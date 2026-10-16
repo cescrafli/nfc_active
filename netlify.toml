@@ -26,8 +26,8 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
     X-Robots-Tag = "noindex, nofollow"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
-    # Halaman memakai inline <script>/<style> dan mengambil saran tempat dari Photon (Komoot).
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://photon.komoot.io; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    # Halaman memakai inline <script>/<style> dan menampilkan pratinjau peta Google Maps.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.google.com https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https://photon.komoot.io; frame-src https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 # config.js berisi pengaturan yang bisa berubah tiap deploy → jangan di-cache lama
 [[headers]]

@@ -18,7 +18,7 @@
     }
     .card {
       background: #ffffff;
-      max-width: 440px;
+      max-width: 460px;
       width: 100%;
       padding: 24px;
       border-radius: 16px;
@@ -93,11 +93,25 @@
     }
     .preview-box strong { display: block; color: #202124; font-size: 14px; margin-bottom: 2px; }
     .preview-box .addr { display: block; color: #5f6368; font-size: 12px; margin-bottom: 6px; }
-    .preview-box span { color: #1a73e8; font-size: 12px; word-break: break-all; }
+    .preview-box span { display: block; color: #1a73e8; font-size: 11px; word-break: break-all; margin-bottom: 10px; }
+
+    /* Pratinjau Peta Google Maps Asli */
+    .map-frame {
+      width: 100%;
+      height: 200px;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      background: #eef0f2;
+    }
+    .map-hint {
+      font-size: 11px;
+      color: #5f6368;
+      margin-top: 6px;
+    }
 
     button {
       width: 100%;
-      margin-top: 20px;
+      margin-top: 18px;
       padding: 14px;
       background: #1a73e8;
       color: #ffffff;
@@ -123,11 +137,11 @@
 
 <div class="card">
   <h2>Aktivasi Kartu NFC</h2>
-  <p>Ketik nama toko atau tempat usaha, pilih dari daftar yang muncul, lalu tempelkan kartu untuk menulis via Google Chrome.</p>
+  <p>Ketik nama toko dan kota Anda (atau tempel link Google Maps), pilih dari daftar, lalu cek peta di bawah sebelum menulis ke kartu.</p>
 
-  <label for="store-input">Nama Toko & Kota (Contoh: Kopi Kenangan Galaxy Bekasi)</label>
+  <label for="store-input">Nama Toko & Kota / Link Google Maps</label>
   <div class="search-wrapper">
-    <input id="store-input" type="text" placeholder="Ketik nama toko..." autocomplete="off" />
+    <input id="store-input" type="text" placeholder="Contoh: Kopi Kenangan Galaxy Bekasi..." autocomplete="off" />
     <div id="dropdown" class="dropdown-list"></div>
   </div>
 
@@ -135,6 +149,8 @@
     <strong id="preview-name"></strong>
     <small class="addr" id="preview-addr"></small>
     <span id="preview-url"></span>
+    <iframe id="map-preview" class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div class="map-hint">👆 Peta di atas adalah lokasi Google Maps yang akan terbuka saat kartu di-tap. Jika kurang pas, tambahkan nama jalan/kecamatan/kota.</div>
   </div>
 
   <button id="activate-btn" disabled>Aktivasi & Tulis ke Kartu NFC</button>
@@ -144,6 +160,7 @@
 <script>
   let targetUrl = "";
   let debounceTimer = null;
+  let mapTimer = null;
   let searchController = null;
 
   const storeInput = document.getElementById("store-input");
@@ -152,16 +169,34 @@
   const previewName = document.getElementById("preview-name");
   const previewAddr = document.getElementById("preview-addr");
   const previewUrl = document.getElementById("preview-url");
+  const mapPreview = document.getElementById("map-preview");
   const activateBtn = document.getElementById("activate-btn");
 
-  function setSelection(title, subtitle, queryText) {
-    targetUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryText)}`;
+  function setSelection(title, subtitle, queryOrUrl, immediateMap = false) {
+    const isDirectUrl = /^https?:\/\//i.test(queryOrUrl);
+    targetUrl = isDirectUrl
+      ? queryOrUrl
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryOrUrl)}`;
+
     previewName.textContent = title;
     previewAddr.textContent = subtitle || "";
     previewAddr.style.display = subtitle ? "block" : "none";
     previewUrl.textContent = targetUrl;
     previewBox.style.display = "block";
     activateBtn.disabled = false;
+
+    clearTimeout(mapTimer);
+    if ( isDirectUrl ) {
+      mapPreview.style.display = "none";
+    } else {
+      mapPreview.style.display = "block";
+      const loadMap = () => {
+        const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryOrUrl)}&hl=id&z=16&output=embed`;
+        if (mapPreview.src !== embedUrl) mapPreview.src = embedUrl;
+      };
+      if (immediateMap) loadMap();
+      else mapTimer = setTimeout(loadMap, 600);
+    }
   }
 
   storeInput.addEventListener("input", () => {
@@ -175,11 +210,15 @@
       return;
     }
 
-    // Tetap siapkan link langsung dari teks yang diketik
-    setSelection("Pencarian: " + q, "Ketuk salah satu daftar di atas untuk lokasi lebih spesifik", q);
+    // Jika pengguna menempel link Google Maps langsung (misal https://maps.app.goo.gl/... atau https://g.page/...)
+    if (/^https?:\/\//i.test(q)) {
+      dropdown.style.display = "none";
+      setSelection("Link Google Maps Langsung", "Tautan yang ditempel akan langsung ditulis ke kartu", q, true);
+      return;
+    }
 
-    // Cari daftar tempat via Photon (OpenStreetMap)
-    debounceTimer = setTimeout(() => searchPlaces(q), 300);
+    setSelection("Pencarian Google Maps: " + q, "Pilih dari daftar atau cek peta di bawah", q, false);
+    debounceTimer = setTimeout(() => searchPlaces(q), 280);
   });
 
   async function searchPlaces(q) {
@@ -194,41 +233,34 @@
     dropdown.appendChild(loading);
 
     try {
-      // bbox Indonesia: 94.5,-11.5,141.5,6.5 agar memprioritaskan tempat di Indonesia
-      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&bbox=94.5,-11.5,141.5,6.5`;
-      const res = await fetch(url, { signal: searchController.signal });
+      const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`, { signal: searchController.signal });
       const data = await res.json();
-      const features = data.features || [];
+      const items = data.items || [];
 
       dropdown.replaceChildren();
 
       // Opsi 1: Selalu sediakan pilihan sesuai ketikan persis pengguna
-      const customItem = createDropdownItem(
-        `Gunakan ketikan: "${q}"`,
-        "Cari langsung kalimat ini di Google Maps",
-        () => {
-          dropdown.style.display = "none";
-          setSelection(q, "Pencarian langsung Google Maps", q);
-        }
+      dropdown.appendChild(
+        createDropdownItem(
+          `🔍 Cari di Google Maps: "${q}"`,
+          "Pakai persis nama yang Anda ketik (pasti ketemu jika ada di Google Maps)",
+          () => {
+            dropdown.style.display = "none";
+            setSelection(q, "Pencarian langsung Google Maps", q, true);
+          }
+        )
       );
-      dropdown.appendChild(customItem);
 
-      // Opsi 2+: Daftar tempat hasil pencarian Photon
-      features.forEach((f) => {
-        const p = f.properties || {};
-        const name = p.name || p.street || q;
-        const addrParts = [p.street, p.locality, p.district, p.city, p.state, p.country]
-          .filter(Boolean)
-          .filter((v, i, arr) => v !== name && arr.indexOf(v) === i);
-        const addr = addrParts.join(", ");
-        const fullQuery = [name, p.street, p.city || p.district, p.state].filter(Boolean).join(", ");
-
-        const item = createDropdownItem(name, addr || "Indonesia", () => {
-          storeInput.value = fullQuery;
-          dropdown.style.display = "none";
-          setSelection(name, addr, fullQuery);
-        });
-        dropdown.appendChild(item);
+      // Opsi 2+: Daftar saran dari Google + peta Indonesia
+      items.forEach((it) => {
+        if (it.title.toLowerCase() === q.toLowerCase()) return;
+        dropdown.appendChild(
+          createDropdownItem(it.title, it.subtitle, () => {
+            storeInput.value = it.query;
+            dropdown.style.display = "none";
+            setSelection(it.title, it.subtitle, it.query, true);
+          })
+        );
       });
     } catch (err) {
       if (err.name === "AbortError") return;
@@ -248,7 +280,6 @@
     return div;
   }
 
-  // Tutup dropdown jika klik di luar kotak pencarian
   document.addEventListener("click", (e) => {
     if (!e.target.closest(".search-wrapper")) {
       dropdown.style.display = "none";

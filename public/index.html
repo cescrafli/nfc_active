@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aktivasi Kartu NFC - Google Maps & Rating</title>
+  <title>Aktivasi Kartu Pintar NFC — Google Maps & Review Bintang 5</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -212,7 +212,7 @@
     .mode-card-title {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       font-size: 13px;
       font-weight: 700;
       color: #0f172a;
@@ -535,11 +535,11 @@
         <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
       </svg>
     </span>
-    <h1>Aktivasi Kartu NFC</h1>
+    <h1>Aktivasi Kartu Pintar NFC</h1>
   </div>
-  <p class="subtitle">Ketik nama toko &amp; kota Anda, klik salah satu toko dari daftar Google Maps yang muncul, masukkan password aktivasi, lalu tempelkan kartu NFC.</p>
+  <p class="subtitle">Hubungkan kartu NFC dengan Google Maps bisnis Anda dalam 30 detik. Sekali tap, pelanggan langsung siap memberi bintang 5!</p>
 
-  <label class="section-label" for="store-input">CARI NAMA TOKO &amp; KOTA DI GOOGLE MAPS</label>
+  <label class="section-label" for="store-input">1. TEMUKAN BISNIS ANDA DI GOOGLE MAPS</label>
   <div class="search-wrapper">
     <div class="search-input-box">
       <span class="search-icon" aria-hidden="true">
@@ -548,7 +548,7 @@
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
       </span>
-      <input id="store-input" type="text" placeholder="Ketik nama toko & kota..." autocomplete="off" />
+      <input id="store-input" type="text" placeholder="Ketik nama bisnis & kota (misal: Kopi Senja Bekasi)..." autocomplete="off" />
       <span class="check-badge" id="search-check" aria-hidden="true">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="20 6 9 17 4 12"></polyline>
@@ -560,32 +560,32 @@
 
   <!-- Pilihan aksi saat kartu di-tap -->
   <div class="mode-section" id="mode-section">
-    <span class="mode-title">Saat Kartu NFC Di-Tap Pelanggan, Buka:</span>
+    <span class="mode-title">2. Pilih Tujuan Saat Pelanggan Men-Tap Kartu:</span>
     <div class="mode-grid">
       <label class="mode-card active" id="card-review">
         <input type="radio" name="target-mode" value="review" checked />
         <div class="mode-card-head">
-          <span class="mode-card-title">⭐ Halaman Rating</span>
+          <span class="mode-card-title">⭐ Form Bintang 5</span>
           <span class="mode-radio-dot">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </span>
         </div>
-        <small>Langsung muncul pop-up beri bintang &amp; ulasan</small>
+        <small>Otomatis buka pop-up ulasan tanpa perlu cari tombol review</small>
       </label>
 
       <label class="mode-card" id="card-maps">
         <input type="radio" name="target-mode" value="maps" />
         <div class="mode-card-head">
-          <span class="mode-card-title">📍 Aplikasi Maps</span>
+          <span class="mode-card-title">📍 Profil &amp; Lokasi Maps</span>
           <span class="mode-radio-dot">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </span>
         </div>
-        <small>Buka profil toko di aplikasi Google Maps</small>
+        <small>Tampilkan profil utama bisnis, rute jalan &amp; katalog toko</small>
       </label>
     </div>
   </div>
@@ -595,9 +595,9 @@
     <div class="preview-topbar">
       <span class="preview-status">
         <span class="status-dot"></span>
-        <span id="preview-badge">Mode: Langsung Buka Halaman Rating &amp; Ulasan</span>
+        <span id="preview-badge">Siap Diaktifkan: Mode Pop-up Bintang 5</span>
       </span>
-      <span class="selected-pill">TERPILIH</span>
+      <span class="selected-pill">TERVERIFIKASI</span>
     </div>
 
     <div class="preview-body">
@@ -640,7 +640,7 @@
       <div class="info-callout">
         <span class="info-callout-icon">i</span>
         <span id="callout-text">
-          <strong>Review Langsung Aktif:</strong> Pelanggan yang men-tap kartu NFC akan langsung diarahkan ke form pop-up bintang 5 tanpa perlu mencari tombol ulasan manual.
+          <strong>Efek Sekali Tap (Instant Review):</strong> Begitu kartu disentuhkan ke HP pelanggan, layar langsung membuka form bintang 5 Google. Lebih praktis = berkali lipat lebih banyak ulasan masuk!
         </span>
       </div>
     </div>
@@ -648,7 +648,7 @@
 
   <!-- Password Aktivasi 8 Kotak Angka -->
   <div class="otp-section" id="otp-section">
-    <div class="otp-title">🔑 Password Aktivasi (8 Angka dari Admin)</div>
+    <div class="otp-title">🔐 3. Kode Lisensi Aktivasi (8 Digit dari Admin)</div>
     <div class="otp-boxes" id="otp-boxes">
       <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 1" />
       <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 2" />
@@ -664,7 +664,7 @@
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="12 6 12 12 16 14"></polyline>
       </svg>
-      <span>Kode berlaku selama 5 menit. Minta kode 8 angka terbaru kepada admin saat siap menempelkan kartu.</span>
+      <span>Demi keamanan kartu Anda, masukkan 8 digit kode lisensi (berlaku 5 menit) dari Admin. Anda bisa langsung tempel (paste) 8 angka sekaligus.</span>
     </div>
   </div>
 
@@ -674,7 +674,7 @@
       <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
       <path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/>
     </svg>
-    <span>Aktivasi &amp; Tulis ke Kartu NFC</span>
+    <span>Aktifkan Kartu NFC Sekarang</span>
   </button>
   <div id="status"></div>
 </div>
@@ -726,14 +726,14 @@
     const mode = getSelectedMode();
     if (mode === "review" && selectedPlace.reviewUrl) {
       targetUrl = selectedPlace.reviewUrl;
-      previewBadge.textContent = "Mode: Langsung Buka Halaman Rating & Ulasan";
+      previewBadge.textContent = "Siap Diaktifkan: Mode Pop-up Bintang 5";
       calloutText.innerHTML =
-        "<strong>Review Langsung Aktif:</strong> Pelanggan yang men-tap kartu NFC akan langsung diarahkan ke form pop-up bintang 5 tanpa perlu mencari tombol ulasan manual.";
+        "<strong>Efek Sekali Tap (Instant Review):</strong> Begitu kartu disentuhkan ke HP pelanggan, layar langsung membuka form bintang 5 Google. Lebih praktis = berkali lipat lebih banyak ulasan masuk!";
     } else {
       targetUrl = selectedPlace.mapsUrl;
-      previewBadge.textContent = "Mode: Langsung Buka Aplikasi Google Maps";
+      previewBadge.textContent = "Siap Diaktifkan: Mode Profil Google Maps";
       calloutText.innerHTML =
-        "<strong>Profil Maps Aktif:</strong> Pelanggan yang men-tap kartu NFC akan langsung membuka titik lokasi & profil toko Anda di aplikasi Google Maps.";
+        "<strong>Navigasi &amp; Profil Instan:</strong> Begitu kartu disentuhkan ke HP pelanggan, aplikasi Google Maps langsung menampilkan titik lokasi, jam buka, foto &amp; profil lengkap bisnis Anda.";
     }
   }
 
@@ -756,7 +756,6 @@
     box.addEventListener("input", (e) => {
       const val = e.target.value.replace(/\D/g, "");
       if (val.length > 1) {
-        // Jika pengguna menempel / mengetik lebih dari 1 angka
         val.split("").forEach((ch, offset) => {
           if (otpDigits[idx + offset]) otpDigits[idx + offset].value = ch;
         });
@@ -860,7 +859,7 @@
     dropdown.replaceChildren();
     const loading = document.createElement("div");
     loading.className = "dropdown-status";
-    loading.textContent = "🔍 Mencari daftar cabang di Google Maps...";
+    loading.textContent = "🔍 Menelusuri lokasi bisnis resmi di Google Maps...";
     dropdown.appendChild(loading);
 
     try {
@@ -873,9 +872,9 @@
       if (items.length === 0) {
         dropdown.appendChild(
           createDropdownItem(
-            `Cari "${q}" di Google Maps`,
+            `Gunakan pencarian: "${q}"`,
             null,
-            "Toko spesifik belum muncul — tambahkan nama jalan atau kota agar lebih akurat",
+            "Tips: Tambahkan nama jalan atau kota agar cabang bisnis Anda muncul spesifik",
             () => {
               dropdown.style.display = "none";
               selectPlace({
@@ -894,7 +893,7 @@
       }
 
       items.forEach((it) => {
-        const badgeText = it.rating ? `⭐ ${it.rating}${it.reviews ? " (" + it.reviews + ")" : ""}` : "📍 Lokasi Google Maps";
+        const badgeText = it.rating ? `⭐ ${it.rating}${it.reviews ? " (" + it.reviews + ")" : ""}` : "📍 Terdaftar di Google Maps";
         dropdown.appendChild(
           createDropdownItem(it.title, badgeText, it.address, () => {
             storeInput.value = it.title;
@@ -959,12 +958,12 @@
     const otpCode = getOtpCode();
 
     if (otpCode.length !== 8) {
-      showStatus("#fdecea", "#b71c1c", "Masukkan 8 angka Password Aktivasi terlebih dahulu.");
+      showStatus("#fdecea", "#b71c1c", "Masukkan 8 digit Kode Lisensi Aktivasi terlebih dahulu.");
       return;
     }
 
     activateBtn.disabled = true;
-    showStatus("#e8f0fe", "#174ea6", "🔒 Memeriksa password aktivasi...");
+    showStatus("#e8f0fe", "#174ea6", "🔐 Memverifikasi kode lisensi aktivasi Anda...");
 
     try {
       const verifyRes = await fetch("/api/otp/verify", {
@@ -975,25 +974,25 @@
       const verifyData = await verifyRes.json();
 
       if (!verifyRes.ok || !verifyData.valid) {
-        showStatus("#fdecea", "#b71c1c", "❌ " + (verifyData.error || "Password aktivasi salah atau sudah kedaluwarsa."));
+        showStatus("#fdecea", "#b71c1c", "❌ " + (verifyData.error || "Kode lisensi tidak valid atau sudah melewati batas 5 menit."));
         updateButtonState();
         return;
       }
     } catch {
-      showStatus("#fdecea", "#b71c1c", "Gagal menghubungi server verifikasi. Periksa koneksi internet Anda.");
+      showStatus("#fdecea", "#b71c1c", "Tidak dapat terhubung ke server lisensi. Pastikan internet Anda aktif lalu coba lagi.");
       updateButtonState();
       return;
     }
 
     if (!("NDEFReader" in window)) {
-      showStatus("#fdecea", "#b71c1c", "Fitur Write NFC hanya berjalan di browser Google Chrome pada HP Android (dengan link HTTPS).");
+      showStatus("#fdecea", "#b71c1c", "Perangkat ini belum mendukung penulisan NFC. Buka halaman ini menggunakan Google Chrome di HP Android dengan fitur NFC menyala.");
       updateButtonState();
       return;
     }
 
     try {
       const ndef = new NDEFReader();
-      showStatus("#fff8e1", "#e65100", "📡 Password valid! Tempelkan dan tahan kartu NFC di belakang HP Anda sekarang...");
+      showStatus("#fff8e1", "#e65100", "📡 Kode lisensi terverifikasi! Tempelkan & tahan kartu NFC di punggung HP Anda selama 2 detik (jangan digeser)...");
 
       await ndef.write({
         records: [{ recordType: "url", data: targetUrl }]
@@ -1003,12 +1002,12 @@
       showStatus(
         "#e8f5e9",
         "#1b5e20",
-        "✅ Aktivasi Berhasil! Kartu NFC sudah berisi link " +
-          (getSelectedMode() === "review" ? "Halaman Rating" : "Aplikasi Google Maps") +
-          " untuk \"" + selectedPlace.title + "\". Silakan tutup Chrome dan tempelkan ulang kartu Anda."
+        "🎉 Kartu NFC Resmi Aktif! Bisnis \"" + selectedPlace.title + "\" kini sudah terhubung ke " +
+          (getSelectedMode() === "review" ? "Form Pop-up Bintang 5" : "Profil Google Maps") +
+          ". Tutup Chrome, lalu coba tap kartu ke HP Anda untuk merasakan hasilnya!"
       );
     } catch (error) {
-      showStatus("#fdecea", "#b71c1c", "Gagal menulis ke kartu: " + error.message);
+      showStatus("#fdecea", "#b71c1c", "Proses penulisan terputus (" + error.message + "). Pastikan kartu ditempelkan rata dan ditahan 2 detik.");
       updateButtonState();
     }
   });

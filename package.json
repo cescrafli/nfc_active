@@ -1,0 +1,19 @@
+{
+  "name": "nfccard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aktivasi kartu NFC review Google Maps via Web NFC + link pengalih di Netlify",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-config.mjs",
+    "dev": "npm run build && npx netlify-cli dev",
+    "check": "node --check netlify/lib/links.mjs && node --check netlify/functions/links.mjs && node --check netlify/functions/redirect.mjs && node --check scripts/build-config.mjs && node --check public/assets/common.js && node --check public/assets/app.js && node --check public/assets/admin.js",
+    "token": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.4"
+  }
+}

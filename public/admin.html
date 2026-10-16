@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#1a73e8">
+  <title>Kelola Kartu NFC Review</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/style.css">
+  <script type="module" src="assets/admin.js"></script>
+</head>
+<body>
+
+<main class="card wide">
+  <div class="topbar">
+    <span class="header-badge">Kelola Kartu NFC</span>
+    <a class="nav-link" href="./">← Aktivasi Kartu</a>
+  </div>
+  <h1>Kelola Link Kartu</h1>
+  <p class="sub">Ubah tujuan, nonaktifkan, atau hapus link pengalih. Perubahan langsung berlaku di semua kartu dengan kode tersebut — tanpa perlu menulis ulang kartu.</p>
+
+  <!-- LOGIN -->
+  <section id="login-section" class="sub-box">
+    <label for="token-input">Token Admin</label>
+    <input type="password" id="token-input" placeholder="ADMIN_TOKEN dari Netlify" autocomplete="current-password">
+    <button type="button" class="btn-main" id="login-btn" style="margin-top:0">Masuk</button>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dash" hidden>
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Cari nama toko / kode / tujuan…">
+      <button type="button" class="btn-small secondary" id="refresh-btn">Muat Ulang</button>
+      <button type="button" class="btn-link inline" id="logout-btn">Keluar</button>
+    </div>
+
+    <details class="sub-box" id="create-box">
+      <summary>+ Buat link baru (tanpa menulis kartu)</summary>
+      <label for="new-name">Nama Toko</label>
+      <input type="text" id="new-name" maxlength="120" placeholder="Contoh: Kopi Senja Bekasi">
+      <label for="new-target">Place ID / Link Review Google</label>
+      <input type="text" id="new-target" placeholder="ChIJ... atau https://g.page/r/.../review" spellcheck="false">
+      <label for="new-code">Kode (opsional)</label>
+      <input type="text" id="new-code" maxlength="32" placeholder="Kosongkan = otomatis" spellcheck="false">
+      <button type="button" class="btn-small blue" id="create-btn">Buat Link</button>
+    </details>
+
+    <div class="hint" id="stats"></div>
+    <div id="list"></div>
+  </section>
+
+  <div id="status-box" class="status" hidden></div>
+</main>
+
+</body>
+</html>

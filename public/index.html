@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aktivasi Kartu NFC - Google Maps Direct</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #ffffff;
+      max-width: 440px;
+      width: 100%;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    h2 { margin: 0 0 6px; color: #202124; font-size: 22px; }
+    p { margin: 0 0 18px; color: #5f6368; font-size: 14px; line-height: 1.5; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #3c4043; margin-bottom: 6px; }
+    input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #dadce0;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.15); }
+    
+    .preview-box {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f8f9fa;
+      border: 1px solid #e8eaed;
+      border-radius: 10px;
+      display: none;
+    }
+    .preview-box strong { display: block; color: #202124; font-size: 14px; margin-bottom: 4px; }
+    .preview-box span { color: #1a73e8; font-size: 12px; word-break: break-all; }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      background: #1a73e8;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { background: #dadce0; color: #80868b; cursor: not-allowed; }
+
+    #status {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: none;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Aktivasi Kartu NFC</h2>
+  <p>Ketik nama toko dan kota Anda secara lengkap (sama seperti saat Anda mencarinya di Google Maps), lalu tempelkan kartu untuk menulis via Google Chrome.</p>
+
+  <label for="store-input">Nama Toko & Kota (Contoh: Kopi Kenangan Galaxy Bekasi)</label>
+  <input id="store-input" type="text" placeholder="Ketik nama toko..." autocomplete="off" />
+
+  <div class="preview-box" id="preview-box">
+    <strong id="preview-name"></strong>
+    <span id="preview-url"></span>
+  </div>
+
+  <button id="activate-btn" disabled>Aktivasi & Tulis ke Kartu NFC</button>
+  <div id="status"></div>
+</div>
+
+<script>
+  let targetUrl = "";
+  const storeInput = document.getElementById("store-input");
+
+  storeInput.addEventListener("input", () => {
+    const val = storeInput.value.trim();
+    if (val.length < 3) {
+      document.getElementById("preview-box").style.display = "none";
+      document.getElementById("activate-btn").disabled = true;
+      return;
+    }
+
+    // Merakit link pencarian langsung ke Google Maps
+    targetUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`;
+
+    document.getElementById("preview-name").textContent = "Pencarian: " + val;
+    document.getElementById("preview-url").textContent = targetUrl;
+    document.getElementById("preview-box").style.display = "block";
+    document.getElementById("activate-btn").disabled = false;
+  });
+
+  // Tulis ke Kartu NFC via Google Chrome (Web NFC API)
+  document.getElementById("activate-btn").addEventListener("click", async () => {
+    const statusBox = document.getElementById("status");
+    statusBox.style.display = "block";
+
+    if (!("NDEFReader" in window)) {
+      statusBox.style.background = "#fdecea";
+      statusBox.style.color = "#b71c1c";
+      statusBox.textContent = "Fitur Write NFC hanya berjalan di browser Google Chrome pada HP Android (dengan link HTTPS).";
+      return;
+    }
+
+    try {
+      const ndef = new NDEFReader();
+      statusBox.style.background = "#fff8e1";
+      statusBox.style.color = "#e65100";
+      statusBox.textContent = "📡 Tempelkan dan tahan kartu NFC di belakang HP Anda sekarang...";
+
+      await ndef.write({
+        records: [{ recordType: "url", data: targetUrl }]
+      });
+
+      statusBox.style.background = "#e8f5e9";
+      statusBox.style.color = "#1b5e20";
+      statusBox.textContent = "✅ Aktivasi Berhasil! Kartu NFC sudah terisi. Silakan tutup Chrome dan coba tempelkan ulang kartu Anda.";
+    } catch (error) {
+      statusBox.style.background = "#fdecea";
+      statusBox.style.color = "#b71c1c";
+      statusBox.textContent = "Gagal menulis ke kartu: " + error.message;
+    }
+  });
+</script>
+
+</body>
+</html>

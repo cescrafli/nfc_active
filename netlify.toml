@@ -1,0 +1,36 @@
+# =============================================================
+# Konfigurasi Netlify — Aktivasi Kartu NFC Review Google Maps
+# =============================================================
+
+[build]
+  # Folder yang dipublikasikan (hanya isi public/ yang bisa diakses publik)
+  publish = "public"
+  # Membuat public/config.js dari Environment Variables (API Key tidak masuk GitHub)
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  # /r/:code (redirect) & /api/links (admin) — path diatur di masing-masing file
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# ---------- Header keamanan untuk semua halaman ----------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Robots-Tag = "noindex, nofollow"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    # Halaman memakai inline <script>/<style>; tidak ada resource pihak ketiga.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
+# config.js berisi pengaturan yang bisa berubah tiap deploy → jangan di-cache lama
+[[headers]]
+  for = "/config.js"
+  [headers.values]
+    Cache-Control = "no-cache"

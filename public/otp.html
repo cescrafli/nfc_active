@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Generator Password Aktivasi (Khusus Admin)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #1e293b;
+      max-width: 420px;
+      width: 100%;
+      padding: 26px;
+      border-radius: 18px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+    h2 { margin: 0 0 6px; font-size: 20px; }
+    p { margin: 0 0 18px; color: #94a3b8; font-size: 13px; line-height: 1.5; }
+
+    input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      background: #0f172a;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    input:focus { border-color: #38bdf8; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn-secondary {
+      background: #334155;
+      margin-top: 10px;
+      font-size: 13px;
+      padding: 10px;
+    }
+
+    .otp-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 20px 14px;
+      margin: 14px 0;
+    }
+    .otp-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: #38bdf8;
+      margin: 4px 0 10px;
+      user-select: all;
+    }
+    .timer-bar {
+      width: 100%;
+      height: 6px;
+      background: #334155;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .timer-fill {
+      height: 100%;
+      background: #38bdf8;
+      width: 100%;
+      transition: width 0.9s linear;
+    }
+    .timer-text {
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+    .next-code {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 12px;
+    }
+    .error {
+      color: #f87171;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <span class="badge">🔒 KHUSUS ADMIN</span>
+  <h2>Password Aktivasi 8 Angka</h2>
+  <p>Kode ini otomatis berganti setiap 1 menit. Berikan 8 angka di bawah kepada pengguna yang hendak mengaktifkan kartu NFC.</p>
+
+  <!-- Form Login Admin -->
+  <div id="login-view">
+    <input id="admin-key" type="password" placeholder="Masukkan Kunci Rahasia Admin..." autocomplete="current-password" />
+    <button class="btn" id="login-btn">Buka Generator</button>
+    <div id="login-error" class="error" style="display:none"></div>
+  </div>
+
+  <!-- Tampilan Live OTP -->
+  <div id="otp-view" style="display:none">
+    <div class="otp-box">
+      <div class="timer-text">Kode Aktif Saat Ini:</div>
+      <div class="otp-code" id="otp-display">--------</div>
+      <div class="timer-text">Reset dalam <strong id="sec-left">--</strong> detik</div>
+      <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+      <div class="next-code">Kode menit berikutnya: <strong id="next-otp">--------</strong></div>
+    </div>
+
+    <button class="btn" id="copy-btn">📋 Salin Kode 8 Angka</button>
+    <button class="btn btn-secondary" id="logout-btn">Keluar / Kunci</button>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = "nfc_otp_admin_key";
+  let rawCode = "";
+  let remaining = 60;
+  let tickTimer = null;
+
+  const loginView = document.getElementById("login-view");
+  const otpView = document.getElementById("otp-view");
+  const adminKeyInput = document.getElementById("admin-key");
+  const loginError = document.getElementById("login-error");
+  const otpDisplay = document.getElementById("otp-display");
+  const nextOtpDisplay = document.getElementById("next-otp");
+  const secLeft = document.getElementById("sec-left");
+  const timerFill = document.getElementById("timer-fill");
+  const copyBtn = document.getElementById("copy-btn");
+
+  const format8 = (code) => String(code).slice(0, 4) + " " + String(code).slice(4, 8);
+
+  async function fetchOtp(key) {
+    const res = await fetch("/api/otp/current", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.valid) {
+      throw new Error(data.error || "Kunci salah");
+    }
+    rawCode = data.code;
+    remaining = data.remainingSec;
+    otpDisplay.textContent = format8(data.code);
+    nextOtpDisplay.textContent = format8(data.nextCode);
+    updateTimerUi();
+  }
+
+  function updateTimerUi() {
+    secLeft.textContent = remaining;
+    timerFill.style.width = ((remaining / 60) * 100) + "%";
+    timerFill.style.background = remaining <= 10 ? "#f87171" : "#38bdf8";
+  }
+
+  async function startLive(key) {
+    try {
+      loginError.style.display = "none";
+      await fetchOtp(key);
+      localStorage.setItem(STORAGE_KEY, key);
+      loginView.style.display = "none";
+      otpView.style.display = "block";
+
+      clearInterval(tickTimer);
+      tickTimer = setInterval(async () => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          try { await fetchOtp(key); } catch {}
+        } else {
+          updateTimerUi();
+        }
+      }, 1000);
+    } catch (err) {
+      localStorage.removeItem(STORAGE_KEY);
+      loginError.textContent = err.message;
+      loginError.style.display = "block";
+    }
+  }
+
+  document.getElementById("login-btn").addEventListener("click", () => {
+    const k = adminKeyInput.value.trim();
+    if (k) startLive(k);
+  });
+
+  adminKeyInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("login-btn").click();
+  });
+
+  copyBtn.addEventListener("click", async () => {
+    if (!rawCode) return;
+    try {
+      await navigator.clipboard.writeText(rawCode);
+      copyBtn.textContent = "✅ Tersalin: " + rawCode;
+      setTimeout(() => { copyBtn.textContent = "📋 Salin Kode 8 Angka"; }, 1800);
+    } catch {
+      prompt("Salin kode:", rawCode);
+    }
+  });
+
+  document.getElementById("logout-btn").addEventListener("click", () => {
+    clearInterval(tickTimer);
+    localStorage.removeItem(STORAGE_KEY);
+    otpView.style.display = "none";
+    loginView.style.display = "block";
+    adminKeyInput.value = "";
+  });
+
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) startLive(saved);
+</script>
+
+</body>
+</html>

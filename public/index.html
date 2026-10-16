@@ -32,7 +32,7 @@
     .search-wrapper {
       position: relative;
     }
-    input[type="text"] {
+    input[type="text"], input[type="tel"] {
       width: 100%;
       padding: 13px 14px;
       border: 1px solid #dadce0;
@@ -40,7 +40,10 @@
       font-size: 15px;
       outline: none;
     }
-    input[type="text"]:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.15); }
+    input[type="text"]:focus, input[type="tel"]:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+    }
 
     .dropdown-list {
       position: absolute;
@@ -149,36 +152,7 @@
       margin-bottom: 6px;
     }
     .preview-box strong { display: block; color: #202124; font-size: 15px; margin-bottom: 3px; }
-    .preview-box .addr { display: block; color: #5f6368; font-size: 12px; margin-bottom: 8px; line-height: 1.4; }
-    .preview-box .url-box {
-      display: block;
-      color: #1a73e8;
-      background: #e8f0fe;
-      padding: 7px 9px;
-      border-radius: 6px;
-      font-size: 11px;
-      word-break: break-all;
-      margin-bottom: 10px;
-    }
-
-    .test-links {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .test-btn {
-      flex: 1;
-      text-align: center;
-      padding: 8px 10px;
-      background: #ffffff;
-      border: 1px solid #dadce0;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #1a73e8;
-      text-decoration: none;
-    }
-    .test-btn:hover { background: #f1f6fe; }
+    .preview-box .addr { display: block; color: #5f6368; font-size: 12px; margin-bottom: 10px; line-height: 1.4; }
 
     .map-frame {
       width: 100%;
@@ -186,6 +160,29 @@
       border: 1px solid #dadce0;
       border-radius: 8px;
       background: #eef0f2;
+    }
+
+    /* Kotak Password OTP 8 Angka */
+    .otp-section {
+      margin-top: 16px;
+      padding: 14px;
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: 12px;
+      display: none;
+    }
+    .otp-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 20px !important;
+      font-weight: 700;
+      letter-spacing: 5px;
+      text-align: center;
+      background: #ffffff;
+    }
+    .otp-hint {
+      font-size: 12px;
+      color: #8d6e63;
+      margin-top: 6px;
     }
 
     button#activate-btn {
@@ -216,7 +213,7 @@
 
 <div class="card">
   <h2>Aktivasi Kartu NFC</h2>
-  <p>Ketik nama toko & kota Anda, klik salah satu toko dari daftar Google Maps yang muncul, lalu tempelkan kartu NFC.</p>
+  <p>Ketik nama toko & kota Anda, klik salah satu toko dari daftar Google Maps yang muncul, masukkan password aktivasi, lalu tempelkan kartu NFC.</p>
 
   <label for="store-input">Cari Nama Toko & Kota di Google Maps</label>
   <div class="search-wrapper">
@@ -245,14 +242,22 @@
     <span class="preview-badge" id="preview-badge">✓ Toko Google Maps Terpilih</span>
     <strong id="preview-name"></strong>
     <small class="addr" id="preview-addr"></small>
-    <span class="url-box" id="preview-url"></span>
-
-    <div class="test-links">
-      <a id="test-review-link" class="test-btn" href="#" target="_blank" rel="noopener">⭐ Tes Buka Halaman Rating</a>
-      <a id="test-maps-link" class="test-btn" href="#" target="_blank" rel="noopener">📍 Tes Buka Aplikasi Maps</a>
-    </div>
-
     <iframe id="map-preview" class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+
+  <!-- Password Aktivasi 8 Angka (reset tiap 1 menit) -->
+  <div class="otp-section" id="otp-section">
+    <label for="otp-input">🔑 Password Aktivasi (8 Angka dari Admin)</label>
+    <input
+      id="otp-input"
+      class="otp-input"
+      type="tel"
+      inputmode="numeric"
+      maxlength="8"
+      placeholder="00000000"
+      autocomplete="one-time-code"
+    />
+    <div class="otp-hint">Kode berlaku selama 1 menit. Minta kode 8 angka terbaru kepada admin saat siap menempelkan kartu.</div>
   </div>
 
   <button id="activate-btn" disabled>Aktivasi & Tulis ke Kartu NFC</button>
@@ -260,7 +265,7 @@
 </div>
 
 <script>
-  let selectedPlace = null; // { title, address, placeId, cid, rating, reviews, reviewUrl, mapsUrl }
+  let selectedPlace = null;
   let targetUrl = "";
   let debounceTimer = null;
   let searchController = null;
@@ -274,11 +279,11 @@
   const previewBadge = document.getElementById("preview-badge");
   const previewName = document.getElementById("preview-name");
   const previewAddr = document.getElementById("preview-addr");
-  const previewUrl = document.getElementById("preview-url");
-  const testReviewLink = document.getElementById("test-review-link");
-  const testMapsLink = document.getElementById("test-maps-link");
   const mapPreview = document.getElementById("map-preview");
+  const otpSection = document.getElementById("otp-section");
+  const otpInput = document.getElementById("otp-input");
   const activateBtn = document.getElementById("activate-btn");
+  const statusBox = document.getElementById("status");
 
   function getSelectedMode() {
     const checked = document.querySelector('input[name="target-mode"]:checked');
@@ -303,8 +308,15 @@
       targetUrl = selectedPlace.mapsUrl;
       previewBadge.textContent = "📍 Mode: Langsung Buka Aplikasi Google Maps";
     }
-    previewUrl.textContent = targetUrl;
   }
+
+  function updateButtonState() {
+    const otpClean = otpInput.value.replace(/\D/g, "");
+    otpInput.value = otpClean;
+    activateBtn.disabled = !selectedPlace || otpClean.length !== 8;
+  }
+
+  otpInput.addEventListener("input", updateButtonState);
 
   function selectPlace(place) {
     selectedPlace = place;
@@ -314,13 +326,10 @@
     previewName.textContent = place.title;
     previewAddr.textContent = ratingInfo + (place.address || "");
     previewBox.style.display = "block";
-    activateBtn.disabled = false;
-
-    testReviewLink.style.display = place.reviewUrl ? "block" : "none";
-    testReviewLink.href = place.reviewUrl || "#";
-    testMapsLink.href = place.mapsUrl;
+    otpSection.style.display = "block";
 
     updateTargetUrl();
+    updateButtonState();
 
     const embedParam = place.cid
       ? `cid=${encodeURIComponent(place.cid)}`
@@ -436,38 +445,71 @@
     }
   });
 
-  // Tulis ke Kartu NFC via Google Chrome (Web NFC API)
-  activateBtn.addEventListener("click", async () => {
-    const statusBox = document.getElementById("status");
+  function showStatus(bg, color, text) {
     statusBox.style.display = "block";
+    statusBox.style.background = bg;
+    statusBox.style.color = color;
+    statusBox.textContent = text;
+  }
+
+  // Verifikasi OTP 8 angka lalu tulis ke Kartu NFC via Google Chrome
+  activateBtn.addEventListener("click", async () => {
     dropdown.style.display = "none";
+    const otpCode = otpInput.value.replace(/\D/g, "");
+
+    if (otpCode.length !== 8) {
+      showStatus("#fdecea", "#b71c1c", "Masukkan 8 angka Password Aktivasi terlebih dahulu.");
+      return;
+    }
+
+    activateBtn.disabled = true;
+    showStatus("#e8f0fe", "#174ea6", "🔒 Memeriksa password aktivasi...");
+
+    try {
+      const verifyRes = await fetch("/api/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: otpCode })
+      });
+      const verifyData = await verifyRes.json();
+
+      if (!verifyRes.ok || !verifyData.valid) {
+        showStatus("#fdecea", "#b71c1c", "❌ " + (verifyData.error || "Password aktivasi salah atau sudah kedaluwarsa."));
+        updateButtonState();
+        return;
+      }
+    } catch {
+      showStatus("#fdecea", "#b71c1c", "Gagal menghubungi server verifikasi. Periksa koneksi internet Anda.");
+      updateButtonState();
+      return;
+    }
 
     if (!("NDEFReader" in window)) {
-      statusBox.style.background = "#fdecea";
-      statusBox.style.color = "#b71c1c";
-      statusBox.textContent = "Fitur Write NFC hanya berjalan di browser Google Chrome pada HP Android (dengan link HTTPS).";
+      showStatus("#fdecea", "#b71c1c", "Fitur Write NFC hanya berjalan di browser Google Chrome pada HP Android (dengan link HTTPS).");
+      updateButtonState();
       return;
     }
 
     try {
       const ndef = new NDEFReader();
-      statusBox.style.background = "#fff8e1";
-      statusBox.style.color = "#e65100";
-      statusBox.textContent = "📡 Tempelkan dan tahan kartu NFC di belakang HP Anda sekarang...";
+      showStatus("#fff8e1", "#e65100", "📡 Password valid! Tempelkan dan tahan kartu NFC di belakang HP Anda sekarang...");
 
       await ndef.write({
         records: [{ recordType: "url", data: targetUrl }]
       });
 
-      statusBox.style.background = "#e8f5e9";
-      statusBox.style.color = "#1b5e20";
-      statusBox.textContent = "✅ Aktivasi Berhasil! Kartu NFC sudah berisi link " +
-        (getSelectedMode() === "review" ? "Halaman Rating" : "Aplikasi Google Maps") +
-        " untuk \"" + selectedPlace.title + "\". Silakan tutup Chrome dan tempelkan ulang kartu Anda.";
+      otpInput.value = "";
+      updateButtonState();
+      showStatus(
+        "#e8f5e9",
+        "#1b5e20",
+        "✅ Aktivasi Berhasil! Kartu NFC sudah berisi link " +
+          (getSelectedMode() === "review" ? "Halaman Rating" : "Aplikasi Google Maps") +
+          " untuk \"" + selectedPlace.title + "\". Silakan tutup Chrome dan tempelkan ulang kartu Anda."
+      );
     } catch (error) {
-      statusBox.style.background = "#fdecea";
-      statusBox.style.color = "#b71c1c";
-      statusBox.textContent = "Gagal menulis ke kartu: " + error.message;
+      showStatus("#fdecea", "#b71c1c", "Gagal menulis ke kartu: " + error.message);
+      updateButtonState();
     }
   });
 </script>

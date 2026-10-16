@@ -134,12 +134,41 @@
       margin-bottom: 6px;
     }
 
+    .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .label-row label { margin-bottom: 0; }
+
+    .copy-pill-btn {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .copy-pill-btn.copied {
+      background: #dcfce7;
+      border-color: #86efac;
+      color: #15803d;
+    }
+
     /* Quick Tags for 4-5 stars */
     .quick-tags {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     .tag-chip {
       background: #f1f5f9;
@@ -147,7 +176,7 @@
       color: #334155;
       font-size: 11.5px;
       font-weight: 600;
-      padding: 5px 10px;
+      padding: 6px 11px;
       border-radius: 999px;
       cursor: pointer;
       transition: all 0.15s;
@@ -168,7 +197,7 @@
       color: #0f172a;
       background: #f8fafc;
       outline: none;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       transition: border-color 0.15s, background 0.15s;
     }
     textarea {
@@ -179,6 +208,17 @@
       background: #ffffff;
       border-color: #2563eb;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .copy-guide-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      padding: 9px 11px;
+      border-radius: 10px;
+      font-size: 11.5px;
+      line-height: 1.45;
+      margin-bottom: 12px;
     }
 
     .submit-btn {
@@ -217,15 +257,15 @@
     .toast {
       display: none;
       margin-top: 12px;
-      padding: 11px 12px;
+      padding: 12px 14px;
       border-radius: 10px;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      color: #1e40af;
+      background: #dcfce7;
+      border: 1px solid #86efac;
+      color: #166534;
       font-size: 12.5px;
-      font-weight: 600;
+      font-weight: 700;
       text-align: center;
-      line-height: 1.4;
+      line-height: 1.45;
     }
   </style>
 </head>
@@ -261,12 +301,12 @@
 
     <!-- Chip kalimat cepat untuk bintang 4-5 -->
     <div id="quick-tags-wrap" style="display:none">
-      <label>Pilih Cepat / Tulis Ulasan Anda:</label>
+      <label>Pilih Cepat Kalimat Ulasan:</label>
       <div class="quick-tags" id="quick-tags">
         <button type="button" class="tag-chip">Pelayanan sangat ramah 👍</button>
-        <button type="button" class="tag-chip">Tempat nyaman & bersih ✨</button>
-        <button type="button" class="tag-chip">Produk berkualitas & recommended! ⭐</button>
-        <button type="button" class="tag-chip">Harga terjangkau & memuaskan 💯</button>
+        <button type="button" class="tag-chip">Tempat nyaman &amp; bersih ✨</button>
+        <button type="button" class="tag-chip">Produk berkualitas &amp; recommended! ⭐</button>
+        <button type="button" class="tag-chip">Harga terjangkau &amp; memuaskan 💯</button>
       </div>
     </div>
 
@@ -275,8 +315,15 @@
       <input type="text" id="cust-name" placeholder="Masukkan nama Anda..." />
     </div>
 
-    <label for="feedback-text" id="feedback-label">Pesan / Ulasan Anda</label>
+    <div class="label-row">
+      <label for="feedback-text" id="feedback-label">Pesan / Ulasan Anda</label>
+      <button type="button" class="copy-pill-btn" id="copy-review-btn" style="display:none">📋 Salin Ulasan</button>
+    </div>
     <textarea id="feedback-text" placeholder="Tulis pengalaman Anda di sini..."></textarea>
+
+    <div class="copy-guide-box" id="copy-guide-box" style="display:none">
+      💡 <strong>Cara Mudah:</strong> Klik tombol di bawah — teks ulasan Anda <strong>otomatis disalin (Copy)</strong>, lalu tinggal <strong>Tempel (Paste)</strong> di kolom ulasan Google Maps yang terbuka.
+    </div>
 
     <button type="button" class="submit-btn" id="submit-btn">Kirim Penilaian</button>
     <div class="helper-foot" id="helper-foot"></div>
@@ -310,6 +357,7 @@
   let currentStar = 0;
 
   const starBtns = Array.from(document.querySelectorAll(".star-btn"));
+  const tagChips = Array.from(document.querySelectorAll(".tag-chip"));
   const ratingCaption = document.getElementById("rating-caption");
   const formArea = document.getElementById("form-area");
   const modeBanner = document.getElementById("mode-banner");
@@ -318,12 +366,64 @@
   const custName = document.getElementById("cust-name");
   const feedbackLabel = document.getElementById("feedback-label");
   const feedbackText = document.getElementById("feedback-text");
+  const copyReviewBtn = document.getElementById("copy-review-btn");
+  const copyGuideBox = document.getElementById("copy-guide-box");
   const submitBtn = document.getElementById("submit-btn");
   const helperFoot = document.getElementById("helper-foot");
   const toast = document.getElementById("toast");
 
+  // Fungsi salin ke clipboard yang bekerja di Android & iOS Safari
+  async function copyToClipboard(text) {
+    if (!text) return false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {
+      /* fallback di bawah */
+    }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+
+  function markCopiedUi() {
+    copyReviewBtn.classList.add("copied");
+    copyReviewBtn.textContent = "✅ Tersalin!";
+    setTimeout(() => {
+      copyReviewBtn.classList.remove("copied");
+      copyReviewBtn.textContent = "📋 Salin Ulasan";
+    }, 2000);
+  }
+
+  copyReviewBtn.addEventListener("click", async () => {
+    const text = feedbackText.value.trim();
+    if (!text) {
+      feedbackText.focus();
+      return;
+    }
+    await copyToClipboard(text);
+    markCopiedUi();
+    toast.style.display = "block";
+    toast.textContent = "✅ Teks ulasan disalin! Sekarang klik tombol biru di bawah untuk membuka Google Maps.";
+  });
+
   starBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
+      const prevStar = currentStar;
       currentStar = Number(btn.dataset.star);
       starBtns.forEach((b) => {
         b.classList.toggle("active", Number(b.dataset.star) <= currentStar);
@@ -334,11 +434,17 @@
 
       if (currentStar <= 3) {
         // Bintang 1 - 3 -> Arahkan ke WhatsApp
+        if (prevStar >= 4) {
+          feedbackText.value = "";
+          tagChips.forEach((c) => c.classList.remove("selected"));
+        }
         modeBanner.className = "mode-banner low";
         modeBanner.textContent =
           "🙏 Mohon maaf jika ada hal yang kurang berkenan. Sampaikan masukan Anda langsung kepada manajemen kami via WhatsApp agar segera kami perbaiki.";
         quickTagsWrap.style.display = "none";
         nameFieldWrap.style.display = "block";
+        copyReviewBtn.style.display = "none";
+        copyGuideBox.style.display = "none";
         feedbackLabel.textContent = "Apa yang perlu kami tingkatkan?";
         feedbackText.placeholder = "Ceritakan keluhan atau saran Anda...";
         submitBtn.className = "submit-btn wa";
@@ -346,27 +452,43 @@
         helperFoot.textContent = "Pesan Anda akan langsung terformat dan dikirim ke WhatsApp resmi kami.";
       } else {
         // Bintang 4 - 5 -> Salin ulasan & arahkan ke Google Maps Review
+        if (prevStar <= 3 && !feedbackText.value.trim()) {
+          tagChips[0].classList.add("selected");
+          tagChips[2].classList.add("selected");
+          feedbackText.value = `${tagChips[0].textContent}. ${tagChips[2].textContent}.`;
+        }
         modeBanner.className = "mode-banner high";
         modeBanner.textContent =
-          "🎉 Terima kasih atas penilaian positif Anda! Tulis ulasan singkat di bawah untuk diposting ke Google Maps.";
+          "🎉 Terima kasih atas penilaian positif Anda! Pilih atau edit kalimat ulasan di bawah untuk di-copy paste ke Google Maps.";
         quickTagsWrap.style.display = "block";
         nameFieldWrap.style.display = "none";
-        feedbackLabel.textContent = "Tulis Ulasan Positif Anda (Opsional):";
+        copyReviewBtn.style.display = "inline-flex";
+        copyGuideBox.style.display = "block";
+        feedbackLabel.textContent = "Ulasan Positif Anda (Siap di-Copy):";
         feedbackText.placeholder = "Contoh: Pelayanan sangat ramah dan memuaskan...";
         submitBtn.className = "submit-btn google";
-        submitBtn.textContent = "⭐ Kirim & Posting di Google Maps";
-        helperFoot.textContent = "Ulasan Anda otomatis tersalin & halaman Google Review langsung terbuka.";
+        submitBtn.textContent = "📋 Salin Ulasan & Buka Google Maps";
+        helperFoot.textContent = "Saat diklik, teks ulasan otomatis ter-copy lalu halaman Google Review terbuka.";
+
+        // Langsung salin otomatis begitu bintang 4-5 dipilih
+        if (feedbackText.value.trim()) {
+          await copyToClipboard(feedbackText.value.trim());
+        }
       }
     });
   });
 
-  // Klik chip kalimat cepat
-  document.querySelectorAll(".tag-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
+  // Klik chip kalimat cepat -> gabungkan ke textarea & langsung auto-copy
+  tagChips.forEach((chip) => {
+    chip.addEventListener("click", async () => {
       chip.classList.toggle("selected");
-      const selectedTexts = Array.from(document.querySelectorAll(".tag-chip.selected")).map((c) => c.textContent);
-      if (selectedTexts.length > 0) {
-        feedbackText.value = selectedTexts.join(". ") + ".";
+      const selectedTexts = tagChips
+        .filter((c) => c.classList.contains("selected"))
+        .map((c) => c.textContent);
+      feedbackText.value = selectedTexts.length > 0 ? selectedTexts.join(". ") + "." : "";
+      if (feedbackText.value) {
+        await copyToClipboard(feedbackText.value);
+        markCopiedUi();
       }
     });
   });
@@ -385,7 +507,7 @@
       const sender = custName.value.trim();
       const starsStr = "⭐".repeat(currentStar) + ` (${currentStar}/5)`;
       const waLines = [
-        `Halo Admin *${storeName}*, saya ingin memberikan masukan terkait layanan Anda.`,
+        `Halo Admin *${storeName}*, saya ingin memberikan masukan layanan:`,
         ``,
         `*Rating:* ${starsStr}`,
         sender ? `*Nama:* ${sender}` : null,
@@ -399,19 +521,16 @@
 
       window.location.href = waTarget;
     } else {
-      // Bintang 4 - 5: Salin teks ulasan (jika diisi) & langsung buka form Google Maps Review
+      // Bintang 4 - 5: Salin teks ulasan ke clipboard & buka form Google Maps Review
       if (msg) {
-        try {
-          await navigator.clipboard.writeText(msg);
-          toast.style.display = "block";
-          toast.textContent = "✅ Teks ulasan Anda sudah tersalin! Tinggal tempel (Paste) di Google Maps...";
-        } catch {
-          /* lanjut redirect */
-        }
+        await copyToClipboard(msg);
+        markCopiedUi();
+        toast.style.display = "block";
+        toast.textContent = "✅ Ulasan berhasil disalin! Membuka Google Maps — tinggal tahan & klik Tempel (Paste)...";
       }
       setTimeout(() => {
         window.location.href = googleReviewUrl;
-      }, msg ? 550 : 50);
+      }, msg ? 850 : 100);
     }
   });
 </script>

@@ -2,7 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "public",
-  "cleanUrls": false,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/otp", "destination": "/otp.html" },
+    { "source": "/admin", "destination": "/admin.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

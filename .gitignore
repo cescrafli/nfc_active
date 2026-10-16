@@ -10,8 +10,9 @@ config.local.json
 # Dibuat otomatis saat build (berisi API Key dari env)
 public/config.js
 
-# ===== Netlify (berisi Site ID & state CLI) =====
+# ===== Netlify & Vercel (berisi Project ID & state CLI) =====
 .netlify/
+.vercel/
 
 # ===== Node / npm (jika nanti pakai netlify-cli lokal) =====
 node_modules/

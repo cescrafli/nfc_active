@@ -45,9 +45,10 @@ export default async (req) => {
   }
 
   const secret = getSecret();
+  const WINDOW_SEC = 300; // 5 menit (300 detik)
   const nowSec = Math.floor(Date.now() / 1000);
-  const step = Math.floor(nowSec / 60);
-  const remainingSec = 60 - (nowSec % 60);
+  const step = Math.floor(nowSec / WINDOW_SEC);
+  const remainingSec = WINDOW_SEC - (nowSec % WINDOW_SEC);
 
   const url = new URL(req.url);
 
@@ -62,6 +63,7 @@ export default async (req) => {
       code: generate8DigitOtp(secret, step),
       nextCode: generate8DigitOtp(secret, step + 1),
       remainingSec,
+      windowSec: WINDOW_SEC,
     });
   }
 
@@ -71,18 +73,18 @@ export default async (req) => {
     return json({ valid: false, error: "Password aktivasi harus berupa 8 angka." }, 400);
   }
 
-  // Cek kode menit ini (dan toleransi menit sebelumnya jika baru saja berganti beberapa detik lalu)
+  // Cek kode 5 menit ini (dan toleransi 15 detik awal jika baru saja berganti)
   const currentOtp = generate8DigitOtp(secret, step);
   const prevOtp = generate8DigitOtp(secret, step - 1);
   const isValid =
     safeEqual(rawCode, currentOtp) ||
-    (nowSec % 60 <= 10 && safeEqual(rawCode, prevOtp));
+    (nowSec % WINDOW_SEC <= 15 && safeEqual(rawCode, prevOtp));
 
   if (!isValid) {
     return json(
       {
         valid: false,
-        error: "Password aktivasi salah atau sudah kedaluwarsa (lewat 1 menit). Minta kode terbaru ke admin.",
+        error: "Password aktivasi salah atau sudah kedaluwarsa (lewat 5 menit). Minta kode terbaru ke admin.",
       },
       401
     );

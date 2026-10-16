@@ -27,6 +27,11 @@
     h2 { margin: 0 0 6px; color: #202124; font-size: 22px; }
     p { margin: 0 0 18px; color: #5f6368; font-size: 14px; line-height: 1.5; }
     label { display: block; font-size: 13px; font-weight: 600; color: #3c4043; margin-bottom: 6px; }
+
+    /* Search Wrapper & Dropdown */
+    .search-wrapper {
+      position: relative;
+    }
     input {
       width: 100%;
       padding: 13px 14px;
@@ -36,7 +41,48 @@
       outline: none;
     }
     input:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.15); }
-    
+
+    .dropdown-list {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border: 1px solid #dadce0;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      max-height: 260px;
+      overflow-y: auto;
+      z-index: 20;
+      display: none;
+    }
+    .dropdown-item {
+      padding: 11px 14px;
+      border-bottom: 1px solid #f1f3f4;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .dropdown-item:last-child { border-bottom: none; }
+    .dropdown-item:hover, .dropdown-item:active { background: #f1f6fe; }
+    .dropdown-item strong {
+      display: block;
+      font-size: 14px;
+      color: #202124;
+      margin-bottom: 2px;
+    }
+    .dropdown-item small {
+      display: block;
+      font-size: 12px;
+      color: #5f6368;
+      line-height: 1.35;
+    }
+    .dropdown-status {
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #5f6368;
+      text-align: center;
+    }
+
     .preview-box {
       margin-top: 16px;
       padding: 12px;
@@ -45,7 +91,8 @@
       border-radius: 10px;
       display: none;
     }
-    .preview-box strong { display: block; color: #202124; font-size: 14px; margin-bottom: 4px; }
+    .preview-box strong { display: block; color: #202124; font-size: 14px; margin-bottom: 2px; }
+    .preview-box .addr { display: block; color: #5f6368; font-size: 12px; margin-bottom: 6px; }
     .preview-box span { color: #1a73e8; font-size: 12px; word-break: break-all; }
 
     button {
@@ -76,13 +123,17 @@
 
 <div class="card">
   <h2>Aktivasi Kartu NFC</h2>
-  <p>Ketik nama toko dan kota Anda secara lengkap (sama seperti saat Anda mencarinya di Google Maps), lalu tempelkan kartu untuk menulis via Google Chrome.</p>
+  <p>Ketik nama toko atau tempat usaha, pilih dari daftar yang muncul, lalu tempelkan kartu untuk menulis via Google Chrome.</p>
 
   <label for="store-input">Nama Toko & Kota (Contoh: Kopi Kenangan Galaxy Bekasi)</label>
-  <input id="store-input" type="text" placeholder="Ketik nama toko..." autocomplete="off" />
+  <div class="search-wrapper">
+    <input id="store-input" type="text" placeholder="Ketik nama toko..." autocomplete="off" />
+    <div id="dropdown" class="dropdown-list"></div>
+  </div>
 
   <div class="preview-box" id="preview-box">
     <strong id="preview-name"></strong>
+    <small class="addr" id="preview-addr"></small>
     <span id="preview-url"></span>
   </div>
 
@@ -92,29 +143,129 @@
 
 <script>
   let targetUrl = "";
+  let debounceTimer = null;
+  let searchController = null;
+
   const storeInput = document.getElementById("store-input");
+  const dropdown = document.getElementById("dropdown");
+  const previewBox = document.getElementById("preview-box");
+  const previewName = document.getElementById("preview-name");
+  const previewAddr = document.getElementById("preview-addr");
+  const previewUrl = document.getElementById("preview-url");
+  const activateBtn = document.getElementById("activate-btn");
+
+  function setSelection(title, subtitle, queryText) {
+    targetUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryText)}`;
+    previewName.textContent = title;
+    previewAddr.textContent = subtitle || "";
+    previewAddr.style.display = subtitle ? "block" : "none";
+    previewUrl.textContent = targetUrl;
+    previewBox.style.display = "block";
+    activateBtn.disabled = false;
+  }
 
   storeInput.addEventListener("input", () => {
-    const val = storeInput.value.trim();
-    if (val.length < 3) {
-      document.getElementById("preview-box").style.display = "none";
-      document.getElementById("activate-btn").disabled = true;
+    const q = storeInput.value.trim();
+    clearTimeout(debounceTimer);
+
+    if (q.length < 3) {
+      dropdown.style.display = "none";
+      previewBox.style.display = "none";
+      activateBtn.disabled = true;
       return;
     }
 
-    // Merakit link pencarian langsung ke Google Maps
-    targetUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`;
+    // Tetap siapkan link langsung dari teks yang diketik
+    setSelection("Pencarian: " + q, "Ketuk salah satu daftar di atas untuk lokasi lebih spesifik", q);
 
-    document.getElementById("preview-name").textContent = "Pencarian: " + val;
-    document.getElementById("preview-url").textContent = targetUrl;
-    document.getElementById("preview-box").style.display = "block";
-    document.getElementById("activate-btn").disabled = false;
+    // Cari daftar tempat via Photon (OpenStreetMap)
+    debounceTimer = setTimeout(() => searchPlaces(q), 300);
+  });
+
+  async function searchPlaces(q) {
+    if (searchController) searchController.abort();
+    searchController = new AbortController();
+
+    dropdown.style.display = "block";
+    dropdown.replaceChildren();
+    const loading = document.createElement("div");
+    loading.className = "dropdown-status";
+    loading.textContent = "Mencari tempat...";
+    dropdown.appendChild(loading);
+
+    try {
+      // bbox Indonesia: 94.5,-11.5,141.5,6.5 agar memprioritaskan tempat di Indonesia
+      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&bbox=94.5,-11.5,141.5,6.5`;
+      const res = await fetch(url, { signal: searchController.signal });
+      const data = await res.json();
+      const features = data.features || [];
+
+      dropdown.replaceChildren();
+
+      // Opsi 1: Selalu sediakan pilihan sesuai ketikan persis pengguna
+      const customItem = createDropdownItem(
+        `Gunakan ketikan: "${q}"`,
+        "Cari langsung kalimat ini di Google Maps",
+        () => {
+          dropdown.style.display = "none";
+          setSelection(q, "Pencarian langsung Google Maps", q);
+        }
+      );
+      dropdown.appendChild(customItem);
+
+      // Opsi 2+: Daftar tempat hasil pencarian Photon
+      features.forEach((f) => {
+        const p = f.properties || {};
+        const name = p.name || p.street || q;
+        const addrParts = [p.street, p.locality, p.district, p.city, p.state, p.country]
+          .filter(Boolean)
+          .filter((v, i, arr) => v !== name && arr.indexOf(v) === i);
+        const addr = addrParts.join(", ");
+        const fullQuery = [name, p.street, p.city || p.district, p.state].filter(Boolean).join(", ");
+
+        const item = createDropdownItem(name, addr || "Indonesia", () => {
+          storeInput.value = fullQuery;
+          dropdown.style.display = "none";
+          setSelection(name, addr, fullQuery);
+        });
+        dropdown.appendChild(item);
+      });
+    } catch (err) {
+      if (err.name === "AbortError") return;
+      dropdown.style.display = "none";
+    }
+  }
+
+  function createDropdownItem(title, subtitle, onSelect) {
+    const div = document.createElement("div");
+    div.className = "dropdown-item";
+    const strong = document.createElement("strong");
+    strong.textContent = title;
+    const small = document.createElement("small");
+    small.textContent = subtitle;
+    div.append(strong, small);
+    div.addEventListener("click", onSelect);
+    return div;
+  }
+
+  // Tutup dropdown jika klik di luar kotak pencarian
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".search-wrapper")) {
+      dropdown.style.display = "none";
+    }
+  });
+
+  storeInput.addEventListener("focus", () => {
+    if (dropdown.children.length > 0 && storeInput.value.trim().length >= 3) {
+      dropdown.style.display = "block";
+    }
   });
 
   // Tulis ke Kartu NFC via Google Chrome (Web NFC API)
-  document.getElementById("activate-btn").addEventListener("click", async () => {
+  activateBtn.addEventListener("click", async () => {
     const statusBox = document.getElementById("status");
     statusBox.style.display = "block";
+    dropdown.style.display = "none";
 
     if (!("NDEFReader" in window)) {
       statusBox.style.background = "#fdecea";

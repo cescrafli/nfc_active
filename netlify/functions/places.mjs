@@ -1,8 +1,64 @@
 // =============================================================
-// Endpoint pencarian tempat: GET /api/places?q=...
-// Menggabungkan saran tempat dari Google + Nominatim/Photon (Indonesia)
-// sehingga pengguna tidak memerlukan Google Cloud API Key.
+// Endpoint pencarian tempat Google Maps asli: GET /api/places?q=...
+// Mengambil daftar toko/cabang langsung dari Google Maps Embed (tanpa API Key)
+// lengkap dengan Nama Toko, Alamat, Rating, Jumlah Ulasan, dan Place ID (ChIJ...)
+// sehingga link yang ditulis ke kartu NFC bisa langsung membuka:
+//   1. Halaman Rating / Tulis Ulasan (search.google.com/local/writereview?placeid=...)
+//   2. Aplikasi Google Maps langsung ke profil toko (maps?cid=...)
 // =============================================================
+
+function parseSpotlit(html) {
+  const m = html.match(/initEmbed\(([\s\S]*?)\);\s*\}/);
+  if (!m) return null;
+  let data;
+  try {
+    data = JSON.parse(m[1]);
+  } catch {
+    return null;
+  }
+  const info = data?.[21]?.[3];
+  if (!Array.isArray(info)) return null;
+
+  const placeId = (m[1].match(/"(ChIJ[A-Za-z0-9_-]{10,60})"/) || [])[1] || "";
+  const cid = info?.[0]?.[3] || "";
+  const title = info?.[1] || "";
+  const address =
+    info?.[13] ||
+    (Array.isArray(info?.[2]) ? info[2].join(", ") : "") ||
+    info?.[0]?.[1] ||
+    "";
+  const rating = typeof info?.[3] === "number" ? info[3].toFixed(1) : null;
+  const reviews = typeof info?.[4] === "string" ? info[4] : null;
+  const category = typeof info?.[12] === "string" ? info[12] : null;
+
+  if (!placeId || !title) return null;
+
+  return {
+    title,
+    address,
+    placeId,
+    cid,
+    rating,
+    reviews,
+    category,
+    reviewUrl: `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`,
+    mapsUrl: cid
+      ? `https://www.google.com/maps?cid=${encodeURIComponent(cid)}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(title)}&query_place_id=${encodeURIComponent(placeId)}`,
+  };
+}
+
+async function fetchEmbed(params) {
+  const url = `https://maps.google.com/maps?${params}&hl=id&gl=id&output=embed`;
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+      "Accept-Language": "id-ID,id;q=0.9",
+    },
+  });
+  return res.text();
+}
 
 export default async (req) => {
   const url = new URL(req.url);
@@ -12,63 +68,41 @@ export default async (req) => {
     return json({ items: [] });
   }
 
-  const results = [];
-  const seen = new Set();
+  try {
+    const html = await fetchEmbed(`q=${encodeURIComponent(q)}`);
 
-  const addItem = (title, subtitle, query) => {
-    const key = (title + "|" + subtitle).toLowerCase();
-    if (!title || seen.has(key)) return;
-    seen.add(key);
-    results.push({ title, subtitle, query: query || [title, subtitle].filter(Boolean).join(", ") });
-  };
-
-  // 1. Ambil autocomplete dari Google (sangat mengenal nama toko/tempat di Indonesia)
-  const googleTask = (async () => {
-    try {
-      const gUrl =
-        "https://suggestqueries.google.com/complete/search?client=firefox&hl=id&gl=id&ds=cse&q=" +
-        encodeURIComponent(q);
-      const res = await fetch(gUrl, {
-        headers: { "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0" },
-      });
-      const data = await res.json();
-      const list = Array.isArray(data?.[1]) ? data[1] : [];
-      for (const item of list.slice(0, 6)) {
-        const clean = String(item).trim();
-        if (clean) addItem(clean, "Saran pencarian Google", clean);
-      }
-    } catch {
-      /* abaikan jika gagal */
+    // Kasus 1: Langsung ketemu 1 toko spesifik ("spotlit")
+    const direct = parseSpotlit(html);
+    if (direct) {
+      return json({ items: [direct] });
     }
-  })();
 
-  // 2. Ambil data detail tempat dari Nominatim OpenStreetMap khusus Indonesia (countrycodes=id)
-  const osmTask = (async () => {
-    try {
-      const nUrl =
-        "https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&countrycodes=id&accept-language=id&q=" +
-        encodeURIComponent(q);
-      const res = await fetch(nUrl, {
-        headers: { "User-Agent": "NFC-Review-Card-Activator/1.0" },
-      });
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        for (const row of data) {
-          const name = row.name || (row.display_name ? row.display_name.split(",")[0] : q);
-          const addr = row.display_name
-            ? row.display_name.split(",").slice(1, 4).join(",").trim()
-            : "Indonesia";
-          addItem(name, addr, `${name}, ${addr}`);
-        }
+    // Kasus 2: Banyak cabang / daftar tempat -> ambil hingga 6 CID teratas secara paralel
+    const cids = [
+      ...new Set([...html.matchAll(/\["\d{10,22}","(\d{10,22})"\]/g)].map((x) => x[1])),
+    ].slice(0, 6);
+
+    if (cids.length > 0) {
+      const details = await Promise.all(
+        cids.map(async (cid) => {
+          try {
+            const cidHtml = await fetchEmbed(`cid=${encodeURIComponent(cid)}`);
+            return parseSpotlit(cidHtml);
+          } catch {
+            return null;
+          }
+        })
+      );
+      const valid = details.filter(Boolean);
+      if (valid.length > 0) {
+        return json({ items: valid });
       }
-    } catch {
-      /* abaikan jika gagal */
     }
-  })();
 
-  await Promise.all([googleTask, osmTask]);
-
-  return json({ items: results.slice(0, 8) });
+    return json({ items: [] });
+  } catch (err) {
+    return json({ items: [], error: err?.message || "Gagal mencari tempat" });
+  }
 };
 
 function json(data, status = 200) {
@@ -76,7 +110,7 @@ function json(data, status = 200) {
     status,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "public, max-age=60",
+      "cache-control": "public, max-age=120",
     },
   });
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aktivasi Kartu NFC - Google Maps Direct</title>
+  <title>Aktivasi Kartu NFC - Google Maps & Rating</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -18,7 +18,7 @@
     }
     .card {
       background: #ffffff;
-      max-width: 460px;
+      max-width: 480px;
       width: 100%;
       padding: 24px;
       border-radius: 16px;
@@ -32,7 +32,7 @@
     .search-wrapper {
       position: relative;
     }
-    input {
+    input[type="text"] {
       width: 100%;
       padding: 13px 14px;
       border: 1px solid #dadce0;
@@ -40,7 +40,7 @@
       font-size: 15px;
       outline: none;
     }
-    input:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.15); }
+    input[type="text"]:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.15); }
 
     .dropdown-list {
       position: absolute;
@@ -49,15 +49,15 @@
       right: 0;
       background: #ffffff;
       border: 1px solid #dadce0;
-      border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-      max-height: 260px;
+      border-radius: 12px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.15);
+      max-height: 310px;
       overflow-y: auto;
       z-index: 20;
       display: none;
     }
     .dropdown-item {
-      padding: 11px 14px;
+      padding: 12px 14px;
       border-bottom: 1px solid #f1f3f4;
       cursor: pointer;
       transition: background 0.15s;
@@ -68,7 +68,17 @@
       display: block;
       font-size: 14px;
       color: #202124;
-      margin-bottom: 2px;
+      margin-bottom: 3px;
+    }
+    .dropdown-rating {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #b06000;
+      background: #fef7e0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 4px;
     }
     .dropdown-item small {
       display: block;
@@ -77,39 +87,108 @@
       line-height: 1.35;
     }
     .dropdown-status {
-      padding: 12px 14px;
+      padding: 14px;
       font-size: 13px;
       color: #5f6368;
       text-align: center;
     }
 
-    .preview-box {
+    /* Mode Pilihan Tujuan Saat Kartu Di-Tap */
+    .mode-section {
       margin-top: 16px;
-      padding: 12px;
-      background: #f8f9fa;
-      border: 1px solid #e8eaed;
-      border-radius: 10px;
       display: none;
     }
-    .preview-box strong { display: block; color: #202124; font-size: 14px; margin-bottom: 2px; }
-    .preview-box .addr { display: block; color: #5f6368; font-size: 12px; margin-bottom: 6px; }
-    .preview-box span { display: block; color: #1a73e8; font-size: 11px; word-break: break-all; margin-bottom: 10px; }
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .mode-card {
+      border: 1.5px solid #dadce0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      background: #fff;
+      transition: all 0.15s;
+    }
+    .mode-card.active {
+      border-color: #1a73e8;
+      background: #f1f6fe;
+    }
+    .mode-card input { display: none; }
+    .mode-card strong {
+      display: block;
+      font-size: 13px;
+      color: #202124;
+      margin-bottom: 2px;
+    }
+    .mode-card small {
+      display: block;
+      font-size: 11px;
+      color: #5f6368;
+      line-height: 1.3;
+    }
 
-    /* Pratinjau Peta Google Maps Asli */
+    /* Preview Box */
+    .preview-box {
+      margin-top: 14px;
+      padding: 14px;
+      background: #f8f9fa;
+      border: 1px solid #e8eaed;
+      border-radius: 12px;
+      display: none;
+    }
+    .preview-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #e8f5e9;
+      color: #1b5e20;
+      margin-bottom: 6px;
+    }
+    .preview-box strong { display: block; color: #202124; font-size: 15px; margin-bottom: 3px; }
+    .preview-box .addr { display: block; color: #5f6368; font-size: 12px; margin-bottom: 8px; line-height: 1.4; }
+    .preview-box .url-box {
+      display: block;
+      color: #1a73e8;
+      background: #e8f0fe;
+      padding: 7px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+
+    .test-links {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .test-btn {
+      flex: 1;
+      text-align: center;
+      padding: 8px 10px;
+      background: #ffffff;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1a73e8;
+      text-decoration: none;
+    }
+    .test-btn:hover { background: #f1f6fe; }
+
     .map-frame {
       width: 100%;
-      height: 200px;
+      height: 190px;
       border: 1px solid #dadce0;
       border-radius: 8px;
       background: #eef0f2;
     }
-    .map-hint {
-      font-size: 11px;
-      color: #5f6368;
-      margin-top: 6px;
-    }
 
-    button {
+    button#activate-btn {
       width: 100%;
       margin-top: 18px;
       padding: 14px;
@@ -121,7 +200,7 @@
       font-weight: 600;
       cursor: pointer;
     }
-    button:disabled { background: #dadce0; color: #80868b; cursor: not-allowed; }
+    button#activate-btn:disabled { background: #dadce0; color: #80868b; cursor: not-allowed; }
 
     #status {
       margin-top: 16px;
@@ -137,20 +216,43 @@
 
 <div class="card">
   <h2>Aktivasi Kartu NFC</h2>
-  <p>Ketik nama toko dan kota Anda (atau tempel link Google Maps), pilih dari daftar, lalu cek peta di bawah sebelum menulis ke kartu.</p>
+  <p>Ketik nama toko & kota Anda, klik salah satu toko dari daftar Google Maps yang muncul, lalu tempelkan kartu NFC.</p>
 
-  <label for="store-input">Nama Toko & Kota / Link Google Maps</label>
+  <label for="store-input">Cari Nama Toko & Kota di Google Maps</label>
   <div class="search-wrapper">
     <input id="store-input" type="text" placeholder="Contoh: Kopi Kenangan Galaxy Bekasi..." autocomplete="off" />
     <div id="dropdown" class="dropdown-list"></div>
   </div>
 
+  <!-- Pilihan aksi saat kartu di-tap -->
+  <div class="mode-section" id="mode-section">
+    <label>Saat Kartu NFC Di-Tap Pelanggan, Buka:</label>
+    <div class="mode-grid">
+      <label class="mode-card active" id="card-review">
+        <input type="radio" name="target-mode" value="review" checked />
+        <strong>⭐ Halaman Rating</strong>
+        <small>Langsung muncul pop-up beri bintang & ulasan</small>
+      </label>
+      <label class="mode-card" id="card-maps">
+        <input type="radio" name="target-mode" value="maps" />
+        <strong>📍 Aplikasi Maps</strong>
+        <small>Buka profil toko di aplikasi Google Maps</small>
+      </label>
+    </div>
+  </div>
+
   <div class="preview-box" id="preview-box">
+    <span class="preview-badge" id="preview-badge">✓ Toko Google Maps Terpilih</span>
     <strong id="preview-name"></strong>
     <small class="addr" id="preview-addr"></small>
-    <span id="preview-url"></span>
+    <span class="url-box" id="preview-url"></span>
+
+    <div class="test-links">
+      <a id="test-review-link" class="test-btn" href="#" target="_blank" rel="noopener">⭐ Tes Buka Halaman Rating</a>
+      <a id="test-maps-link" class="test-btn" href="#" target="_blank" rel="noopener">📍 Tes Buka Aplikasi Maps</a>
+    </div>
+
     <iframe id="map-preview" class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-    <div class="map-hint">👆 Peta di atas adalah lokasi Google Maps yang akan terbuka saat kartu di-tap. Jika kurang pas, tambahkan nama jalan/kecamatan/kota.</div>
   </div>
 
   <button id="activate-btn" disabled>Aktivasi & Tulis ke Kartu NFC</button>
@@ -158,44 +260,74 @@
 </div>
 
 <script>
+  let selectedPlace = null; // { title, address, placeId, cid, rating, reviews, reviewUrl, mapsUrl }
   let targetUrl = "";
   let debounceTimer = null;
-  let mapTimer = null;
   let searchController = null;
 
   const storeInput = document.getElementById("store-input");
   const dropdown = document.getElementById("dropdown");
+  const modeSection = document.getElementById("mode-section");
+  const cardReview = document.getElementById("card-review");
+  const cardMaps = document.getElementById("card-maps");
   const previewBox = document.getElementById("preview-box");
+  const previewBadge = document.getElementById("preview-badge");
   const previewName = document.getElementById("preview-name");
   const previewAddr = document.getElementById("preview-addr");
   const previewUrl = document.getElementById("preview-url");
+  const testReviewLink = document.getElementById("test-review-link");
+  const testMapsLink = document.getElementById("test-maps-link");
   const mapPreview = document.getElementById("map-preview");
   const activateBtn = document.getElementById("activate-btn");
 
-  function setSelection(title, subtitle, queryOrUrl, immediateMap = false) {
-    const isDirectUrl = /^https?:\/\//i.test(queryOrUrl);
-    targetUrl = isDirectUrl
-      ? queryOrUrl
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryOrUrl)}`;
+  function getSelectedMode() {
+    const checked = document.querySelector('input[name="target-mode"]:checked');
+    return checked ? checked.value : "review";
+  }
 
-    previewName.textContent = title;
-    previewAddr.textContent = subtitle || "";
-    previewAddr.style.display = subtitle ? "block" : "none";
+  document.querySelectorAll('input[name="target-mode"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+      cardReview.classList.toggle("active", getSelectedMode() === "review");
+      cardMaps.classList.toggle("active", getSelectedMode() === "maps");
+      updateTargetUrl();
+    });
+  });
+
+  function updateTargetUrl() {
+    if (!selectedPlace) return;
+    const mode = getSelectedMode();
+    if (mode === "review" && selectedPlace.reviewUrl) {
+      targetUrl = selectedPlace.reviewUrl;
+      previewBadge.textContent = "⭐ Mode: Langsung Buka Halaman Rating & Ulasan";
+    } else {
+      targetUrl = selectedPlace.mapsUrl;
+      previewBadge.textContent = "📍 Mode: Langsung Buka Aplikasi Google Maps";
+    }
     previewUrl.textContent = targetUrl;
+  }
+
+  function selectPlace(place) {
+    selectedPlace = place;
+    modeSection.style.display = place.reviewUrl ? "block" : "none";
+
+    const ratingInfo = place.rating ? `⭐ ${place.rating} (${place.reviews || "ulasan"}) • ` : "";
+    previewName.textContent = place.title;
+    previewAddr.textContent = ratingInfo + (place.address || "");
     previewBox.style.display = "block";
     activateBtn.disabled = false;
 
-    clearTimeout(mapTimer);
-    if ( isDirectUrl ) {
-      mapPreview.style.display = "none";
-    } else {
-      mapPreview.style.display = "block";
-      const loadMap = () => {
-        const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryOrUrl)}&hl=id&z=16&output=embed`;
-        if (mapPreview.src !== embedUrl) mapPreview.src = embedUrl;
-      };
-      if (immediateMap) loadMap();
-      else mapTimer = setTimeout(loadMap, 600);
+    testReviewLink.style.display = place.reviewUrl ? "block" : "none";
+    testReviewLink.href = place.reviewUrl || "#";
+    testMapsLink.href = place.mapsUrl;
+
+    updateTargetUrl();
+
+    const embedParam = place.cid
+      ? `cid=${encodeURIComponent(place.cid)}`
+      : `q=${encodeURIComponent(place.title + " " + (place.address || ""))}`;
+    const embedUrl = `https://maps.google.com/maps?${embedParam}&hl=id&z=16&output=embed`;
+    if (mapPreview.src !== embedUrl) {
+      mapPreview.src = embedUrl;
     }
   }
 
@@ -205,20 +337,10 @@
 
     if (q.length < 3) {
       dropdown.style.display = "none";
-      previewBox.style.display = "none";
-      activateBtn.disabled = true;
       return;
     }
 
-    // Jika pengguna menempel link Google Maps langsung (misal https://maps.app.goo.gl/... atau https://g.page/...)
-    if (/^https?:\/\//i.test(q)) {
-      dropdown.style.display = "none";
-      setSelection("Link Google Maps Langsung", "Tautan yang ditempel akan langsung ditulis ke kartu", q, true);
-      return;
-    }
-
-    setSelection("Pencarian Google Maps: " + q, "Pilih dari daftar atau cek peta di bawah", q, false);
-    debounceTimer = setTimeout(() => searchPlaces(q), 280);
+    debounceTimer = setTimeout(() => searchPlaces(q), 350);
   });
 
   async function searchPlaces(q) {
@@ -229,7 +351,7 @@
     dropdown.replaceChildren();
     const loading = document.createElement("div");
     loading.className = "dropdown-status";
-    loading.textContent = "Mencari tempat...";
+    loading.textContent = "🔍 Mencari daftar cabang di Google Maps...";
     dropdown.appendChild(loading);
 
     try {
@@ -239,26 +361,35 @@
 
       dropdown.replaceChildren();
 
-      // Opsi 1: Selalu sediakan pilihan sesuai ketikan persis pengguna
-      dropdown.appendChild(
-        createDropdownItem(
-          `🔍 Cari di Google Maps: "${q}"`,
-          "Pakai persis nama yang Anda ketik (pasti ketemu jika ada di Google Maps)",
-          () => {
-            dropdown.style.display = "none";
-            setSelection(q, "Pencarian langsung Google Maps", q, true);
-          }
-        )
-      );
-
-      // Opsi 2+: Daftar saran dari Google + peta Indonesia
-      items.forEach((it) => {
-        if (it.title.toLowerCase() === q.toLowerCase()) return;
+      if (items.length === 0) {
         dropdown.appendChild(
-          createDropdownItem(it.title, it.subtitle, () => {
-            storeInput.value = it.query;
+          createDropdownItem(
+            `Cari "${q}" di Google Maps`,
+            null,
+            "Toko spesifik belum muncul — tambahkan nama jalan atau kota agar lebih akurat",
+            () => {
+              dropdown.style.display = "none";
+              selectPlace({
+                title: q,
+                address: "Pencarian langsung Google Maps",
+                placeId: "",
+                cid: "",
+                reviewUrl: "",
+                mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`,
+              });
+            }
+          )
+        );
+        return;
+      }
+
+      items.forEach((it) => {
+        const badgeText = it.rating ? `⭐ ${it.rating}${it.reviews ? " (" + it.reviews + ")" : ""}` : "📍 Lokasi Google Maps";
+        dropdown.appendChild(
+          createDropdownItem(it.title, badgeText, it.address, () => {
+            storeInput.value = it.title;
             dropdown.style.display = "none";
-            setSelection(it.title, it.subtitle, it.query, true);
+            selectPlace(it);
           })
         );
       });
@@ -268,14 +399,27 @@
     }
   }
 
-  function createDropdownItem(title, subtitle, onSelect) {
+  function createDropdownItem(title, ratingText, subtitle, onSelect) {
     const div = document.createElement("div");
     div.className = "dropdown-item";
+
     const strong = document.createElement("strong");
     strong.textContent = title;
-    const small = document.createElement("small");
-    small.textContent = subtitle;
-    div.append(strong, small);
+    div.appendChild(strong);
+
+    if (ratingText) {
+      const badge = document.createElement("span");
+      badge.className = "dropdown-rating";
+      badge.textContent = ratingText;
+      div.appendChild(badge);
+    }
+
+    if (subtitle) {
+      const small = document.createElement("small");
+      small.textContent = subtitle;
+      div.appendChild(small);
+    }
+
     div.addEventListener("click", onSelect);
     return div;
   }
@@ -317,7 +461,9 @@
 
       statusBox.style.background = "#e8f5e9";
       statusBox.style.color = "#1b5e20";
-      statusBox.textContent = "✅ Aktivasi Berhasil! Kartu NFC sudah terisi. Silakan tutup Chrome dan coba tempelkan ulang kartu Anda.";
+      statusBox.textContent = "✅ Aktivasi Berhasil! Kartu NFC sudah berisi link " +
+        (getSelectedMode() === "review" ? "Halaman Rating" : "Aplikasi Google Maps") +
+        " untuk \"" + selectedPlace.title + "\". Silakan tutup Chrome dan tempelkan ulang kartu Anda.";
     } catch (error) {
       statusBox.style.background = "#fdecea";
       statusBox.style.color = "#b71c1c";

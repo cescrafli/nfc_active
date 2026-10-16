@@ -82,8 +82,8 @@
     .star-btn:hover { transform: scale(1.1); }
     .star-btn.active { color: #f59e0b; }
     .star-btn svg {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       fill: currentColor;
       display: block;
     }
@@ -96,7 +96,33 @@
       color: #475569;
     }
 
-    /* Form Box */
+    /* Redirect Box for 4-5 Stars */
+    .redirect-box {
+      display: none;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      padding: 16px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      font-weight: 700;
+      line-height: 1.5;
+      margin-top: 8px;
+      animation: fadeIn 0.2s ease;
+    }
+    .redirect-box a {
+      display: inline-block;
+      margin-top: 10px;
+      background: #1d58e8;
+      color: #ffffff;
+      text-decoration: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* Form Box for 1-3 Stars */
     .form-area {
       display: none;
       text-align: left;
@@ -114,16 +140,9 @@
       font-weight: 600;
       line-height: 1.45;
       margin-bottom: 14px;
-    }
-    .mode-banner.low {
       background: #fff7ed;
       border: 1px solid #fed7aa;
       color: #9a3412;
-    }
-    .mode-banner.high {
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      color: #166534;
     }
 
     label {
@@ -132,59 +151,6 @@
       font-weight: 700;
       color: #334155;
       margin-bottom: 6px;
-    }
-
-    .label-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    .label-row label { margin-bottom: 0; }
-
-    .copy-pill-btn {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      color: #1d4ed8;
-      font-size: 11.5px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.15s;
-    }
-    .copy-pill-btn.copied {
-      background: #dcfce7;
-      border-color: #86efac;
-      color: #15803d;
-    }
-
-    /* Quick Tags for 4-5 stars */
-    .quick-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-    .tag-chip {
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
-      color: #334155;
-      font-size: 11.5px;
-      font-weight: 600;
-      padding: 6px 11px;
-      border-radius: 999px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .tag-chip.selected {
-      background: #eff6ff;
-      border-color: #3b82f6;
-      color: #1d4ed8;
     }
 
     input[type="text"], textarea {
@@ -197,7 +163,7 @@
       color: #0f172a;
       background: #f8fafc;
       outline: none;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       transition: border-color 0.15s, background 0.15s;
     }
     textarea {
@@ -210,17 +176,6 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
 
-    .copy-guide-box {
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      color: #92400e;
-      padding: 9px 11px;
-      border-radius: 10px;
-      font-size: 11.5px;
-      line-height: 1.45;
-      margin-bottom: 12px;
-    }
-
     .submit-btn {
       width: 100%;
       padding: 14px 16px;
@@ -229,6 +184,8 @@
       font-size: 15px;
       font-weight: 700;
       color: #ffffff;
+      background: #16a34a;
+      box-shadow: 0 6px 18px rgba(22, 163, 74, 0.25);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -237,14 +194,6 @@
       transition: opacity 0.15s, transform 0.1s;
     }
     .submit-btn:active { transform: scale(0.99); }
-    .submit-btn.wa {
-      background: #16a34a;
-      box-shadow: 0 6px 18px rgba(22, 163, 74, 0.25);
-    }
-    .submit-btn.google {
-      background: #1d58e8;
-      box-shadow: 0 6px 18px rgba(29, 88, 232, 0.25);
-    }
 
     .helper-foot {
       font-size: 11.5px;
@@ -252,20 +201,6 @@
       text-align: center;
       margin-top: 10px;
       line-height: 1.4;
-    }
-
-    .toast {
-      display: none;
-      margin-top: 12px;
-      padding: 12px 14px;
-      border-radius: 10px;
-      background: #dcfce7;
-      border: 1px solid #86efac;
-      color: #166534;
-      font-size: 12.5px;
-      font-weight: 700;
-      text-align: center;
-      line-height: 1.45;
     }
   </style>
 </head>
@@ -296,38 +231,29 @@
 
   <div class="rating-caption" id="rating-caption">Pilih 1 sampai 5 bintang</div>
 
-  <div class="form-area" id="form-area">
-    <div class="mode-banner" id="mode-banner"></div>
+  <!-- Tampil saat klik Bintang 4 atau 5 (Langsung Redirect ke Google Maps) -->
+  <div class="redirect-box" id="redirect-box">
+    🎉 Terima kasih atas penilaian positif Anda!<br>
+    Mengarahkan langsung ke halaman ulasan <strong>Google Maps</strong>...<br>
+    <a id="manual-google-link" href="#">Buka Google Maps Sekarang →</a>
+  </div>
 
-    <!-- Chip kalimat cepat untuk bintang 4-5 -->
-    <div id="quick-tags-wrap" style="display:none">
-      <label>Pilih Cepat Kalimat Ulasan:</label>
-      <div class="quick-tags" id="quick-tags">
-        <button type="button" class="tag-chip">Pelayanan sangat ramah 👍</button>
-        <button type="button" class="tag-chip">Tempat nyaman &amp; bersih ✨</button>
-        <button type="button" class="tag-chip">Produk berkualitas &amp; recommended! ⭐</button>
-        <button type="button" class="tag-chip">Harga terjangkau &amp; memuaskan 💯</button>
-      </div>
+  <!-- Tampil saat klik Bintang 1 sampai 3 (Form Masukan ke WhatsApp) -->
+  <div class="form-area" id="form-area">
+    <div class="mode-banner">
+      🙏 Mohon maaf jika ada hal yang kurang berkenan. Sampaikan masukan Anda langsung kepada manajemen kami via WhatsApp agar segera kami perbaiki.
     </div>
 
-    <div id="name-field-wrap" style="display:none">
+    <div>
       <label for="cust-name">Nama Anda (Opsional)</label>
       <input type="text" id="cust-name" placeholder="Masukkan nama Anda..." />
     </div>
 
-    <div class="label-row">
-      <label for="feedback-text" id="feedback-label">Pesan / Ulasan Anda</label>
-      <button type="button" class="copy-pill-btn" id="copy-review-btn" style="display:none">📋 Salin Ulasan</button>
-    </div>
-    <textarea id="feedback-text" placeholder="Tulis pengalaman Anda di sini..."></textarea>
+    <label for="feedback-text">Apa yang perlu kami tingkatkan?</label>
+    <textarea id="feedback-text" placeholder="Ceritakan keluhan atau saran Anda..."></textarea>
 
-    <div class="copy-guide-box" id="copy-guide-box" style="display:none">
-      💡 <strong>Cara Mudah:</strong> Klik tombol di bawah — teks ulasan Anda <strong>otomatis disalin (Copy)</strong>, lalu tinggal <strong>Tempel (Paste)</strong> di kolom ulasan Google Maps yang terbuka.
-    </div>
-
-    <button type="button" class="submit-btn" id="submit-btn">Kirim Penilaian</button>
-    <div class="helper-foot" id="helper-foot"></div>
-    <div class="toast" id="toast"></div>
+    <button type="button" class="submit-btn" id="submit-btn">💬 Kirim Masukan ke WhatsApp Manajemen</button>
+    <div class="helper-foot">Pesan Anda akan langsung terformat dan dikirim ke WhatsApp resmi kami.</div>
   </div>
 </div>
 
@@ -346,192 +272,80 @@
       ? `https://www.google.com/maps?cid=${encodeURIComponent(cid)}`
       : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(storeName)}`;
 
+  document.getElementById("manual-google-link").href = googleReviewUrl;
+
   const captions = {
     1: "😞 Sangat Kurang Puas (1/5)",
     2: "😕 Kurang Puas (2/5)",
     3: "😐 Cukup / Biasa Saja (3/5)",
-    4: "😊 Puas! (4/5)",
-    5: "🤩 Sangat Puas & Luar Biasa! (5/5)"
+    4: "😊 Puas! (4/5) — Membuka Google Maps...",
+    5: "🤩 Sangat Puas! (5/5) — Membuka Google Maps..."
   };
 
   let currentStar = 0;
+  let redirectTimer = null;
 
   const starBtns = Array.from(document.querySelectorAll(".star-btn"));
-  const tagChips = Array.from(document.querySelectorAll(".tag-chip"));
   const ratingCaption = document.getElementById("rating-caption");
   const formArea = document.getElementById("form-area");
-  const modeBanner = document.getElementById("mode-banner");
-  const quickTagsWrap = document.getElementById("quick-tags-wrap");
-  const nameFieldWrap = document.getElementById("name-field-wrap");
+  const redirectBox = document.getElementById("redirect-box");
   const custName = document.getElementById("cust-name");
-  const feedbackLabel = document.getElementById("feedback-label");
   const feedbackText = document.getElementById("feedback-text");
-  const copyReviewBtn = document.getElementById("copy-review-btn");
-  const copyGuideBox = document.getElementById("copy-guide-box");
   const submitBtn = document.getElementById("submit-btn");
-  const helperFoot = document.getElementById("helper-foot");
-  const toast = document.getElementById("toast");
-
-  // Fungsi salin ke clipboard yang bekerja di Android & iOS Safari
-  async function copyToClipboard(text) {
-    if (!text) return false;
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-    } catch {
-      /* fallback di bawah */
-    }
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.top = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      ta.setSelectionRange(0, text.length);
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      return ok;
-    } catch {
-      return false;
-    }
-  }
-
-  function markCopiedUi() {
-    copyReviewBtn.classList.add("copied");
-    copyReviewBtn.textContent = "✅ Tersalin!";
-    setTimeout(() => {
-      copyReviewBtn.classList.remove("copied");
-      copyReviewBtn.textContent = "📋 Salin Ulasan";
-    }, 2000);
-  }
-
-  copyReviewBtn.addEventListener("click", async () => {
-    const text = feedbackText.value.trim();
-    if (!text) {
-      feedbackText.focus();
-      return;
-    }
-    await copyToClipboard(text);
-    markCopiedUi();
-    toast.style.display = "block";
-    toast.textContent = "✅ Teks ulasan disalin! Sekarang klik tombol biru di bawah untuk membuka Google Maps.";
-  });
 
   starBtns.forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const prevStar = currentStar;
+    btn.addEventListener("click", () => {
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+        redirectTimer = null;
+      }
+
       currentStar = Number(btn.dataset.star);
       starBtns.forEach((b) => {
         b.classList.toggle("active", Number(b.dataset.star) <= currentStar);
       });
       ratingCaption.textContent = captions[currentStar] || "";
-      formArea.style.display = "block";
-      toast.style.display = "none";
 
       if (currentStar <= 3) {
-        // Bintang 1 - 3 -> Arahkan ke WhatsApp
-        if (prevStar >= 4) {
-          feedbackText.value = "";
-          tagChips.forEach((c) => c.classList.remove("selected"));
-        }
-        modeBanner.className = "mode-banner low";
-        modeBanner.textContent =
-          "🙏 Mohon maaf jika ada hal yang kurang berkenan. Sampaikan masukan Anda langsung kepada manajemen kami via WhatsApp agar segera kami perbaiki.";
-        quickTagsWrap.style.display = "none";
-        nameFieldWrap.style.display = "block";
-        copyReviewBtn.style.display = "none";
-        copyGuideBox.style.display = "none";
-        feedbackLabel.textContent = "Apa yang perlu kami tingkatkan?";
-        feedbackText.placeholder = "Ceritakan keluhan atau saran Anda...";
-        submitBtn.className = "submit-btn wa";
-        submitBtn.textContent = "💬 Kirim Masukan ke WhatsApp Manajemen";
-        helperFoot.textContent = "Pesan Anda akan langsung terformat dan dikirim ke WhatsApp resmi kami.";
+        // Bintang 1 - 3 -> Munculkan form keluhan ke WhatsApp
+        redirectBox.style.display = "none";
+        formArea.style.display = "block";
       } else {
-        // Bintang 4 - 5 -> Salin ulasan & arahkan ke Google Maps Review
-        if (prevStar <= 3 && !feedbackText.value.trim()) {
-          tagChips[0].classList.add("selected");
-          tagChips[2].classList.add("selected");
-          feedbackText.value = `${tagChips[0].textContent}. ${tagChips[2].textContent}.`;
-        }
-        modeBanner.className = "mode-banner high";
-        modeBanner.textContent =
-          "🎉 Terima kasih atas penilaian positif Anda! Pilih atau edit kalimat ulasan di bawah untuk di-copy paste ke Google Maps.";
-        quickTagsWrap.style.display = "block";
-        nameFieldWrap.style.display = "none";
-        copyReviewBtn.style.display = "inline-flex";
-        copyGuideBox.style.display = "block";
-        feedbackLabel.textContent = "Ulasan Positif Anda (Siap di-Copy):";
-        feedbackText.placeholder = "Contoh: Pelayanan sangat ramah dan memuaskan...";
-        submitBtn.className = "submit-btn google";
-        submitBtn.textContent = "📋 Salin Ulasan & Buka Google Maps";
-        helperFoot.textContent = "Saat diklik, teks ulasan otomatis ter-copy lalu halaman Google Review terbuka.";
-
-        // Langsung salin otomatis begitu bintang 4-5 dipilih
-        if (feedbackText.value.trim()) {
-          await copyToClipboard(feedbackText.value.trim());
-        }
+        // Bintang 4 - 5 -> Langsung arahkan ke Google Maps Review (Opsi A)
+        formArea.style.display = "none";
+        redirectBox.style.display = "block";
+        redirectTimer = setTimeout(() => {
+          window.location.href = googleReviewUrl;
+        }, 300);
       }
     });
   });
 
-  // Klik chip kalimat cepat -> gabungkan ke textarea & langsung auto-copy
-  tagChips.forEach((chip) => {
-    chip.addEventListener("click", async () => {
-      chip.classList.toggle("selected");
-      const selectedTexts = tagChips
-        .filter((c) => c.classList.contains("selected"))
-        .map((c) => c.textContent);
-      feedbackText.value = selectedTexts.length > 0 ? selectedTexts.join(". ") + "." : "";
-      if (feedbackText.value) {
-        await copyToClipboard(feedbackText.value);
-        markCopiedUi();
-      }
-    });
-  });
-
-  submitBtn.addEventListener("click", async () => {
-    if (!currentStar) return;
+  submitBtn.addEventListener("click", () => {
+    if (!currentStar || currentStar > 3) return;
     const msg = feedbackText.value.trim();
 
-    if (currentStar <= 3) {
-      // Bintang 1 - 3: Kirim ke WhatsApp
-      if (!msg) {
-        feedbackText.focus();
-        alert("Mohon tuliskan masukan atau keluhan Anda terlebih dahulu.");
-        return;
-      }
-      const sender = custName.value.trim();
-      const starsStr = "⭐".repeat(currentStar) + ` (${currentStar}/5)`;
-      const waLines = [
-        `Halo Admin *${storeName}*, saya ingin memberikan masukan layanan:`,
-        ``,
-        `*Rating:* ${starsStr}`,
-        sender ? `*Nama:* ${sender}` : null,
-        `*Masukan:* ${msg}`,
-      ].filter(Boolean);
-
-      const waText = encodeURIComponent(waLines.join("\n"));
-      const waTarget = rawWa
-        ? `https://wa.me/${rawWa}?text=${waText}`
-        : `https://api.whatsapp.com/send?text=${waText}`;
-
-      window.location.href = waTarget;
-    } else {
-      // Bintang 4 - 5: Salin teks ulasan ke clipboard & buka form Google Maps Review
-      if (msg) {
-        await copyToClipboard(msg);
-        markCopiedUi();
-        toast.style.display = "block";
-        toast.textContent = "✅ Ulasan berhasil disalin! Membuka Google Maps — tinggal tahan & klik Tempel (Paste)...";
-      }
-      setTimeout(() => {
-        window.location.href = googleReviewUrl;
-      }, msg ? 850 : 100);
+    if (!msg) {
+      feedbackText.focus();
+      alert("Mohon tuliskan masukan atau keluhan Anda terlebih dahulu.");
+      return;
     }
+    const sender = custName.value.trim();
+    const starsStr = "⭐".repeat(currentStar) + ` (${currentStar}/5)`;
+    const waLines = [
+      `Halo Admin *${storeName}*, saya ingin memberikan masukan layanan:`,
+      ``,
+      `*Rating:* ${starsStr}`,
+      sender ? `*Nama:* ${sender}` : null,
+      `*Masukan:* ${msg}`,
+    ].filter(Boolean);
+
+    const waText = encodeURIComponent(waLines.join("\n"));
+    const waTarget = rawWa
+      ? `https://wa.me/${rawWa}?text=${waText}`
+      : `https://api.whatsapp.com/send?text=${waText}`;
+
+    window.location.href = waTarget;
   });
 </script>
 

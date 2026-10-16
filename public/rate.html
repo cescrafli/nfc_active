@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Beri Penilaian & Ulasan</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+      background-color: #f4f7fb;
+      background-image: radial-gradient(#dbe3f0 1px, transparent 1px);
+      background-size: 18px 18px;
+      color: #0f172a;
+      margin: 0;
+      padding: 20px 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: #ffffff;
+      max-width: 440px;
+      width: 100%;
+      padding: 28px 24px;
+      border-radius: 22px;
+      border: 1px solid #eef2f6;
+      box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+      text-align: center;
+    }
+
+    .store-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #dbeafe;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 21px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.3;
+    }
+
+    p.sub {
+      margin: 0 0 22px;
+      font-size: 13.5px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    /* Star Picker */
+    .stars-wrap {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .star-btn {
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      color: #e2e8f0;
+      transition: transform 0.15s, color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .star-btn:hover { transform: scale(1.1); }
+    .star-btn.active { color: #f59e0b; }
+    .star-btn svg {
+      width: 42px;
+      height: 42px;
+      fill: currentColor;
+      display: block;
+    }
+
+    .rating-caption {
+      font-size: 13.5px;
+      font-weight: 700;
+      min-height: 20px;
+      margin-bottom: 18px;
+      color: #475569;
+    }
+
+    /* Form Box */
+    .form-area {
+      display: none;
+      text-align: left;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mode-banner {
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+    .mode-banner.low {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+    }
+    .mode-banner.high {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    /* Quick Tags for 4-5 stars */
+    .quick-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .tag-chip {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tag-chip.selected {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 12px 13px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 14px;
+      color: #0f172a;
+      background: #f8fafc;
+      outline: none;
+      margin-bottom: 12px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+    input[type="text"]:focus, textarea:focus {
+      background: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .submit-btn:active { transform: scale(0.99); }
+    .submit-btn.wa {
+      background: #16a34a;
+      box-shadow: 0 6px 18px rgba(22, 163, 74, 0.25);
+    }
+    .submit-btn.google {
+      background: #1d58e8;
+      box-shadow: 0 6px 18px rgba(29, 88, 232, 0.25);
+    }
+
+    .helper-foot {
+      font-size: 11.5px;
+      color: #64748b;
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+    .toast {
+      display: none;
+      margin-top: 12px;
+      padding: 11px 12px;
+      border-radius: 10px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      font-size: 12.5px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <span class="store-badge">⭐ PENILAIAN PELANGGAN</span>
+  <h1 id="store-title">Bagaimana Pengalaman Anda?</h1>
+  <p class="sub">Ketuk bintang di bawah untuk memberikan penilaian terhadap layanan kami.</p>
+
+  <div class="stars-wrap" id="stars-wrap">
+    <button type="button" class="star-btn" data-star="1" aria-label="Bintang 1">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    </button>
+    <button type="button" class="star-btn" data-star="2" aria-label="Bintang 2">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    </button>
+    <button type="button" class="star-btn" data-star="3" aria-label="Bintang 3">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    </button>
+    <button type="button" class="star-btn" data-star="4" aria-label="Bintang 4">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    </button>
+    <button type="button" class="star-btn" data-star="5" aria-label="Bintang 5">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    </button>
+  </div>
+
+  <div class="rating-caption" id="rating-caption">Pilih 1 sampai 5 bintang</div>
+
+  <div class="form-area" id="form-area">
+    <div class="mode-banner" id="mode-banner"></div>
+
+    <!-- Chip kalimat cepat untuk bintang 4-5 -->
+    <div id="quick-tags-wrap" style="display:none">
+      <label>Pilih Cepat / Tulis Ulasan Anda:</label>
+      <div class="quick-tags" id="quick-tags">
+        <button type="button" class="tag-chip">Pelayanan sangat ramah 👍</button>
+        <button type="button" class="tag-chip">Tempat nyaman & bersih ✨</button>
+        <button type="button" class="tag-chip">Produk berkualitas & recommended! ⭐</button>
+        <button type="button" class="tag-chip">Harga terjangkau & memuaskan 💯</button>
+      </div>
+    </div>
+
+    <div id="name-field-wrap" style="display:none">
+      <label for="cust-name">Nama Anda (Opsional)</label>
+      <input type="text" id="cust-name" placeholder="Masukkan nama Anda..." />
+    </div>
+
+    <label for="feedback-text" id="feedback-label">Pesan / Ulasan Anda</label>
+    <textarea id="feedback-text" placeholder="Tulis pengalaman Anda di sini..."></textarea>
+
+    <button type="button" class="submit-btn" id="submit-btn">Kirim Penilaian</button>
+    <div class="helper-foot" id="helper-foot"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const storeName = (params.get("n") || "Kami").trim();
+  const placeId = (params.get("p") || "").trim();
+  const cid = (params.get("c") || "").trim();
+  const rawWa = (params.get("w") || "").replace(/\D/g, "");
+
+  document.getElementById("store-title").textContent = storeName;
+
+  const googleReviewUrl = placeId
+    ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`
+    : cid
+      ? `https://www.google.com/maps?cid=${encodeURIComponent(cid)}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(storeName)}`;
+
+  const captions = {
+    1: "😞 Sangat Kurang Puas (1/5)",
+    2: "😕 Kurang Puas (2/5)",
+    3: "😐 Cukup / Biasa Saja (3/5)",
+    4: "😊 Puas! (4/5)",
+    5: "🤩 Sangat Puas & Luar Biasa! (5/5)"
+  };
+
+  let currentStar = 0;
+
+  const starBtns = Array.from(document.querySelectorAll(".star-btn"));
+  const ratingCaption = document.getElementById("rating-caption");
+  const formArea = document.getElementById("form-area");
+  const modeBanner = document.getElementById("mode-banner");
+  const quickTagsWrap = document.getElementById("quick-tags-wrap");
+  const nameFieldWrap = document.getElementById("name-field-wrap");
+  const custName = document.getElementById("cust-name");
+  const feedbackLabel = document.getElementById("feedback-label");
+  const feedbackText = document.getElementById("feedback-text");
+  const submitBtn = document.getElementById("submit-btn");
+  const helperFoot = document.getElementById("helper-foot");
+  const toast = document.getElementById("toast");
+
+  starBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      currentStar = Number(btn.dataset.star);
+      starBtns.forEach((b) => {
+        b.classList.toggle("active", Number(b.dataset.star) <= currentStar);
+      });
+      ratingCaption.textContent = captions[currentStar] || "";
+      formArea.style.display = "block";
+      toast.style.display = "none";
+
+      if (currentStar <= 3) {
+        // Bintang 1 - 3 -> Arahkan ke WhatsApp
+        modeBanner.className = "mode-banner low";
+        modeBanner.textContent =
+          "🙏 Mohon maaf jika ada hal yang kurang berkenan. Sampaikan masukan Anda langsung kepada manajemen kami via WhatsApp agar segera kami perbaiki.";
+        quickTagsWrap.style.display = "none";
+        nameFieldWrap.style.display = "block";
+        feedbackLabel.textContent = "Apa yang perlu kami tingkatkan?";
+        feedbackText.placeholder = "Ceritakan keluhan atau saran Anda...";
+        submitBtn.className = "submit-btn wa";
+        submitBtn.textContent = "💬 Kirim Masukan ke WhatsApp Manajemen";
+        helperFoot.textContent = "Pesan Anda akan langsung terformat dan dikirim ke WhatsApp resmi kami.";
+      } else {
+        // Bintang 4 - 5 -> Salin ulasan & arahkan ke Google Maps Review
+        modeBanner.className = "mode-banner high";
+        modeBanner.textContent =
+          "🎉 Terima kasih atas penilaian positif Anda! Tulis ulasan singkat di bawah untuk diposting ke Google Maps.";
+        quickTagsWrap.style.display = "block";
+        nameFieldWrap.style.display = "none";
+        feedbackLabel.textContent = "Tulis Ulasan Positif Anda (Opsional):";
+        feedbackText.placeholder = "Contoh: Pelayanan sangat ramah dan memuaskan...";
+        submitBtn.className = "submit-btn google";
+        submitBtn.textContent = "⭐ Kirim & Posting di Google Maps";
+        helperFoot.textContent = "Ulasan Anda otomatis tersalin & halaman Google Review langsung terbuka.";
+      }
+    });
+  });
+
+  // Klik chip kalimat cepat
+  document.querySelectorAll(".tag-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chip.classList.toggle("selected");
+      const selectedTexts = Array.from(document.querySelectorAll(".tag-chip.selected")).map((c) => c.textContent);
+      if (selectedTexts.length > 0) {
+        feedbackText.value = selectedTexts.join(". ") + ".";
+      }
+    });
+  });
+
+  submitBtn.addEventListener("click", async () => {
+    if (!currentStar) return;
+    const msg = feedbackText.value.trim();
+
+    if (currentStar <= 3) {
+      // Bintang 1 - 3: Kirim ke WhatsApp
+      if (!msg) {
+        feedbackText.focus();
+        alert("Mohon tuliskan masukan atau keluhan Anda terlebih dahulu.");
+        return;
+      }
+      const sender = custName.value.trim();
+      const starsStr = "⭐".repeat(currentStar) + ` (${currentStar}/5)`;
+      const waLines = [
+        `Halo Admin *${storeName}*, saya ingin memberikan masukan layanan:`,
+        ``,
+        `*Rating:* ${starsStr}`,
+        sender ? `*Nama:* ${sender}` : null,
+        `*Masukan:* ${msg}`,
+      ].filter(Boolean);
+
+      const waText = encodeURIComponent(waLines.join("\n"));
+      const waTarget = rawWa
+        ? `https://wa.me/${rawWa}?text=${waText}`
+        : `https://api.whatsapp.com/send?text=${waText}`;
+
+      window.location.href = waTarget;
+    } else {
+      // Bintang 4 - 5: Salin teks ulasan (jika diisi) & langsung buka form Google Maps Review
+      if (msg) {
+        try {
+          await navigator.clipboard.writeText(msg);
+          toast.style.display = "block";
+          toast.textContent = "✅ Teks ulasan Anda sudah tersalin! Tinggal tempel (Paste) di Google Maps...";
+        } catch {
+          /* lanjut redirect */
+        }
+      }
+      setTimeout(() => {
+        window.location.href = googleReviewUrl;
+      }, msg ? 550 : 50);
+    }
+  });
+</script>
+
+</body>
+</html>

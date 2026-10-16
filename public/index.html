@@ -103,7 +103,7 @@
     .check-badge.visible {
       display: inline-flex;
     }
-    input#store-input {
+    input#store-input, input#wa-input {
       width: 100%;
       padding: 13px 40px 13px 40px;
       border: 1.5px solid #e2e8f0;
@@ -115,13 +115,37 @@
       outline: none;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-    input#store-input::placeholder {
+    input#wa-input {
+      padding: 12px 14px;
+    }
+    input#store-input::placeholder, input#wa-input::placeholder {
       font-weight: 400;
       color: #94a3b8;
     }
-    input#store-input:focus {
+    input#store-input:focus, input#wa-input:focus {
       border-color: #2563eb;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .wa-box {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+    }
+    .wa-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #166534;
+      margin-bottom: 6px;
+    }
+    .wa-hint {
+      font-size: 11px;
+      color: #15803d;
+      margin-top: 6px;
+      line-height: 1.4;
     }
 
     /* Dropdown */
@@ -565,20 +589,20 @@
       <label class="mode-card active" id="card-review">
         <input type="radio" name="target-mode" value="review" checked />
         <div class="mode-card-head">
-          <span class="mode-card-title">⭐ Form Bintang 5</span>
+          <span class="mode-card-title">⭐ Halaman Rating</span>
           <span class="mode-radio-dot">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </span>
         </div>
-        <small>Otomatis buka pop-up ulasan tanpa perlu cari tombol review</small>
+        <small>Rating 1–3 ke WhatsApp, Rating 4–5 otomatis ke Google Review</small>
       </label>
 
       <label class="mode-card" id="card-maps">
         <input type="radio" name="target-mode" value="maps" />
         <div class="mode-card-head">
-          <span class="mode-card-title">📍 Profil &amp; Lokasi Maps</span>
+          <span class="mode-card-title">📍 Aplikasi Maps</span>
           <span class="mode-radio-dot">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
@@ -588,6 +612,13 @@
         <small>Tampilkan profil utama bisnis, rute jalan &amp; katalog toko</small>
       </label>
     </div>
+
+    <!-- Nomor WhatsApp untuk penampung komplain bintang 1-3 -->
+    <div class="wa-box" id="wa-box">
+      <label class="wa-label" for="wa-input">💬 Nomor WhatsApp Penerima Masukan (Bintang 1–3)</label>
+      <input id="wa-input" type="tel" inputmode="numeric" placeholder="Contoh: 081234567890" autocomplete="tel" />
+      <div class="wa-hint">Jika pelanggan memilih bintang 1–3, keluhan mereka langsung diarahkan ke nomor WhatsApp ini (tidak masuk ke Google Maps).</div>
+    </div>
   </div>
 
   <!-- Kotak Pratinjau Toko Terpilih -->
@@ -595,7 +626,7 @@
     <div class="preview-topbar">
       <span class="preview-status">
         <span class="status-dot"></span>
-        <span id="preview-badge">Siap Diaktifkan: Mode Pop-up Bintang 5</span>
+        <span id="preview-badge">Siap Diaktifkan: Mode Smart Rating Filter</span>
       </span>
       <span class="selected-pill">TERVERIFIKASI</span>
     </div>
@@ -640,7 +671,7 @@
       <div class="info-callout">
         <span class="info-callout-icon">i</span>
         <span id="callout-text">
-          <strong>Efek Sekali Tap (Instant Review):</strong> Begitu kartu disentuhkan ke HP pelanggan, layar langsung membuka form bintang 5 Google. Lebih praktis = berkali lipat lebih banyak ulasan masuk!
+          <strong>Smart Rating Filter Aktif:</strong> Pelanggan yang mengisi bintang 1–3 otomatis diarahkan ke WhatsApp Anda, sedangkan bintang 4–5 otomatis diarahkan untuk memposting ulasan ke Google Maps!
         </span>
       </div>
     </div>
@@ -686,6 +717,8 @@
   let searchController = null;
 
   const storeInput = document.getElementById("store-input");
+  const waInput = document.getElementById("wa-input");
+  const waBox = document.getElementById("wa-box");
   const searchCheck = document.getElementById("search-check");
   const dropdown = document.getElementById("dropdown");
   const modeSection = document.getElementById("mode-section");
@@ -713,22 +746,42 @@
     return checked ? checked.value : "review";
   }
 
+  function normalizeWaNumber(raw) {
+    let digits = String(raw || "").replace(/\D/g, "");
+    if (digits.startsWith("0")) digits = "62" + digits.slice(1);
+    return digits;
+  }
+
   document.querySelectorAll('input[name="target-mode"]').forEach((radio) => {
     radio.addEventListener("change", () => {
-      cardReview.classList.toggle("active", getSelectedMode() === "review");
-      cardMaps.classList.toggle("active", getSelectedMode() === "maps");
+      const isReview = getSelectedMode() === "review";
+      cardReview.classList.toggle("active", isReview);
+      cardMaps.classList.toggle("active", !isReview);
+      waBox.style.display = isReview ? "block" : "none";
       updateTargetUrl();
     });
   });
 
+  waInput.addEventListener("input", updateTargetUrl);
+
+  function buildSmartRateUrl(place) {
+    const u = new URL("/rate", window.location.origin);
+    u.searchParams.set("n", place.title || "Toko Kami");
+    if (place.placeId) u.searchParams.set("p", place.placeId);
+    else if (place.cid) u.searchParams.set("c", place.cid);
+    const wa = normalizeWaNumber(waInput.value);
+    if (wa) u.searchParams.set("w", wa);
+    return u.toString();
+  }
+
   function updateTargetUrl() {
     if (!selectedPlace) return;
     const mode = getSelectedMode();
-    if (mode === "review" && selectedPlace.reviewUrl) {
-      targetUrl = selectedPlace.reviewUrl;
-      previewBadge.textContent = "Siap Diaktifkan: Mode Pop-up Bintang 5";
+    if (mode === "review") {
+      targetUrl = buildSmartRateUrl(selectedPlace);
+      previewBadge.textContent = "Siap Diaktifkan: Mode Smart Rating (Filter WA & Google)";
       calloutText.innerHTML =
-        "<strong>Efek Sekali Tap (Instant Review):</strong> Begitu kartu disentuhkan ke HP pelanggan, layar langsung membuka form bintang 5 Google. Lebih praktis = berkali lipat lebih banyak ulasan masuk!";
+        "<strong>Smart Rating Filter Aktif:</strong> Saat kartu di-tap, pelanggan masuk ke halaman rating toko Anda dulu. Rating 1–3 otomatis diarahkan ke WhatsApp, sedangkan 4–5 langsung diarahkan ke Google Review!";
     } else {
       targetUrl = selectedPlace.mapsUrl;
       previewBadge.textContent = "Siap Diaktifkan: Mode Profil Google Maps";
@@ -799,7 +852,8 @@
   function selectPlace(place) {
     selectedPlace = place;
     searchCheck.classList.add("visible");
-    modeSection.style.display = place.reviewUrl ? "block" : "none";
+    modeSection.style.display = "block";
+    waBox.style.display = getSelectedMode() === "review" ? "block" : "none";
 
     previewName.textContent = place.title;
 
@@ -962,6 +1016,12 @@
       return;
     }
 
+    if (getSelectedMode() === "review" && !normalizeWaNumber(waInput.value)) {
+      waInput.focus();
+      showStatus("#fff8e1", "#b45309", "💬 Masukkan Nomor WhatsApp terlebih dahulu agar masukan bintang 1–3 dapat dikirim ke WhatsApp Anda.");
+      return;
+    }
+
     activateBtn.disabled = true;
     showStatus("#e8f0fe", "#174ea6", "🔐 Memverifikasi kode lisensi aktivasi Anda...");
 
@@ -990,6 +1050,8 @@
       return;
     }
 
+    updateTargetUrl();
+
     try {
       const ndef = new NDEFReader();
       showStatus("#fff8e1", "#e65100", "📡 Kode lisensi terverifikasi! Tempelkan & tahan kartu NFC di punggung HP Anda selama 2 detik (jangan digeser)...");
@@ -1003,7 +1065,7 @@
         "#e8f5e9",
         "#1b5e20",
         "🎉 Kartu NFC Resmi Aktif! Bisnis \"" + selectedPlace.title + "\" kini sudah terhubung ke " +
-          (getSelectedMode() === "review" ? "Form Pop-up Bintang 5" : "Profil Google Maps") +
+          (getSelectedMode() === "review" ? "Halaman Smart Rating (1–3 ke WhatsApp, 4–5 ke Google Review)" : "Profil Google Maps") +
           ". Tutup Chrome, lalu coba tap kartu ke HP Anda untuk merasakan hasilnya!"
       );
     } catch (error) {

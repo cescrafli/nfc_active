@@ -5,6 +5,7 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/otp", "destination": "/otp.html" },
+    { "source": "/rate", "destination": "/rate.html" },
     { "source": "/admin", "destination": "/admin.html" }
   ],
   "headers": [

@@ -7,78 +7,158 @@
   <style>
     * { box-sizing: border-box; }
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: #f4f6f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+      background-color: #f4f7fb;
+      background-image: radial-gradient(#dbe3f0 1px, transparent 1px);
+      background-size: 18px 18px;
+      color: #0f172a;
       margin: 0;
-      padding: 20px;
+      padding: 28px 16px;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
     }
+
     .card {
       background: #ffffff;
-      max-width: 480px;
+      max-width: 520px;
       width: 100%;
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      padding: 28px 26px;
+      border-radius: 20px;
+      border: 1px solid #eef2f6;
+      box-shadow: 0 12px 36px rgba(15, 23, 42, 0.06);
     }
-    h2 { margin: 0 0 6px; color: #202124; font-size: 22px; }
-    p { margin: 0 0 18px; color: #5f6368; font-size: 14px; line-height: 1.5; }
-    label { display: block; font-size: 13px; font-weight: 600; color: #3c4043; margin-bottom: 6px; }
 
-    /* Search Wrapper & Dropdown */
+    /* Header */
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .nfc-icon-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: #2563eb;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    h1 {
+      margin: 0;
+      color: #0f172a;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    p.subtitle {
+      margin: 0 0 22px;
+      color: #64748b;
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+
+    /* Search Input */
+    .section-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 8px;
+    }
     .search-wrapper {
       position: relative;
     }
-    input[type="text"], input[type="tel"] {
-      width: 100%;
-      padding: 13px 14px;
-      border: 1px solid #dadce0;
-      border-radius: 10px;
-      font-size: 15px;
-      outline: none;
+    .search-input-box {
+      position: relative;
+      display: flex;
+      align-items: center;
     }
-    input[type="text"]:focus, input[type="tel"]:focus {
-      border-color: #1a73e8;
-      box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      color: #94a3b8;
+      pointer-events: none;
+      display: flex;
+    }
+    .check-badge {
+      position: absolute;
+      right: 14px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #10b981;
+      color: #ffffff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .check-badge.visible {
+      display: inline-flex;
+    }
+    input#store-input {
+      width: 100%;
+      padding: 13px 40px 13px 40px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #0f172a;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input#store-input::placeholder {
+      font-weight: 400;
+      color: #94a3b8;
+    }
+    input#store-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
 
+    /* Dropdown */
     .dropdown-list {
       position: absolute;
       top: calc(100% + 6px);
       left: 0;
       right: 0;
       background: #ffffff;
-      border: 1px solid #dadce0;
+      border: 1px solid #e2e8f0;
       border-radius: 12px;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.15);
-      max-height: 310px;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
+      max-height: 300px;
       overflow-y: auto;
-      z-index: 20;
+      z-index: 30;
       display: none;
     }
     .dropdown-item {
       padding: 12px 14px;
-      border-bottom: 1px solid #f1f3f4;
+      border-bottom: 1px solid #f1f5f9;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.12s;
     }
     .dropdown-item:last-child { border-bottom: none; }
-    .dropdown-item:hover, .dropdown-item:active { background: #f1f6fe; }
+    .dropdown-item:hover, .dropdown-item:active { background: #f8fafc; }
     .dropdown-item strong {
       display: block;
-      font-size: 14px;
-      color: #202124;
+      font-size: 13.5px;
+      color: #0f172a;
       margin-bottom: 3px;
     }
     .dropdown-rating {
       display: inline-block;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
-      color: #b06000;
-      background: #fef7e0;
+      color: #b45309;
+      background: #fef3c7;
       padding: 2px 6px;
       border-radius: 4px;
       margin-bottom: 4px;
@@ -86,181 +166,516 @@
     .dropdown-item small {
       display: block;
       font-size: 12px;
-      color: #5f6368;
+      color: #64748b;
       line-height: 1.35;
     }
     .dropdown-status {
       padding: 14px;
       font-size: 13px;
-      color: #5f6368;
+      color: #64748b;
       text-align: center;
     }
 
-    /* Mode Pilihan Tujuan Saat Kartu Di-Tap */
+    /* Mode Selector */
     .mode-section {
-      margin-top: 16px;
+      margin-top: 18px;
       display: none;
+    }
+    .mode-title {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 8px;
     }
     .mode-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      gap: 10px;
     }
     .mode-card {
-      border: 1.5px solid #dadce0;
-      border-radius: 10px;
-      padding: 10px 12px;
+      position: relative;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px;
       cursor: pointer;
-      background: #fff;
+      background: #ffffff;
       transition: all 0.15s;
     }
-    .mode-card.active {
-      border-color: #1a73e8;
-      background: #f1f6fe;
-    }
     .mode-card input { display: none; }
-    .mode-card strong {
-      display: block;
+    .mode-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .mode-card-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       font-size: 13px;
-      color: #202124;
-      margin-bottom: 2px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .mode-radio-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: transparent;
+      transition: all 0.15s;
     }
     .mode-card small {
       display: block;
-      font-size: 11px;
-      color: #5f6368;
-      line-height: 1.3;
+      font-size: 11.5px;
+      color: #64748b;
+      line-height: 1.35;
+    }
+    .mode-card.active {
+      border-color: #2563eb;
+      background: #f8fbff;
+      box-shadow: 0 0 0 1px #2563eb;
+    }
+    .mode-card.active .mode-radio-dot {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+    .mode-card.active small {
+      color: #2563eb;
     }
 
-    /* Preview Box */
+    /* Preview Card */
     .preview-box {
-      margin-top: 14px;
-      padding: 14px;
-      background: #f8f9fa;
-      border: 1px solid #e8eaed;
-      border-radius: 12px;
+      margin-top: 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #ffffff;
+      overflow: hidden;
       display: none;
     }
-    .preview-badge {
-      display: inline-block;
-      font-size: 11px;
+    .preview-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #f0fdf4;
+      border-bottom: 1px solid #dcfce7;
+    }
+    .preview-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
       font-weight: 700;
+      color: #15803d;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #16a34a;
+      display: inline-block;
+    }
+    .selected-pill {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
       padding: 3px 8px;
       border-radius: 6px;
-      background: #e8f5e9;
-      color: #1b5e20;
-      margin-bottom: 6px;
+      background: #dcfce7;
+      color: #15803d;
+      text-transform: uppercase;
     }
-    .preview-box strong { display: block; color: #202124; font-size: 15px; margin-bottom: 3px; }
-    .preview-box .addr { display: block; color: #5f6368; font-size: 12px; margin-bottom: 10px; line-height: 1.4; }
+
+    .preview-body {
+      padding: 14px;
+    }
+    .store-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .store-title-wrap {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .store-title {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .verified-check {
+      color: #2563eb;
+      display: inline-flex;
+      align-items: center;
+    }
+    .category-chip {
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .maps-pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #2563eb;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 4px 9px;
+      border-radius: 8px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .maps-pill-btn:hover { background: #dbeafe; }
+
+    .rating-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      margin-bottom: 8px;
+    }
+    .rating-score {
+      font-weight: 800;
+      color: #d97706;
+    }
+    .rating-stars {
+      color: #f59e0b;
+      letter-spacing: 1px;
+      font-size: 13px;
+    }
+    .rating-count {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .address-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 12.5px;
+      color: #64748b;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+    .address-row svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: #94a3b8;
+    }
 
     .map-frame {
       width: 100%;
-      height: 190px;
-      border: 1px solid #dadce0;
-      border-radius: 8px;
-      background: #eef0f2;
+      height: 165px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f1f5f9;
+      display: block;
     }
 
-    /* Kotak Password OTP 8 Angka */
+    .info-callout {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 11.5px;
+      color: #475569;
+      line-height: 1.45;
+    }
+    .info-callout-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .info-callout strong {
+      color: #0f172a;
+    }
+
+    /* 8-Box OTP Section */
     .otp-section {
       margin-top: 16px;
-      padding: 14px;
-      background: #fff8e1;
-      border: 1px solid #ffe082;
-      border-radius: 12px;
+      padding: 16px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 14px;
       display: none;
     }
-    .otp-input {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 20px !important;
+    .otp-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
       font-weight: 700;
-      letter-spacing: 5px;
-      text-align: center;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+    .otp-boxes {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 7px;
+    }
+    .otp-digit {
+      width: 100%;
+      height: 46px;
+      border: 1.5px solid #fcd34d;
+      border-radius: 10px;
       background: #ffffff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+      text-align: center;
+      outline: none;
+      padding: 0;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .otp-digit::placeholder {
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+    .otp-digit:focus {
+      border-color: #d97706;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
     }
     .otp-hint {
-      font-size: 12px;
-      color: #8d6e63;
-      margin-top: 6px;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 11.5px;
+      color: #b45309;
+      margin-top: 11px;
+      line-height: 1.4;
+    }
+    .otp-hint svg {
+      flex-shrink: 0;
+      margin-top: 1px;
     }
 
+    /* Main Dark Button */
     button#activate-btn {
       width: 100%;
       margin-top: 18px;
-      padding: 14px;
-      background: #1a73e8;
+      padding: 15px 18px;
+      background: #0f172a;
       color: #ffffff;
       border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 600;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s, opacity 0.15s;
     }
-    button#activate-btn:disabled { background: #dadce0; color: #80868b; cursor: not-allowed; }
+    button#activate-btn:hover:not(:disabled) {
+      background: #1e293b;
+    }
+    button#activate-btn:disabled {
+      background: #0f172a;
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
 
     #status {
-      margin-top: 16px;
-      padding: 12px;
+      margin-top: 14px;
+      padding: 12px 14px;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 13.5px;
       display: none;
-      line-height: 1.4;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 440px) {
+      .card { padding: 22px 18px; }
+      .mode-grid { grid-template-columns: 1fr; }
+      .otp-boxes { gap: 5px; }
+      .otp-digit { height: 42px; font-size: 16px; }
     }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <h2>Aktivasi Kartu NFC</h2>
-  <p>Ketik nama toko & kota Anda, klik salah satu toko dari daftar Google Maps yang muncul, masukkan password aktivasi, lalu tempelkan kartu NFC.</p>
+  <div class="header-row">
+    <span class="nfc-icon-badge" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+        <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+        <path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/>
+        <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+      </svg>
+    </span>
+    <h1>Aktivasi Kartu NFC</h1>
+  </div>
+  <p class="subtitle">Ketik nama toko &amp; kota Anda, klik salah satu toko dari daftar Google Maps yang muncul, masukkan password aktivasi, lalu tempelkan kartu NFC.</p>
 
-  <label for="store-input">Cari Nama Toko & Kota di Google Maps</label>
+  <label class="section-label" for="store-input">CARI NAMA TOKO &amp; KOTA DI GOOGLE MAPS</label>
   <div class="search-wrapper">
-    <input id="store-input" type="text" placeholder="Contoh: Kopi Kenangan Galaxy Bekasi..." autocomplete="off" />
+    <div class="search-input-box">
+      <span class="search-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </span>
+      <input id="store-input" type="text" placeholder="Ketik nama toko & kota..." autocomplete="off" />
+      <span class="check-badge" id="search-check" aria-hidden="true">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </span>
+    </div>
     <div id="dropdown" class="dropdown-list"></div>
   </div>
 
   <!-- Pilihan aksi saat kartu di-tap -->
   <div class="mode-section" id="mode-section">
-    <label>Saat Kartu NFC Di-Tap Pelanggan, Buka:</label>
+    <span class="mode-title">Saat Kartu NFC Di-Tap Pelanggan, Buka:</span>
     <div class="mode-grid">
       <label class="mode-card active" id="card-review">
         <input type="radio" name="target-mode" value="review" checked />
-        <strong>⭐ Halaman Rating</strong>
-        <small>Langsung muncul pop-up beri bintang & ulasan</small>
+        <div class="mode-card-head">
+          <span class="mode-card-title">⭐ Halaman Rating</span>
+          <span class="mode-radio-dot">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </span>
+        </div>
+        <small>Langsung muncul pop-up beri bintang &amp; ulasan</small>
       </label>
+
       <label class="mode-card" id="card-maps">
         <input type="radio" name="target-mode" value="maps" />
-        <strong>📍 Aplikasi Maps</strong>
+        <div class="mode-card-head">
+          <span class="mode-card-title">📍 Aplikasi Maps</span>
+          <span class="mode-radio-dot">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </span>
+        </div>
         <small>Buka profil toko di aplikasi Google Maps</small>
       </label>
     </div>
   </div>
 
+  <!-- Kotak Pratinjau Toko Terpilih -->
   <div class="preview-box" id="preview-box">
-    <span class="preview-badge" id="preview-badge">✓ Toko Google Maps Terpilih</span>
-    <strong id="preview-name"></strong>
-    <small class="addr" id="preview-addr"></small>
-    <iframe id="map-preview" class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div class="preview-topbar">
+      <span class="preview-status">
+        <span class="status-dot"></span>
+        <span id="preview-badge">Mode: Langsung Buka Halaman Rating &amp; Ulasan</span>
+      </span>
+      <span class="selected-pill">TERPILIH</span>
+    </div>
+
+    <div class="preview-body">
+      <div class="store-header-row">
+        <div class="store-title-wrap">
+          <span class="store-title" id="preview-name"></span>
+          <span class="verified-check" title="Terdaftar di Google Maps">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </span>
+          <span class="category-chip" id="preview-category" style="display:none"></span>
+        </div>
+        <a class="maps-pill-btn" id="maps-pill-link" href="#" target="_blank" rel="noopener">
+          Maps
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      </div>
+
+      <div class="rating-row" id="rating-row" style="display:none">
+        <span class="rating-score" id="preview-rating"></span>
+        <span class="rating-stars" id="preview-stars">★★★★★</span>
+        <span class="rating-count" id="preview-reviews"></span>
+      </div>
+
+      <div class="address-row">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        <span id="preview-addr"></span>
+      </div>
+
+      <iframe id="map-preview" class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+      <div class="info-callout">
+        <span class="info-callout-icon">i</span>
+        <span id="callout-text">
+          <strong>Review Langsung Aktif:</strong> Pelanggan yang men-tap kartu NFC akan langsung diarahkan ke form pop-up bintang 5 tanpa perlu mencari tombol ulasan manual.
+        </span>
+      </div>
+    </div>
   </div>
 
-  <!-- Password Aktivasi 8 Angka (reset tiap 5 menit) -->
+  <!-- Password Aktivasi 8 Kotak Angka -->
   <div class="otp-section" id="otp-section">
-    <label for="otp-input">🔑 Password Aktivasi (8 Angka dari Admin)</label>
-    <input
-      id="otp-input"
-      class="otp-input"
-      type="tel"
-      inputmode="numeric"
-      maxlength="8"
-      placeholder="00000000"
-      autocomplete="one-time-code"
-    />
-    <div class="otp-hint">Kode berlaku selama 5 menit. Minta kode 8 angka terbaru kepada admin saat siap menempelkan kartu.</div>
+    <div class="otp-title">🔑 Password Aktivasi (8 Angka dari Admin)</div>
+    <div class="otp-boxes" id="otp-boxes">
+      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 1" />
+      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 2" />
+      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 3" />
+      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 4" />
+      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 5" />
+      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 6" />
+      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 7" />
+      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 8" />
+    </div>
+    <div class="otp-hint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+      <span>Kode berlaku selama 5 menit. Minta kode 8 angka terbaru kepada admin saat siap menempelkan kartu.</span>
+    </div>
   </div>
 
-  <button id="activate-btn" disabled>Aktivasi & Tulis ke Kartu NFC</button>
+  <button id="activate-btn" disabled>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+      <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+      <path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/>
+    </svg>
+    <span>Aktivasi &amp; Tulis ke Kartu NFC</span>
+  </button>
   <div id="status"></div>
 </div>
 
@@ -271,6 +686,7 @@
   let searchController = null;
 
   const storeInput = document.getElementById("store-input");
+  const searchCheck = document.getElementById("search-check");
   const dropdown = document.getElementById("dropdown");
   const modeSection = document.getElementById("mode-section");
   const cardReview = document.getElementById("card-review");
@@ -278,10 +694,17 @@
   const previewBox = document.getElementById("preview-box");
   const previewBadge = document.getElementById("preview-badge");
   const previewName = document.getElementById("preview-name");
+  const previewCategory = document.getElementById("preview-category");
+  const mapsPillLink = document.getElementById("maps-pill-link");
+  const ratingRow = document.getElementById("rating-row");
+  const previewRating = document.getElementById("preview-rating");
+  const previewStars = document.getElementById("preview-stars");
+  const previewReviews = document.getElementById("preview-reviews");
   const previewAddr = document.getElementById("preview-addr");
   const mapPreview = document.getElementById("map-preview");
+  const calloutText = document.getElementById("callout-text");
   const otpSection = document.getElementById("otp-section");
-  const otpInput = document.getElementById("otp-input");
+  const otpDigits = Array.from(document.querySelectorAll(".otp-digit"));
   const activateBtn = document.getElementById("activate-btn");
   const statusBox = document.getElementById("status");
 
@@ -303,28 +726,104 @@
     const mode = getSelectedMode();
     if (mode === "review" && selectedPlace.reviewUrl) {
       targetUrl = selectedPlace.reviewUrl;
-      previewBadge.textContent = "⭐ Mode: Langsung Buka Halaman Rating & Ulasan";
+      previewBadge.textContent = "Mode: Langsung Buka Halaman Rating & Ulasan";
+      calloutText.innerHTML =
+        "<strong>Review Langsung Aktif:</strong> Pelanggan yang men-tap kartu NFC akan langsung diarahkan ke form pop-up bintang 5 tanpa perlu mencari tombol ulasan manual.";
     } else {
       targetUrl = selectedPlace.mapsUrl;
-      previewBadge.textContent = "📍 Mode: Langsung Buka Aplikasi Google Maps";
+      previewBadge.textContent = "Mode: Langsung Buka Aplikasi Google Maps";
+      calloutText.innerHTML =
+        "<strong>Profil Maps Aktif:</strong> Pelanggan yang men-tap kartu NFC akan langsung membuka titik lokasi & profil toko Anda di aplikasi Google Maps.";
     }
   }
 
-  function updateButtonState() {
-    const otpClean = otpInput.value.replace(/\D/g, "");
-    otpInput.value = otpClean;
-    activateBtn.disabled = !selectedPlace || otpClean.length !== 8;
+  // --- Logika 8 Kotak OTP (auto-next, backspace, dan paste 8 angka sekaligus) ---
+  function getOtpCode() {
+    return otpDigits.map((el) => el.value.replace(/\D/g, "")).join("");
   }
 
-  otpInput.addEventListener("input", updateButtonState);
+  function clearOtpBoxes() {
+    otpDigits.forEach((el) => { el.value = ""; });
+    updateButtonState();
+  }
+
+  function updateButtonState() {
+    const code = getOtpCode();
+    activateBtn.disabled = !selectedPlace || code.length !== 8;
+  }
+
+  otpDigits.forEach((box, idx) => {
+    box.addEventListener("input", (e) => {
+      const val = e.target.value.replace(/\D/g, "");
+      if (val.length > 1) {
+        // Jika pengguna menempel / mengetik lebih dari 1 angka
+        val.split("").forEach((ch, offset) => {
+          if (otpDigits[idx + offset]) otpDigits[idx + offset].value = ch;
+        });
+        const nextIdx = Math.min(idx + val.length, otpDigits.length - 1);
+        otpDigits[nextIdx].focus();
+      } else {
+        e.target.value = val;
+        if (val && idx < otpDigits.length - 1) {
+          otpDigits[idx + 1].focus();
+        }
+      }
+      updateButtonState();
+    });
+
+    box.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && !box.value && idx > 0) {
+        otpDigits[idx - 1].value = "";
+        otpDigits[idx - 1].focus();
+        updateButtonState();
+      } else if (e.key === "ArrowLeft" && idx > 0) {
+        otpDigits[idx - 1].focus();
+      } else if (e.key === "ArrowRight" && idx < otpDigits.length - 1) {
+        otpDigits[idx + 1].focus();
+      }
+    });
+
+    box.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 8);
+      if (!pasted) return;
+      pasted.split("").forEach((ch, i) => {
+        if (otpDigits[i]) otpDigits[i].value = ch;
+      });
+      otpDigits[Math.min(pasted.length, 8) - 1].focus();
+      updateButtonState();
+    });
+
+    box.addEventListener("focus", () => box.select());
+  });
 
   function selectPlace(place) {
     selectedPlace = place;
+    searchCheck.classList.add("visible");
     modeSection.style.display = place.reviewUrl ? "block" : "none";
 
-    const ratingInfo = place.rating ? `⭐ ${place.rating} (${place.reviews || "ulasan"}) • ` : "";
     previewName.textContent = place.title;
-    previewAddr.textContent = ratingInfo + (place.address || "");
+
+    if (place.category && place.category.length <= 40) {
+      previewCategory.textContent = place.category;
+      previewCategory.style.display = "inline-block";
+    } else {
+      previewCategory.style.display = "none";
+    }
+
+    mapsPillLink.href = place.mapsUrl;
+
+    if (place.rating) {
+      ratingRow.style.display = "flex";
+      previewRating.textContent = place.rating;
+      const starCount = Math.max(1, Math.min(5, Math.round(Number(place.rating))));
+      previewStars.textContent = "★".repeat(starCount) + "☆".repeat(5 - starCount);
+      previewReviews.textContent = place.reviews ? `(${place.reviews} di Google)` : "(Ulasan Google)";
+    } else {
+      ratingRow.style.display = "none";
+    }
+
+    previewAddr.textContent = place.address || "Indonesia";
     previewBox.style.display = "block";
     otpSection.style.display = "block";
 
@@ -342,6 +841,7 @@
 
   storeInput.addEventListener("input", () => {
     const q = storeInput.value.trim();
+    searchCheck.classList.remove("visible");
     clearTimeout(debounceTimer);
 
     if (q.length < 3) {
@@ -381,6 +881,7 @@
               selectPlace({
                 title: q,
                 address: "Pencarian langsung Google Maps",
+                category: "",
                 placeId: "",
                 cid: "",
                 reviewUrl: "",
@@ -455,7 +956,7 @@
   // Verifikasi OTP 8 angka lalu tulis ke Kartu NFC via Google Chrome
   activateBtn.addEventListener("click", async () => {
     dropdown.style.display = "none";
-    const otpCode = otpInput.value.replace(/\D/g, "");
+    const otpCode = getOtpCode();
 
     if (otpCode.length !== 8) {
       showStatus("#fdecea", "#b71c1c", "Masukkan 8 angka Password Aktivasi terlebih dahulu.");
@@ -498,8 +999,7 @@
         records: [{ recordType: "url", data: targetUrl }]
       });
 
-      otpInput.value = "";
-      updateButtonState();
+      clearOtpBoxes();
       showStatus(
         "#e8f5e9",
         "#1b5e20",

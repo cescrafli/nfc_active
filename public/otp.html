@@ -4,147 +4,419 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Generator Password Aktivasi (Khusus Admin)</title>
+  <title>Kode Lisensi Aktivasi — Generator Admin</title>
   <style>
     * { box-sizing: border-box; }
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+      background-color: #070b14;
+      background-image:
+        radial-gradient(circle at 22% 18%, rgba(29, 78, 216, 0.16) 0%, transparent 45%),
+        radial-gradient(circle at 78% 82%, rgba(56, 189, 248, 0.08) 0%, transparent 45%);
       color: #f8fafc;
       margin: 0;
-      padding: 20px;
+      padding: 24px 16px;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
     }
+
     .card {
-      background: #1e293b;
-      max-width: 420px;
+      background: #0d1322;
+      border: 1px solid #1e293b;
+      max-width: 440px;
       width: 100%;
-      padding: 26px;
-      border-radius: 18px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+      padding: 32px 26px 28px;
+      border-radius: 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
       text-align: center;
     }
+
+    /* Top Pill Badge */
     .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 58, 138, 0.35);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
       display: inline-block;
-      background: rgba(56, 189, 248, 0.15);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+    }
+    p.subtitle {
+      margin: 0 auto 22px;
+      max-width: 310px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    /* Login Input */
+    .login-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      background: #090e1a;
+      color: #ffffff;
+      font-size: 14.5px;
+      outline: none;
+      margin-bottom: 14px;
+      text-align: center;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .login-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    /* Inner OTP Container */
+    .otp-container {
+      background: #0a0f1d;
+      border: 1px solid #1a2438;
+      border-radius: 16px;
+      padding: 18px 16px 16px;
+      text-align: left;
+    }
+
+    .otp-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .otp-active-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .cyan-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 6px #38bdf8;
+      display: inline-block;
+    }
+    .mini-copy-btn {
+      background: none;
+      border: none;
       color: #38bdf8;
       font-size: 12px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 999px;
-      margin-bottom: 10px;
-    }
-    h2 { margin: 0 0 6px; font-size: 20px; }
-    p { margin: 0 0 18px; color: #94a3b8; font-size: 13px; line-height: 1.5; }
-
-    input {
-      width: 100%;
-      padding: 13px 14px;
-      border: 1px solid #334155;
-      border-radius: 10px;
-      background: #0f172a;
-      color: #fff;
-      font-size: 15px;
-      outline: none;
-      margin-bottom: 12px;
-      text-align: center;
-    }
-    input:focus { border-color: #38bdf8; }
-
-    .btn {
-      width: 100%;
-      padding: 13px;
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 4px;
+      border-radius: 6px;
     }
-    .btn:hover { background: #1d4ed8; }
-    .btn-secondary {
-      background: #334155;
-      margin-top: 10px;
-      font-size: 13px;
-      padding: 10px;
+    .mini-copy-btn:hover {
+      background: rgba(56, 189, 248, 0.1);
     }
 
-    .otp-box {
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 14px;
-      padding: 20px 14px;
-      margin: 14px 0;
+    /* 8 Digit Tiles (4 - 4) */
+    .digits-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 5px;
+      margin-bottom: 18px;
     }
-    .otp-code {
+    .digit-tile {
+      flex: 1;
+      height: 50px;
+      background: #11192c;
+      border: 1px solid #1e2d4a;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 36px;
+      font-size: 21px;
       font-weight: 800;
-      letter-spacing: 4px;
       color: #38bdf8;
-      margin: 4px 0 10px;
+      text-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
       user-select: all;
+    }
+    .digit-sep {
+      color: #475569;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 0 2px;
+      user-select: none;
+    }
+
+    /* Timer Section */
+    .timer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .timer-left-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .timer-countdown {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 700;
+      color: #38bdf8;
+      font-size: 12px;
     }
     .timer-bar {
       width: 100%;
-      height: 6px;
-      background: #334155;
+      height: 5px;
+      background: #162033;
       border-radius: 999px;
       overflow: hidden;
-      margin-top: 10px;
+      margin-bottom: 16px;
     }
     .timer-fill {
       height: 100%;
-      background: #38bdf8;
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
       width: 100%;
+      border-radius: 999px;
       transition: width 0.9s linear;
     }
-    .timer-text {
-      font-size: 13px;
-      color: #cbd5e1;
+
+    /* Next Period Box */
+    .next-period-box {
+      background: #0d1424;
+      border: 1px solid #182235;
+      border-radius: 10px;
+      padding: 9px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
     }
-    .next-code {
+    .next-label {
+      font-size: 11.5px;
+      color: #64748b;
+    }
+    .next-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .next-code-pill {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: #cbd5e1;
+      background: #162033;
+      border: 1px solid #23314d;
+      padding: 4px 9px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .ready-pill {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #94a3b8;
+      background: #162033;
+      border: 1px solid #23314d;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    /* Helper Note */
+    .helper-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      text-align: left;
       font-size: 12px;
       color: #64748b;
-      margin-top: 12px;
+      line-height: 1.45;
+      margin: 16px 2px 20px;
     }
+    .helper-note svg {
+      flex-shrink: 0;
+      color: #38bdf8;
+      margin-top: 1px;
+    }
+
+    /* Action Buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 14px 18px;
+      background: linear-gradient(90deg, #2563eb 0%, #4f46e5 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-primary:hover { opacity: 0.95; }
+    .btn-primary:active { transform: scale(0.99); }
+
+    .btn-secondary {
+      width: 100%;
+      margin-top: 10px;
+      padding: 13px 18px;
+      background: #151d2e;
+      border: 1px solid #1e293b;
+      color: #cbd5e1;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+    .btn-secondary:hover {
+      background: #1e293b;
+    }
+
     .error {
       color: #f87171;
       font-size: 13px;
-      margin-top: 10px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 400px) {
+      .card { padding: 24px 18px; }
+      .digit-tile { height: 44px; font-size: 18px; }
     }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <span class="badge">🔒 GENERATOR LISENSI ADMIN</span>
-  <h2>Kode Lisensi Aktivasi (8 Digit)</h2>
-  <p>Kode lisensi ini otomatis di-reset setiap 5 menit. Salin dan berikan 8 angka di bawah kepada pembeli yang siap mengaktifkan kartu NFC.</p>
+  <div class="badge">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+    </svg>
+    <span>GENERATOR LISENSI ADMIN</span>
+    <span class="badge-dot"></span>
+  </div>
+
+  <h1>Kode Lisensi Aktivasi</h1>
+  <p class="subtitle">Kode ini digunakan pembeli untuk aktivasi kartu NFC. Diperbarui otomatis setiap 5 menit.</p>
 
   <!-- Form Login Admin -->
   <div id="login-view">
-    <input id="admin-key" type="password" placeholder="Masukkan Kunci Rahasia Admin..." autocomplete="current-password" />
-    <button class="btn" id="login-btn">Buka Generator</button>
+    <input id="admin-key" class="login-input" type="password" placeholder="Masukkan Kunci Rahasia Admin..." autocomplete="current-password" />
+    <button class="btn-primary" id="login-btn">Buka Generator</button>
     <div id="login-error" class="error" style="display:none"></div>
   </div>
 
   <!-- Tampilan Live OTP -->
   <div id="otp-view" style="display:none">
-    <div class="otp-box">
-      <div class="timer-text">Kode Aktif Saat Ini:</div>
-      <div class="otp-code" id="otp-display">--------</div>
-      <div class="timer-text">Reset dalam <strong id="sec-left">--:--</strong></div>
+    <div class="otp-container">
+      <div class="otp-top-row">
+        <span class="otp-active-label">
+          <span class="cyan-dot"></span>
+          <span>Kode Aktif Saat Ini:</span>
+        </span>
+        <button type="button" class="mini-copy-btn" id="mini-copy-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span id="mini-copy-text">Salin</span>
+        </button>
+      </div>
+
+      <!-- 8 Kotak Digit (4 - 4) -->
+      <div class="digits-row" id="digits-row">
+        <div class="digit-tile">-</div>
+        <div class="digit-tile">-</div>
+        <div class="digit-tile">-</div>
+        <div class="digit-tile">-</div>
+        <span class="digit-sep">-</span>
+        <div class="digit-tile">-</div>
+        <div class="digit-tile">-</div>
+        <div class="digit-tile">-</div>
+        <div class="digit-tile">-</div>
+      </div>
+
+      <div class="timer-header">
+        <span class="timer-left-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Reset dalam:</span>
+        </span>
+        <span class="timer-countdown" id="sec-left">--m --d</span>
+      </div>
+
       <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
-      <div class="next-code">Kode periode berikutnya: <strong id="next-otp">--------</strong></div>
+
+      <div class="next-period-box">
+        <span class="next-label">Kode periode berikutnya:</span>
+        <div class="next-right">
+          <span class="next-code-pill" id="next-otp">---- ----</span>
+          <span class="ready-pill">Siap</span>
+        </div>
+      </div>
     </div>
 
-    <button class="btn" id="copy-btn">📋 Salin Kode 8 Angka</button>
-    <button class="btn btn-secondary" id="logout-btn">Keluar / Kunci</button>
+    <div class="helper-note">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <span>Salin dan berikan 8 angka di atas kepada pembeli yang siap mengaktifkan kartu NFC.</span>
+    </div>
+
+    <button type="button" class="btn-primary" id="copy-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <span id="copy-btn-text">Salin Kode 8 Angka</span>
+    </button>
+
+    <button type="button" class="btn-secondary" id="logout-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <span>Keluar / Kunci</span>
+    </button>
   </div>
 </div>
 
@@ -159,11 +431,12 @@
   const otpView = document.getElementById("otp-view");
   const adminKeyInput = document.getElementById("admin-key");
   const loginError = document.getElementById("login-error");
-  const otpDisplay = document.getElementById("otp-display");
+  const digitTiles = Array.from(document.querySelectorAll("#digits-row .digit-tile"));
   const nextOtpDisplay = document.getElementById("next-otp");
   const secLeft = document.getElementById("sec-left");
   const timerFill = document.getElementById("timer-fill");
-  const copyBtn = document.getElementById("copy-btn");
+  const copyBtnText = document.getElementById("copy-btn-text");
+  const miniCopyText = document.getElementById("mini-copy-text");
 
   const format8 = (code) => String(code).slice(0, 4) + " " + String(code).slice(4, 8);
   const formatTime = (s) => {
@@ -171,6 +444,13 @@
     const sec = String(s % 60).padStart(2, "0");
     return `${m}m ${sec}d`;
   };
+
+  function renderDigits(code) {
+    const chars = String(code || "").padEnd(8, "-").split("");
+    digitTiles.forEach((tile, i) => {
+      tile.textContent = chars[i] || "-";
+    });
+  }
 
   async function fetchOtp(key) {
     const res = await fetch("/api/otp/current", {
@@ -185,7 +465,7 @@
     rawCode = data.code;
     remaining = data.remainingSec;
     windowSec = data.windowSec || 300;
-    otpDisplay.textContent = format8(data.code);
+    renderDigits(data.code);
     nextOtpDisplay.textContent = format8(data.nextCode);
     updateTimerUi();
   }
@@ -193,7 +473,10 @@
   function updateTimerUi() {
     secLeft.textContent = formatTime(remaining);
     timerFill.style.width = ((remaining / windowSec) * 100) + "%";
-    timerFill.style.background = remaining <= 20 ? "#f87171" : "#38bdf8";
+    timerFill.style.background =
+      remaining <= 20
+        ? "linear-gradient(90deg, #ef4444, #f97316)"
+        : "linear-gradient(90deg, #06b6d4, #3b82f6)";
   }
 
   async function startLive(key) {
@@ -229,16 +512,23 @@
     if (e.key === "Enter") document.getElementById("login-btn").click();
   });
 
-  copyBtn.addEventListener("click", async () => {
+  async function handleCopy() {
     if (!rawCode) return;
     try {
       await navigator.clipboard.writeText(rawCode);
-      copyBtn.textContent = "✅ Tersalin: " + rawCode;
-      setTimeout(() => { copyBtn.textContent = "📋 Salin Kode 8 Angka"; }, 1800);
+      copyBtnText.textContent = "Tersalin: " + rawCode;
+      miniCopyText.textContent = "Tersalin!";
+      setTimeout(() => {
+        copyBtnText.textContent = "Salin Kode 8 Angka";
+        miniCopyText.textContent = "Salin";
+      }, 1800);
     } catch {
       prompt("Salin kode:", rawCode);
     }
-  });
+  }
+
+  document.getElementById("copy-btn").addEventListener("click", handleCopy);
+  document.getElementById("mini-copy-btn").addEventListener("click", handleCopy);
 
   document.getElementById("logout-btn").addEventListener("click", () => {
     clearInterval(tickTimer);

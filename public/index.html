@@ -1006,9 +1006,17 @@
     if (cardHasPin) {
       pinTitle.textContent = "🔒 3. Masukkan Password Kartu Anda (4 Angka)";
       pinHintText.textContent = "Masukkan 4 angka password yang Anda buat saat pertama kali mengaktifkan kartu ini untuk mengubah lokasi toko.";
+      // Jika kartu sudah pernah diaktifkan pertama kali, tombol 'Aktifkan Kartu NFC Sekarang' hilang selamanya
+      activateBtn.style.display = "none";
+      if (selectedPlace) {
+        cloudOnlyBtn.style.display = "inline-flex";
+      }
     } else {
       pinTitle.textContent = "🔐 3. Buat Password Kartu Baru Anda (4 Angka)";
       pinHintText.textContent = "Buat 4 angka password rahasia Anda sendiri. Ingat baik-baik — password ini akan digunakan setiap kali Anda ingin mengganti lokasi toko di kemudian hari.";
+      // Saat pertama kali aktivasi, tampilkan tombol 'Aktifkan Kartu NFC Sekarang' dan sembunyikan tombol Update
+      activateBtn.style.display = "inline-flex";
+      cloudOnlyBtn.style.display = "none";
     }
   }
 
@@ -1252,8 +1260,8 @@
     previewAddr.textContent = place.address || "Indonesia";
     previewBox.style.display = "block";
     otpSection.style.display = "block";
-    cloudOnlyBtn.style.display = "inline-flex";
 
+    updatePinUiMode(cardHasPin);
     updateTargetUrl();
     updateButtonState();
 

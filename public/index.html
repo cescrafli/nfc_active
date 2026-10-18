@@ -56,10 +56,142 @@
       letter-spacing: -0.02em;
     }
     p.subtitle {
-      margin: 0 0 22px;
+      margin: 0 0 20px;
       color: #64748b;
       font-size: 13.5px;
       line-height: 1.55;
+    }
+
+    /* Dynamic Card ID / Barcode Box */
+    .card-id-box {
+      margin-bottom: 18px;
+      padding: 13px 14px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+    }
+    .card-id-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+    .card-id-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #1e293b;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dynamic-badge {
+      font-size: 10px;
+      font-weight: 700;
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .card-id-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    input#card-id-input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+      background: #ffffff;
+      outline: none;
+    }
+    input#card-id-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .qr-toggle-btn {
+      padding: 10px 12px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .qr-toggle-btn:hover { background: #dbeafe; }
+    .card-id-hint {
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+    .current-card-status {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      font-size: 11.5px;
+      color: #1e40af;
+      display: none;
+      line-height: 1.4;
+    }
+
+    /* QR Code Preview Drawer */
+    .qr-drawer {
+      display: none;
+      margin-top: 12px;
+      padding: 14px;
+      background: #ffffff;
+      border: 1px dashed #93c5fd;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .qr-drawer img {
+      width: 160px;
+      height: 160px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      padding: 6px;
+      background: #ffffff;
+    }
+    .qr-url-pill {
+      display: block;
+      margin: 8px auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #1d4ed8;
+      background: #eff6ff;
+      padding: 6px 10px;
+      border-radius: 8px;
+      word-break: break-all;
+    }
+    .qr-dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      padding: 8px 14px;
+      background: #2563eb;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
     }
 
     /* Search Input */
@@ -503,7 +635,7 @@
       margin-top: 1px;
     }
 
-    /* Main Dark Button */
+    /* Action Buttons */
     button#activate-btn {
       width: 100%;
       margin-top: 18px;
@@ -526,6 +658,31 @@
     }
     button#activate-btn:disabled {
       background: #0f172a;
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button#cloud-only-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 13px 16px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    button#cloud-only-btn:hover:not(:disabled) {
+      background: #dbeafe;
+    }
+    button#cloud-only-btn:disabled {
       opacity: 0.45;
       cursor: not-allowed;
     }
@@ -561,7 +718,31 @@
     </span>
     <h1>Aktivasi Kartu Pintar NFC</h1>
   </div>
-  <p class="subtitle">Hubungkan kartu NFC dengan Google Maps bisnis Anda dalam 30 detik. Sekali tap, pelanggan langsung siap memberi bintang 5!</p>
+  <p class="subtitle">Hubungkan Kartu NFC &amp; Barcode Dinamis dengan Google Maps bisnis Anda. Ganti lokasi toko kapan saja tanpa perlu cetak ulang barcode!</p>
+
+  <!-- ID Kartu & Barcode Dinamis -->
+  <div class="card-id-box">
+    <div class="card-id-head">
+      <span class="card-id-label">
+        🏷️ ID Kartu / Kode Barcode
+      </span>
+      <span class="dynamic-badge">QR Dinamis (Tanpa Print Ulang)</span>
+    </div>
+    <div class="card-id-row">
+      <input id="card-id-input" type="text" placeholder="Contoh: KARTU01 atau 001" value="001" autocomplete="off" />
+      <button type="button" class="qr-toggle-btn" id="qr-toggle-btn">📱 Lihat Barcode QR</button>
+    </div>
+    <div class="card-id-hint">
+      Setiap kartu memiliki 1 ID tetap. Saat Anda mengganti lokasi toko di bawah, <strong>Barcode/QR ini otomatis ter-update ke toko baru</strong> tanpa perlu di-print ulang.
+    </div>
+    <div class="current-card-status" id="current-card-status"></div>
+
+    <div class="qr-drawer" id="qr-drawer">
+      <img id="qr-img" alt="QR Code Kartu" src="" />
+      <span class="qr-url-pill" id="qr-url-text"></span>
+      <button type="button" class="qr-dl-btn" id="qr-dl-btn">⬇️ Download Barcode QR (Cetak Sekali Selamanya)</button>
+    </div>
+  </div>
 
   <label class="section-label" for="store-input">1. TEMUKAN BISNIS ANDA DI GOOGLE MAPS</label>
   <div class="search-wrapper">
@@ -584,7 +765,7 @@
 
   <!-- Pilihan aksi saat kartu di-tap -->
   <div class="mode-section" id="mode-section">
-    <span class="mode-title">2. Pilih Tujuan Saat Pelanggan Men-Tap Kartu:</span>
+    <span class="mode-title">2. Pilih Tujuan Saat Pelanggan Men-Tap / Scan Barcode:</span>
     <div class="mode-grid">
       <label class="mode-card active" id="card-review">
         <input type="radio" name="target-mode" value="review" checked />
@@ -671,7 +852,7 @@
       <div class="info-callout">
         <span class="info-callout-icon">i</span>
         <span id="callout-text">
-          <strong>Smart Rating Filter Aktif:</strong> Pelanggan yang mengisi bintang 1–3 otomatis diarahkan ke WhatsApp Anda, sedangkan bintang 4–5 otomatis diarahkan untuk memposting ulasan ke Google Maps!
+          <strong>Smart Rating Filter Aktif:</strong> Pelanggan yang mengisi bintang 1–3 otomatis diarahkan ke WhatsApp Anda, sedangkan bintang 4–5 otomatis diarahkan ke Google Maps!
         </span>
       </div>
     </div>
@@ -699,14 +880,21 @@
     </div>
   </div>
 
+  <!-- Tombol 1: Tulis NFC + Update Barcode Cloud -->
   <button id="activate-btn" disabled>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
       <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
       <path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/>
     </svg>
-    <span>Aktifkan Kartu NFC Sekarang</span>
+    <span>Aktifkan Kartu NFC &amp; Update Barcode</span>
   </button>
+
+  <!-- Tombol 2: Update Barcode / Cloud saja tanpa tempel kartu (Bisa dari iPhone / PC!) -->
+  <button id="cloud-only-btn" type="button" disabled>
+    🔄 Update Lokasi Barcode / Kartu Saja (Tanpa Tempel NFC)
+  </button>
+
   <div id="status"></div>
 </div>
 
@@ -715,6 +903,15 @@
   let targetUrl = "";
   let debounceTimer = null;
   let searchController = null;
+  let cardCheckTimer = null;
+
+  const cardIdInput = document.getElementById("card-id-input");
+  const qrToggleBtn = document.getElementById("qr-toggle-btn");
+  const qrDrawer = document.getElementById("qr-drawer");
+  const qrImg = document.getElementById("qr-img");
+  const qrUrlText = document.getElementById("qr-url-text");
+  const qrDlBtn = document.getElementById("qr-dl-btn");
+  const currentCardStatus = document.getElementById("current-card-status");
 
   const storeInput = document.getElementById("store-input");
   const waInput = document.getElementById("wa-input");
@@ -739,7 +936,86 @@
   const otpSection = document.getElementById("otp-section");
   const otpDigits = Array.from(document.querySelectorAll(".otp-digit"));
   const activateBtn = document.getElementById("activate-btn");
+  const cloudOnlyBtn = document.getElementById("cloud-only-btn");
   const statusBox = document.getElementById("status");
+
+  // --- Inisialisasi ID Kartu dari URL ?card=... ---
+  const initParams = new URLSearchParams(window.location.search);
+  if (initParams.get("card")) {
+    cardIdInput.value = initParams.get("card").trim().toUpperCase();
+  }
+
+  function getCleanCardId() {
+    return cardIdInput.value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+  }
+
+  function getDynamicCardUrl() {
+    const id = getCleanCardId() || "001";
+    return `${window.location.origin}/c/${encodeURIComponent(id)}`;
+  }
+
+  function updateQrPreview() {
+    const dynUrl = getDynamicCardUrl();
+    qrUrlText.textContent = dynUrl;
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=12&data=${encodeURIComponent(dynUrl)}`;
+  }
+
+  async function checkExistingCard() {
+    const id = getCleanCardId();
+    if (!id) {
+      currentCardStatus.style.display = "none";
+      return;
+    }
+    try {
+      const res = await fetch(`/api/card?id=${encodeURIComponent(id)}`);
+      if (!res.ok) {
+        currentCardStatus.style.display = "block";
+        currentCardStatus.innerHTML = `🆕 ID Kartu <strong>${id}</strong> belum pernah diaktifkan. Pilih toko di bawah untuk mengaktifkannya.`;
+        return;
+      }
+      const data = await res.json();
+      if (data.found && data.card) {
+        currentCardStatus.style.display = "block";
+        currentCardStatus.innerHTML = `✅ Kartu <strong>${id}</strong> saat ini aktif ke: <strong>${data.card.storeName || "Toko"}</strong>. Pilih toko baru di bawah jika ingin mengganti lokasinya tanpa print ulang barcode.`;
+      }
+    } catch {
+      currentCardStatus.style.display = "none";
+    }
+  }
+
+  updateQrPreview();
+  checkExistingCard();
+
+  cardIdInput.addEventListener("input", () => {
+    updateQrPreview();
+    clearTimeout(cardCheckTimer);
+    cardCheckTimer = setTimeout(checkExistingCard, 400);
+  });
+
+  qrToggleBtn.addEventListener("click", () => {
+    const isHidden = qrDrawer.style.display !== "block";
+    qrDrawer.style.display = isHidden ? "block" : "none";
+    qrToggleBtn.textContent = isHidden ? "🔼 Tutup Barcode" : "📱 Lihat Barcode QR";
+    if (isHidden) updateQrPreview();
+  });
+
+  qrDlBtn.addEventListener("click", async () => {
+    const id = getCleanCardId() || "001";
+    try {
+      const response = await fetch(qrImg.src);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `QR-KARTU-${id}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(qrImg.src, "_blank");
+    }
+  });
 
   function getSelectedMode() {
     const checked = document.querySelector('input[name="target-mode"]:checked');
@@ -781,16 +1057,16 @@
       targetUrl = buildSmartRateUrl(selectedPlace);
       previewBadge.textContent = "Siap Diaktifkan: Mode Smart Rating (Filter WA & Google)";
       calloutText.innerHTML =
-        "<strong>Smart Rating Filter Aktif:</strong> Saat kartu di-tap, pelanggan masuk ke halaman rating toko Anda dulu. Rating 1–3 otomatis diarahkan ke WhatsApp, sedangkan 4–5 langsung diarahkan ke Google Review!";
+        "<strong>Smart Rating &amp; Barcode Dinamis Aktif:</strong> Saat kartu di-tap atau Barcode di-scan, rating 1–3 otomatis ke WhatsApp dan 4–5 langsung ke Google Review!";
     } else {
       targetUrl = selectedPlace.mapsUrl;
       previewBadge.textContent = "Siap Diaktifkan: Mode Profil Google Maps";
       calloutText.innerHTML =
-        "<strong>Navigasi &amp; Profil Instan:</strong> Begitu kartu disentuhkan ke HP pelanggan, aplikasi Google Maps langsung menampilkan titik lokasi, jam buka, foto &amp; profil lengkap bisnis Anda.";
+        "<strong>Navigasi &amp; Profil Instan:</strong> Saat kartu di-tap atau Barcode di-scan, aplikasi Google Maps langsung menampilkan profil lengkap bisnis Anda.";
     }
   }
 
-  // --- Logika 8 Kotak OTP (auto-next, backspace, dan paste 8 angka sekaligus) ---
+  // --- Logika 8 Kotak OTP ---
   function getOtpCode() {
     return otpDigits.map((el) => el.value.replace(/\D/g, "")).join("");
   }
@@ -802,7 +1078,9 @@
 
   function updateButtonState() {
     const code = getOtpCode();
-    activateBtn.disabled = !selectedPlace || code.length !== 8;
+    const ready = Boolean(selectedPlace && code.length === 8);
+    activateBtn.disabled = !ready;
+    cloudOnlyBtn.disabled = !ready;
   }
 
   otpDigits.forEach((box, idx) => {
@@ -879,6 +1157,7 @@
     previewAddr.textContent = place.address || "Indonesia";
     previewBox.style.display = "block";
     otpSection.style.display = "block";
+    cloudOnlyBtn.style.display = "inline-flex";
 
     updateTargetUrl();
     updateButtonState();
@@ -1006,7 +1285,65 @@
     statusBox.textContent = text;
   }
 
-  // Verifikasi OTP 8 angka lalu tulis ke Kartu NFC via Google Chrome
+  async function verifyAndSaveCloud(otpCode) {
+    updateTargetUrl();
+    const cardId = getCleanCardId() || "001";
+    const res = await fetch("/api/card", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: otpCode,
+        cardId,
+        targetUrl,
+        storeName: selectedPlace.title,
+        mode: getSelectedMode(),
+        placeId: selectedPlace.placeId || "",
+        cid: selectedPlace.cid || "",
+        wa: normalizeWaNumber(waInput.value),
+        address: selectedPlace.address || "",
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.valid) {
+      throw new Error(data.error || "Kode lisensi tidak valid atau sudah melewati batas 5 menit.");
+    }
+    return data;
+  }
+
+  // Tombol Update Lokasi Barcode / Kartu Saja (Tanpa Tempel NFC — Bisa dari iPhone / Laptop!)
+  cloudOnlyBtn.addEventListener("click", async () => {
+    dropdown.style.display = "none";
+    const otpCode = getOtpCode();
+    if (otpCode.length !== 8) {
+      showStatus("#fdecea", "#b71c1c", "Masukkan 8 digit Kode Lisensi Aktivasi terlebih dahulu.");
+      return;
+    }
+    if (getSelectedMode() === "review" && !normalizeWaNumber(waInput.value)) {
+      waInput.focus();
+      showStatus("#fff8e1", "#b45309", "💬 Masukkan Nomor WhatsApp terlebih dahulu agar masukan bintang 1–3 dapat dikirim ke WhatsApp Anda.");
+      return;
+    }
+
+    activateBtn.disabled = true;
+    cloudOnlyBtn.disabled = true;
+    showStatus("#e8f0fe", "#174ea6", "☁️ Memverifikasi lisensi & meng-update tujuan Barcode/Kartu di Cloud...");
+
+    try {
+      const saved = await verifyAndSaveCloud(otpCode);
+      clearOtpBoxes();
+      checkExistingCard();
+      showStatus(
+        "#e8f5e9",
+        "#1b5e20",
+        `🎉 Berhasil! Barcode QR & Link Kartu (${saved.cardId}) sekarang otomatis mengarah ke "${selectedPlace.title}" tanpa perlu print ulang barcode!`
+      );
+    } catch (err) {
+      showStatus("#fdecea", "#b71c1c", "❌ " + err.message);
+      updateButtonState();
+    }
+  });
+
+  // Tombol Utama: Update Cloud Barcode + Tulis Link Dinamis ke Chip Kartu NFC
   activateBtn.addEventListener("click", async () => {
     dropdown.style.display = "none";
     const otpCode = getOtpCode();
@@ -1023,53 +1360,48 @@
     }
 
     activateBtn.disabled = true;
-    showStatus("#e8f0fe", "#174ea6", "🔐 Memverifikasi kode lisensi aktivasi Anda...");
+    cloudOnlyBtn.disabled = true;
+    showStatus("#e8f0fe", "#174ea6", "🔐 Memverifikasi kode lisensi & menyimpan lokasi ke Barcode Dinamis...");
 
     try {
-      const verifyRes = await fetch("/api/otp/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: otpCode })
-      });
-      const verifyData = await verifyRes.json();
-
-      if (!verifyRes.ok || !verifyData.valid) {
-        showStatus("#fdecea", "#b71c1c", "❌ " + (verifyData.error || "Kode lisensi tidak valid atau sudah melewati batas 5 menit."));
-        updateButtonState();
-        return;
-      }
-    } catch {
-      showStatus("#fdecea", "#b71c1c", "Tidak dapat terhubung ke server lisensi. Pastikan internet Anda aktif lalu coba lagi.");
+      await verifyAndSaveCloud(otpCode);
+    } catch (err) {
+      showStatus("#fdecea", "#b71c1c", "❌ " + err.message);
       updateButtonState();
       return;
     }
 
     if (!("NDEFReader" in window)) {
-      showStatus("#fdecea", "#b71c1c", "Perangkat ini belum mendukung penulisan NFC. Buka halaman ini menggunakan Google Chrome di HP Android dengan fitur NFC menyala.");
-      updateButtonState();
-      return;
-    }
-
-    updateTargetUrl();
-
-    try {
-      const ndef = new NDEFReader();
-      showStatus("#fff8e1", "#e65100", "📡 Kode lisensi terverifikasi! Tempelkan & tahan kartu NFC di punggung HP Anda selama 2 detik (jangan digeser)...");
-
-      await ndef.write({
-        records: [{ recordType: "url", data: targetUrl }]
-      });
-
       clearOtpBoxes();
+      checkExistingCard();
       showStatus(
         "#e8f5e9",
         "#1b5e20",
-        "🎉 Kartu NFC Resmi Aktif! Bisnis \"" + selectedPlace.title + "\" kini sudah terhubung ke " +
-          (getSelectedMode() === "review" ? "Halaman Smart Rating (1–3 ke WhatsApp, 4–5 ke Google Review)" : "Profil Google Maps") +
-          ". Tutup Chrome, lalu coba tap kartu ke HP Anda untuk merasakan hasilnya!"
+        `✅ Lokasi Barcode QR (${getCleanCardId() || "001"}) berhasil di-update ke "${selectedPlace.title}"! (Catatan: Untuk menulis ke chip fisik NFC gunakan Chrome Android, tapi Barcode QR Anda sudah langsung aktif sekarang).`
+      );
+      return;
+    }
+
+    // Tulis Link Dinamis (/c/ID) ke chip NFC agar ke depannya ganti toko cukup lewat Cloud tanpa tap ulang pun bisa!
+    const nfcUrlToWrite = getDynamicCardUrl();
+
+    try {
+      const ndef = new NDEFReader();
+      showStatus("#fff8e1", "#e65100", "📡 Barcode Cloud sudah ter-update! Sekarang tempelkan & tahan kartu NFC di punggung HP Anda selama 2 detik...");
+
+      await ndef.write({
+        records: [{ recordType: "url", data: nfcUrlToWrite }]
+      });
+
+      clearOtpBoxes();
+      checkExistingCard();
+      showStatus(
+        "#e8f5e9",
+        "#1b5e20",
+        `🎉 Kartu NFC & Barcode Dinamis (${getCleanCardId() || "001"}) Resmi Aktif untuk "${selectedPlace.title}"! Ke depannya Anda bisa ganti toko tanpa perlu print ulang barcode.`
       );
     } catch (error) {
-      showStatus("#fdecea", "#b71c1c", "Proses penulisan terputus (" + error.message + "). Pastikan kartu ditempelkan rata dan ditahan 2 detik.");
+      showStatus("#fdecea", "#b71c1c", "Barcode Cloud sudah ter-update, namun penulisan chip NFC terputus (" + error.message + "). Tempelkan kartu rata dan coba lagi.");
       updateButtonState();
     }
   });

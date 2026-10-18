@@ -4,6 +4,7 @@
   "outputDirectory": "public",
   "cleanUrls": true,
   "rewrites": [
+    { "source": "/c/:id", "destination": "/api/go?id=:id" },
     { "source": "/otp", "destination": "/otp.html" },
     { "source": "/rate", "destination": "/rate.html" },
     { "source": "/admin", "destination": "/admin.html" }

@@ -597,9 +597,14 @@
           <h2>🔒 Kunci Stiker Barcode ke Fisik Kartu NFC (Scan &rarr; Tap NFC)</h2>
           <p>Sudah menempelkan stiker QR ke fisik kartu? Scan stiker pada kartu tersebut menggunakan kamera, lalu tekan tombol konfirmasi sambil menempelkan kartu ke HP Anda untuk mengunci <strong>Barcode ID</strong>-nya.</p>
         </div>
-        <button type="button" class="btn-scan-lock" id="toggle-scan-lock-btn">
-          📷 Scan Stiker Kartu &amp; Kunci NFC
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button type="button" class="btn-scan-lock" id="toggle-scan-lock-btn">
+            📷 Scan Stiker Kartu &amp; Kunci NFC
+          </button>
+          <button type="button" class="btn btn-outline" id="btn-verify-card" style="background:#ffffff;color:#0f172a;border-color:#cbd5e1;font-weight:700;">
+            🔍 Tes / Baca Isi Kartu NFC
+          </button>
+        </div>
       </div>
 
       <div class="scanner-drawer" id="scanner-drawer">
@@ -966,6 +971,46 @@
       `;
       btnExecuteLock.disabled = false;
       btnExecuteLock.textContent = `📡 COBA LAGI: KLIK & TEMPEL KARTU (${cardId})`;
+    }
+  });
+
+  const btnVerifyCard = document.getElementById("btn-verify-card");
+  btnVerifyCard.addEventListener("click", async () => {
+    if (!("NDEFReader" in window)) {
+      alert("Fitur tes kartu NFC langsung memerlukan browser Google Chrome di HP Android.");
+      return;
+    }
+    try {
+      btnVerifyCard.disabled = true;
+      btnVerifyCard.textContent = "📡 Tempelkan Kartu ke Punggung HP...";
+      const ndef = new NDEFReader();
+      await ndef.scan();
+      ndef.onreading = (event) => {
+        btnVerifyCard.disabled = false;
+        btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
+        for (const record of event.message.records) {
+          if (record.recordType === "url") {
+            const decoder = new TextDecoder();
+            const urlStr = decoder.decode(record.data);
+            const token = extractCardIdFromQr(urlStr);
+            if (token) {
+              const found = allCards.find((c) => c.cardId === token);
+              lastLockedCardId = token;
+              renderCards();
+              const rowEl = document.querySelector("tr.highlight-row");
+              if (rowEl) rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
+
+              alert(`✅ KARTU FISIK TERBACA!\n\nBarcode ID: ${token}\nStatus: ${found?.isUsed ? "🟢 Sudah Digunakan Customer" : found?.nfcLinked ? "🔵 Terkunci di Kartu (Siap Jual)" : "🟡 Belum Dikunci"}\nToko: ${found?.storeName || "(Masih Kosong / Siap Diisi)"}\nNo. WA: ${found?.wa || "-"}`);
+              return;
+            }
+          }
+        }
+        alert("Kartu terdeteksi namun tidak berisi link Barcode ID yang valid.");
+      };
+    } catch (err) {
+      btnVerifyCard.disabled = false;
+      btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
+      alert("Gagal membaca NFC: " + err.message);
     }
   });
 

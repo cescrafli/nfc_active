@@ -173,7 +173,8 @@ export async function listAllCardsFromRedis() {
   cards.sort((a, b) => {
     const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
     const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
-    return tB - tA;
+    if (tB !== tA) return tB - tA;
+    return String(a.cardId || "").localeCompare(String(b.cardId || ""));
   });
 
   return cards;
@@ -250,13 +251,14 @@ export default async (req) => {
       // 2. Generate stok barcode baru & simpan ke database
       if (body.adminAction === "generate") {
         const qty = Math.max(1, Math.min(50, Number(body.qty) || 6));
-        const nowIso = new Date().toISOString();
+        const baseNow = Date.now();
         const cmds = [];
         const createdIds = [];
 
         for (let i = 0; i < qty; i++) {
           const id = generateSecretCardToken();
           createdIds.push(id);
+          const nowIso = new Date(baseNow + i).toISOString();
           const payload = JSON.stringify({
             cardId: id,
             nfcLinked: false,

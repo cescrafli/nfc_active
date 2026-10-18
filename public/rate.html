@@ -265,30 +265,57 @@
 
 <script>
   const params = new URLSearchParams(window.location.search);
-  const storeName = (params.get("n") || "Kami").trim();
-  const placeId = (params.get("p") || "").trim();
-  const cid = (params.get("c") || "").trim();
+  let currentStoreName = (params.get("n") || "Kami").trim();
+  let currentPlaceId = (params.get("p") || "").trim();
+  let currentCid = (params.get("c") || "").trim();
   let rawWa = (params.get("w") || "").replace(/\D/g, "");
   if (rawWa.startsWith("0")) rawWa = "62" + rawWa.slice(1);
   else if (rawWa.startsWith("8")) rawWa = "62" + rawWa;
   const cardToken = (params.get("card") || "").trim();
 
-  document.getElementById("store-title").textContent = storeName;
+  document.getElementById("store-title").textContent = currentStoreName;
 
   if (cardToken) {
     const editWrap = document.getElementById("owner-edit-wrap");
     const editLink = document.getElementById("owner-edit-link");
     editWrap.style.display = "block";
     editLink.href = `/?card=${encodeURIComponent(cardToken)}`;
+
+    // Sinkronisasi Live: Cek apakah kartu di database sudah dipindah cabang atau diganti ke Mode Maps
+    fetch(`/api/card?id=${encodeURIComponent(cardToken)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data || !data.found || !data.card) return;
+        const c = data.card;
+
+        // Jika pemilik telah mengubah mode ke 'maps', redirect langsung ke profil Google Maps
+        if (c.mode === "maps" && c.targetUrl) {
+          window.location.replace(c.targetUrl);
+          return;
+        }
+
+        if (c.storeName) {
+          currentStoreName = c.storeName;
+          document.getElementById("store-title").textContent = c.storeName;
+        }
+        if (c.wa) rawWa = c.wa;
+        if (c.placeId) currentPlaceId = c.placeId;
+        if (c.cid) currentCid = c.cid;
+        updateGoogleReviewLink();
+      })
+      .catch(() => {});
   }
 
-  const googleReviewUrl = placeId
-    ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`
-    : cid
-      ? `https://www.google.com/maps?cid=${encodeURIComponent(cid)}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(storeName)}`;
-
-  document.getElementById("manual-google-link").href = googleReviewUrl;
+  let currentGoogleReviewUrl = "";
+  function updateGoogleReviewLink() {
+    currentGoogleReviewUrl = currentPlaceId
+      ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(currentPlaceId)}`
+      : currentCid
+        ? `https://www.google.com/maps?cid=${encodeURIComponent(currentCid)}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentStoreName)}`;
+    document.getElementById("manual-google-link").href = currentGoogleReviewUrl;
+  }
+  updateGoogleReviewLink();
 
   const captions = {
     1: "😞 Sangat Kurang Puas (1/5)",
@@ -309,6 +336,25 @@
   const feedbackText = document.getElementById("feedback-text");
   const submitBtn = document.getElementById("submit-btn");
 
+  function resetStarsAndBox() {
+    if (redirectTimer) {
+      clearTimeout(redirectTimer);
+      redirectTimer = null;
+    }
+    currentStar = 0;
+    starBtns.forEach((b) => b.classList.remove("active"));
+    ratingCaption.textContent = "Pilih 1 sampai 5 bintang";
+    redirectBox.style.display = "none";
+    formArea.style.display = "none";
+  }
+
+  // Reset tampilan saat browser kembali via tombol Back (bfcache)
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) {
+      resetStarsAndBox();
+    }
+  });
+
   starBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       if (redirectTimer) {
@@ -327,11 +373,11 @@
         redirectBox.style.display = "none";
         formArea.style.display = "block";
       } else {
-        // Bintang 4 - 5 -> Langsung arahkan ke Google Maps Review (Opsi A)
+        // Bintang 4 - 5 -> Langsung arahkan ke Google Maps Review
         formArea.style.display = "none";
         redirectBox.style.display = "block";
         redirectTimer = setTimeout(() => {
-          window.location.href = googleReviewUrl;
+          window.location.href = currentGoogleReviewUrl;
         }, 300);
       }
     });
@@ -349,7 +395,7 @@
     const sender = custName.value.trim();
     const starsStr = "⭐".repeat(currentStar) + ` (${currentStar}/5)`;
     const waLines = [
-      `Halo Admin *${storeName}*, saya ingin memberikan masukan layanan:`,
+      `Halo Admin *${currentStoreName}*, saya ingin memberikan masukan layanan:`,
       ``,
       `*Rating:* ${starsStr}`,
       sender ? `*Nama:* ${sender}` : null,

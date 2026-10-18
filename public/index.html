@@ -1107,6 +1107,21 @@
         currentCardStatus.style.color = "#166534";
         currentCardStatus.innerHTML = `✅ <strong>Kartu Aktif Terdeteksi!</strong> Terhubung ke: <strong>${escapeHtml(data.card.storeName || "Toko")}</strong>.<br>Seluruh data toko &amp; mode Anda saat ini sudah dimuat di bawah. Anda bisa langsung mengubah Mode, No. WA, atau memilih toko baru.`;
 
+        if (data.card.wa) {
+          waInput.value = data.card.wa;
+        }
+        if (data.card.mode) {
+          applyModeRadio(data.card.mode);
+        }
+
+        const realMapsUrl = data.card.cid
+          ? `https://www.google.com/maps?cid=${encodeURIComponent(data.card.cid)}`
+          : data.card.placeId
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.card.storeName)}&query_place_id=${encodeURIComponent(data.card.placeId)}`
+            : (data.card.mode === "maps" && data.card.targetUrl)
+              ? data.card.targetUrl
+              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.card.storeName)}`;
+
         // Pre-fill data toko yang sedang aktif ke dalam form
         storeInput.value = data.card.storeName || "";
         selectPlace({
@@ -1114,18 +1129,13 @@
           address: data.card.address || "Indonesia",
           placeId: data.card.placeId || "",
           cid: data.card.cid || "",
-          mapsUrl: data.card.targetUrl || (data.card.cid ? `https://www.google.com/maps?cid=${data.card.cid}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.card.storeName)}`),
+          mapsUrl: realMapsUrl,
           category: "",
           rating: null,
         });
 
-        if (data.card.wa) {
-          waInput.value = data.card.wa;
-        }
-        if (data.card.mode) {
-          applyModeRadio(data.card.mode);
-        }
         updatePinUiMode(data.hasPin, true);
+        updateTargetUrl();
       } else {
         updatePinUiMode(data.hasPin, false);
         currentCardStatus.style.display = "block";
@@ -1412,6 +1422,14 @@
     const q = storeInput.value.trim();
     searchCheck.classList.remove("visible");
     clearTimeout(debounceTimer);
+
+    // Reset selectedPlace jika user mulai mengetik nama baru agar tidak tersimpan toko lama
+    if (selectedPlace && selectedPlace.title !== q) {
+      selectedPlace = null;
+      targetUrl = "";
+      previewBox.style.display = "none";
+      updateButtonState();
+    }
 
     if (q.length < 3) {
       dropdown.style.display = "none";

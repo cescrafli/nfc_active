@@ -286,13 +286,11 @@
     cardSyncPromise = fetch(`/api/card?id=${encodeURIComponent(cardToken)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!data) return;
-        // Jika kartu telah dikosongkan oleh Admin (Siap Diaktifkan Ulang), arahkan ke halaman aktivasi
-        if (data.existsInStock && !data.found) {
+        if (!data || !data.found || !data.card) {
+          // Jika kartu telah dikosongkan atau dihapus oleh Admin, arahkan ke halaman aktivasi
           window.location.replace(`/?card=${encodeURIComponent(cardToken)}`);
           return;
         }
-        if (!data.found || !data.card) return;
         const c = data.card;
 
         // Jika pemilik telah mengubah mode ke 'maps', redirect langsung ke profil Google Maps
@@ -306,8 +304,8 @@
           document.getElementById("store-title").textContent = c.storeName;
         }
         if (c.wa) rawWa = c.wa;
-        if (c.placeId) currentPlaceId = c.placeId;
-        if (c.cid) currentCid = c.cid;
+        currentPlaceId = c.placeId || "";
+        currentCid = c.cid || "";
         updateGoogleReviewLink();
       })
       .catch(() => {});

@@ -705,9 +705,14 @@
         💳 Kartu / Barcode Anda:
         <span class="id-pill" id="detected-id-badge">Belum Terdeteksi</span>
       </span>
-      <button type="button" id="toggle-manual-id-btn" style="background:none;border:none;color:#2563eb;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;">
-        ⌨️ Ketik Kode ID
-      </button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button type="button" id="reset-card-id-btn" style="display:none;background:none;border:none;color:#dc2626;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;">
+          🔄 Ganti Kartu
+        </button>
+        <button type="button" id="toggle-manual-id-btn" style="background:none;border:none;color:#2563eb;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;">
+          ⌨️ Ketik Kode ID
+        </button>
+      </div>
     </div>
 
     <div class="detect-actions">
@@ -902,6 +907,7 @@
 
   const cardIdInput = document.getElementById("card-id-input");
   const detectedIdBadge = document.getElementById("detected-id-badge");
+  const resetCardIdBtn = document.getElementById("reset-card-id-btn");
   const currentCardStatus = document.getElementById("current-card-status");
   const scanQrBtn = document.getElementById("scan-qr-btn");
   const readNfcBtn = document.getElementById("read-nfc-btn");
@@ -1013,6 +1019,25 @@
     applyDetectedCardToken(val);
   });
 
+  resetCardIdBtn.addEventListener("click", () => {
+    cardIdInput.value = "";
+    manualIdInput.value = "";
+    try { localStorage.removeItem("nfc_secret_card_token"); } catch {}
+    window.history.replaceState(null, "", "/");
+    selectedPlace = null;
+    originalCardData = null;
+    previewBox.style.display = "none";
+    modeSection.style.display = "none";
+    waBox.style.display = "none";
+    otpSection.style.display = "none";
+    searchCheck.classList.remove("visible");
+    storeInput.value = "";
+    waInput.value = "";
+    clearPinBoxes();
+    resetCardIdBtn.style.display = "none";
+    checkExistingCard();
+  });
+
   manualIdInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") applyManualIdBtn.click();
   });
@@ -1064,6 +1089,7 @@
     const id = getCleanCardId();
     if (!id) {
       cardExistsInStock = false;
+      resetCardIdBtn.style.display = "none";
       detectedIdBadge.textContent = "Belum Terdeteksi";
       detectedIdBadge.style.background = "#fef3c7";
       detectedIdBadge.style.color = "#b45309";
@@ -1083,6 +1109,7 @@
 
       if (!data.existsInStock) {
         cardExistsInStock = false;
+        resetCardIdBtn.style.display = "none";
         try { localStorage.removeItem("nfc_secret_card_token"); } catch {}
         detectedIdBadge.textContent = "Tidak Terdaftar";
         detectedIdBadge.style.background = "#fef2f2";
@@ -1098,6 +1125,7 @@
       }
 
       cardExistsInStock = true;
+      resetCardIdBtn.style.display = "inline-block";
       detectedIdBadge.textContent = `ID: ${id}`;
       detectedIdBadge.style.background = "#dbeafe";
       detectedIdBadge.style.color = "#1e40af";
@@ -1108,6 +1136,8 @@
           storeName: data.card.storeName || "",
           mode: data.card.mode || "review",
           wa: normalizeWaNumber(data.card.wa || ""),
+          placeId: data.card.placeId || "",
+          cid: data.card.cid || "",
         };
 
         currentCardStatus.style.display = "block";
@@ -1280,6 +1310,7 @@
     radio.addEventListener("change", () => {
       applyModeRadio(getSelectedMode());
       updateTargetUrl();
+      updateButtonState();
     });
   });
 
@@ -1332,9 +1363,15 @@
     // Cek apakah ada perubahan belum disimpan jika kartu sudah aktif
     if (cardIsUsed && originalCardData) {
       const curStore = selectedPlace ? selectedPlace.title : "";
+      const curPlaceId = selectedPlace ? (selectedPlace.placeId || "") : "";
+      const curCid = selectedPlace ? (selectedPlace.cid || "") : "";
       const curMode = getSelectedMode();
       const curWa = normalizeWaNumber(waInput.value);
-      const isDirty = (curStore && curStore !== originalCardData.storeName) || (curMode !== originalCardData.mode) || (curWa !== originalCardData.wa);
+      const isDirty = (curStore && curStore !== originalCardData.storeName) ||
+                      (curPlaceId !== (originalCardData.placeId || "")) ||
+                      (curCid !== (originalCardData.cid || "")) ||
+                      (curMode !== originalCardData.mode) ||
+                      (curWa !== originalCardData.wa);
 
       if (isDirty) {
         currentCardStatus.style.display = "block";
@@ -1342,6 +1379,12 @@
         currentCardStatus.style.borderColor = "#fde68a";
         currentCardStatus.style.color = "#92400e";
         currentCardStatus.innerHTML = `⚠️ <strong>Perubahan Belum Disimpan:</strong> Anda telah mengubah data toko / mode / WhatsApp. Masukkan 4 angka password Anda di bawah lalu klik tombol Simpan.`;
+      } else {
+        currentCardStatus.style.display = "block";
+        currentCardStatus.style.background = "#f0fdf4";
+        currentCardStatus.style.borderColor = "#bbf7d0";
+        currentCardStatus.style.color = "#166534";
+        currentCardStatus.innerHTML = `✅ <strong>Kartu Aktif Terdeteksi!</strong> Terhubung ke: <strong>${escapeHtml(originalCardData.storeName || "Toko")}</strong>.<br>Seluruh data toko &amp; mode Anda saat ini sudah dimuat di bawah. Anda bisa langsung mengubah Mode, No. WA, atau memilih toko baru.`;
       }
     }
 

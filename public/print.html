@@ -1186,6 +1186,7 @@
       `;
     }
 
+    btnExecuteLock.disabled = false;
     btnExecuteLock.style.display = "inline-flex";
     btnExecuteLock.textContent = `📡 KLIK DI SINI & TEMPEL KARTU (${cardId})`;
     scanNextCardBtn.style.display = "none";
@@ -1212,6 +1213,7 @@
           lockStepStatus.style.background = "#f0fdf4";
           lockStepStatus.style.borderColor = "#86efac";
           lockStepStatus.innerHTML = `✅ Barcode ID <code>${escapeHtml(cardId)}</code> berhasil ditandai sebagai Terkunci di Database.`;
+          btnExecuteLock.disabled = false;
           btnExecuteLock.style.display = "none";
           scanNextCardBtn.style.display = "inline-flex";
         } catch (err) {
@@ -1249,6 +1251,7 @@
         <strong>🎉 BERHASIL TERKUNCI! (ID: <code>${escapeHtml(cardId)}</code>)</strong><br>
         Chip NFC dan Stiker Barcode pada kartu ini sudah sinkron dan berstatus <strong>🔵 Siap Jual</strong>!
       `;
+      btnExecuteLock.disabled = false;
       btnExecuteLock.style.display = "none";
       scanNextCardBtn.style.display = "inline-flex";
     } catch (err) {
@@ -1325,6 +1328,10 @@
   });
 
   toggleScanLockBtn.addEventListener("click", async () => {
+    if (activeNfcController) {
+      activeNfcController.abort();
+      activeNfcController = null;
+    }
     if (scannerDrawer.style.display === "block") {
       await stopAdminQrScanner();
       scannerDrawer.style.display = "none";
@@ -1334,11 +1341,20 @@
   });
 
   closeScanLockBtn.addEventListener("click", async () => {
+    if (activeNfcController) {
+      activeNfcController.abort();
+      activeNfcController = null;
+    }
     await stopAdminQrScanner();
     scannerDrawer.style.display = "none";
   });
 
   scanNextCardBtn.addEventListener("click", async () => {
+    if (activeNfcController) {
+      activeNfcController.abort();
+      activeNfcController = null;
+    }
+    btnExecuteLock.disabled = false;
     await startAdminQrScanner();
   });
 
@@ -1406,45 +1422,12 @@
     });
   }
 
-  function renderPrintSheet(cardsToPrint) {
-    printSheet.replaceChildren();
-    cardsToPrint.forEach((item) => {
-      const secretToken = item.cardId;
-      const dynamicUrl = `${window.location.origin}/c/${secretToken}`;
-      const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
-
-      const printCard = document.createElement("div");
-      printCard.className = "print-qr-card";
-      printCard.innerHTML = `
-        <span class="badge">SCAN UNTUK ULASAN</span>
-        <img src="${qrImgUrl}" alt="QR Code" />
-        <div class="title">Tap NFC atau Scan QR</div>
-        <div class="sub">Beri Penilaian &amp; Review Kami</div>
-        <span class="id-tag">ID: ${escapeHtml(secretToken)}</span>
-      `;
-      printSheet.appendChild(printCard);
-    });
-  }
-
-  // Print dengan menunggu semua gambar QR selesai termuat untuk mencegah hasil cetak kosong
-  async function safePrintCards(cardsToPrint) {
-    renderPrintSheet(cardsToPrint);
-    const imgs = Array.from(printSheet.querySelectorAll("img"));
-    await Promise.all(
-      imgs.map((img) => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = img.onerror = resolve;
-        });
-      })
-    );
-    window.print();
-  }
-
   window.addEventListener("afterprint", () => {
-    const s = document.getElementById("dynamic-print-page-style");
-    if (s) s.remove();
-    renderPrintSheet(getFilteredCards());
+    if (pdfPreviewModal.style.display !== "flex") {
+      const s = document.getElementById("dynamic-print-page-style");
+      if (s) s.remove();
+      printSheet.replaceChildren();
+    }
   });
 
   printBtn.addEventListener("click", () => {
@@ -1620,6 +1603,9 @@
 
   function closeBulkModal() {
     pdfPreviewModal.style.display = "none";
+    const s = document.getElementById("dynamic-print-page-style");
+    if (s) s.remove();
+    printSheet.replaceChildren();
   }
 
   btnOpenBulkModal.addEventListener("click", openBulkModal);
@@ -1632,6 +1618,30 @@
   modalPaperSize.addEventListener("change", () => renderSheetCanvas());
   modalOrientation.addEventListener("change", () => renderSheetCanvas());
   modalColumns.addEventListener("change", () => renderSheetCanvas());
+
+  async function loadQrImageWithRetry(cardId, dynamicUrl, maxAttempts = 3) {
+    if (qrImageCache.has(cardId)) return qrImageCache.get(cardId);
+    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const img = await new Promise((resolve, reject) => {
+          const image = new Image();
+          image.crossOrigin = "anonymous";
+          image.onload = () => resolve(image);
+          image.onerror = () => reject(new Error("Gagal"));
+          image.src = qrImgUrl;
+        });
+        qrImageCache.set(cardId, img);
+        return img;
+      } catch {
+        if (attempt < maxAttempts) {
+          await new Promise((r) => setTimeout(r, 300 * attempt));
+        }
+      }
+    }
+    return null;
+  }
 
   // Render Pratinjau Kertas 1 Halaman ke Canvas
   async function renderSheetCanvas() {
@@ -1652,8 +1662,9 @@
     const paperW = isLandscape ? spec.heightMm : spec.widthMm;
     const paperH = isLandscape ? spec.widthMm : spec.heightMm;
 
-    const marginMm = 8;
-    const gapMm = 3;
+    // Margin & Jarak antarsel adaptif agar muat banyak di 1 kertas
+    const marginMm = N > 30 ? 4 : N > 16 ? 6 : 8;
+    const gapMm = N > 30 ? 1.5 : N > 16 ? 2 : 3;
     const usableW = paperW - (marginMm * 2);
     const usableH = paperH - (marginMm * 2);
 
@@ -1670,7 +1681,7 @@
         const r = Math.ceil(N / c);
         const cellW = (usableW - ((c - 1) * gapMm)) / c;
         const cellH = (usableH - ((r - 1) * gapMm)) / r;
-        if (cellW <= 10 || cellH <= 10) continue;
+        if (cellW <= 0 || cellH <= 0) continue;
 
         const fitW = Math.min(cellW, cellH * targetRatio);
         const fitH = fitW / targetRatio;
@@ -1689,8 +1700,15 @@
     const rows = Math.ceil(N / cols);
     const cellW = (usableW - ((cols - 1) * gapMm)) / cols;
     const cellH = (usableH - ((rows - 1) * gapMm)) / rows;
+    const qrSizeMm = Math.round((Math.min(cellW * 0.76, cellH * 0.48)) * 10) / 10;
 
-    modalGridInfo.textContent = `${N} Barcode • ${cols} Kolom × ${rows} Baris • Ukuran Sel: ~${Math.round(cellW)} × ${Math.round(cellH)} mm (1 Lembar Pas)`;
+    let scanWarning = "";
+    if (qrSizeMm < 14) {
+      scanWarning = ` • <span style="color:#b45309;">⚠️ QR ~${qrSizeMm} mm (disarankan A4/A3 agar mudah di-scan)</span>`;
+    }
+
+    modalGridInfo.className = "status-pill linked";
+    modalGridInfo.innerHTML = `${N} Barcode • ${cols} Kolom × ${rows} Baris • Stiker: ~${Math.round(cellW)}×${Math.round(cellH)} mm • QR: ~${qrSizeMm} mm${scanWarning}`;
 
     const dpiScale = 10; // 10 px per mm (~254 DPI)
     sheetCanvas.width = Math.round(paperW * dpiScale);
@@ -1702,7 +1720,7 @@
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
 
-    // Preload QR Code jika belum ada di cache
+    // Preload QR Code jika belum ada di cache dengan auto-retry
     const toFetch = selectedCards.filter((c) => !qrImageCache.has(c.cardId));
     if (toFetch.length > 0) {
       ctx.fillStyle = "#0f172a";
@@ -1713,22 +1731,32 @@
       await Promise.all(
         toFetch.map((item) => {
           const dynamicUrl = `${window.location.origin}/c/${item.cardId}`;
-          const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
-          return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => {
-              qrImageCache.set(item.cardId, img);
-              resolve();
-            };
-            img.onerror = () => resolve();
-            img.src = qrImgUrl;
-          });
+          return loadQrImageWithRetry(item.cardId, dynamicUrl, 3);
         })
       );
     }
 
     if (currentSession !== renderSessionId) return;
+
+    // Cek apakah ada QR yang gagal termuat
+    const failedCards = selectedCards.filter((c) => !qrImageCache.has(c.cardId));
+    if (failedCards.length > 0) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+      ctx.fillStyle = "#b91c1c";
+      ctx.font = `bold ${toPx(4.5)}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText(`⚠️ ${failedCards.length} QR gagal dimuat dari server karena koneksi / limit.`, sheetCanvas.width / 2, (sheetCanvas.height / 2) - toPx(4));
+      ctx.font = `${toPx(3.5)}px sans-serif`;
+      ctx.fillStyle = "#475569";
+      ctx.fillText("Klik tombol '🔄 Muat Ulang QR' di atas untuk mencoba kembali.", sheetCanvas.width / 2, (sheetCanvas.height / 2) + toPx(4));
+
+      modalGridInfo.className = "status-pill unlinked";
+      modalGridInfo.innerHTML = `⚠️ ${failedCards.length} QR Belum Termuat • <button type="button" id="btn-retry-qr" style="padding:2px 8px;border-radius:6px;border:1px solid #d97706;background:#fff;cursor:pointer;font-weight:700;color:#92400e;">🔄 Muat Ulang QR</button>`;
+      const retryBtn = document.getElementById("btn-retry-qr");
+      if (retryBtn) retryBtn.addEventListener("click", () => renderSheetCanvas());
+      return;
+    }
 
     // Gambar Ulang Kertas Bersih
     ctx.fillStyle = "#ffffff";
@@ -1794,12 +1822,6 @@
 
       if (qrImg) {
         ctx.drawImage(qrImg, centerX - (qrSize / 2), qrY, qrSize, qrSize);
-      } else {
-        ctx.fillStyle = "#f1f5f9";
-        ctx.fillRect(centerX - (qrSize / 2), qrY, qrSize, qrSize);
-        ctx.fillStyle = "#64748b";
-        ctx.font = `${Math.max(9, qrSize * 0.1)}px sans-serif`;
-        ctx.fillText("QR Code", centerX, qrY + (qrSize / 2), qrSize * 0.9);
       }
 
       // Judul & Subjudul
@@ -1936,7 +1958,6 @@
     const filtered = getFilteredCards();
 
     tableContainer.replaceChildren();
-    renderPrintSheet(filtered);
 
     if (filtered.length === 0) {
       const empty = document.createElement("div");
@@ -1993,9 +2014,11 @@
       let storeHtml = `<span style="color:#94a3b8;font-weight:600;">— Belum Diisi Customer —</span>`;
       if (item.isUsed) {
         const modeLabel = item.mode === "maps" ? "📍 Aplikasi Maps" : "⭐ Halaman Rating";
+        const addrHtml = item.address ? `<div style="font-size:11px;color:#64748b;margin-top:3px;max-width:260px;line-height:1.35;">📍 ${escapeHtml(item.address)}</div>` : "";
         storeHtml = `
           <div class="store-cell-title">🏪 ${escapeHtml(item.storeName || "Toko Aktif")}</div>
           <span class="mode-badge">${modeLabel}</span>
+          ${addrHtml}
         `;
       }
 
@@ -2008,9 +2031,12 @@
       }
 
       // PIN
-      const pinHtml = item.hasPin
-        ? `<span style="color:#166534;font-weight:700;">🔐 Aktif (4 Angka)</span>`
-        : `<span style="color:#94a3b8;">⚪ Belum Ada</span>`;
+      let pinHtml = `<span style="color:#94a3b8;">⚪ Belum Ada</span>`;
+      if (item.lockUntil && new Date(item.lockUntil).getTime() > Date.now()) {
+        pinHtml = `<span class="status-pill unlinked" style="background:#fef2f2;border-color:#fecaca;color:#b91c1c;" title="Kartu dikunci sementara karena salah PIN 5 kali berturut-turut">⏳ Terkunci (Salah PIN 5x)</span>`;
+      } else if (item.hasPin) {
+        pinHtml = `<span style="color:#166534;font-weight:700;">🔐 Aktif (4 Angka)</span>`;
+      }
 
       const tr = document.createElement("tr");
       if (lastLockedCardId && lastLockedCardId === secretToken) {

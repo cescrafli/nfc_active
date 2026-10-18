@@ -162,7 +162,7 @@ export async function listAllCardsFromRedis() {
         wa: normalizeWaNumber(parsed.wa || ""),
         cardId: parsed.cardId || ids[i],
         hasPin: Boolean(pinHash),
-        nfcLinked: Boolean(parsed.nfcLinked || isUsed),
+        nfcLinked: Boolean(parsed.nfcLinked),
         isUsed,
       });
     } catch {
@@ -217,7 +217,7 @@ export default async (req) => {
     return json({
       found: true,
       existsInStock: true,
-      nfcLinked: Boolean(card.nfcLinked || true),
+      nfcLinked: Boolean(card.nfcLinked),
       hasPin: Boolean(pinHash),
       card: {
         ...publicCard,
@@ -471,7 +471,7 @@ export default async (req) => {
         cid,
         wa,
         address,
-        nfcLinked: true,
+        nfcLinked: Boolean(existingCard.nfcLinked),
         pinHash: existingCard.pinHash || inputPinHash,
         createdAt: existingCard.createdAt || new Date().toISOString(),
       });

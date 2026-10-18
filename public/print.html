@@ -30,7 +30,7 @@
     }
 
     .container {
-      max-width: 1060px;
+      max-width: 1180px;
       margin: 0 auto;
       display: none;
     }
@@ -188,48 +188,88 @@
       border-color: #0f172a;
     }
 
-    /* Grid Kartu QR Siap Cetak */
-    .qr-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
-      gap: 16px;
+    /* Table View (Tampilan Utama di Layar) */
+    .table-wrap {
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+      overflow-x: auto;
+    }
+    table.qr-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+      font-size: 13px;
+    }
+    table.qr-table thead th {
+      background: #f8fafc;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 13px 14px;
+      text-align: left;
+      border-bottom: 1.5px solid #e2e8f0;
+      white-space: nowrap;
+    }
+    table.qr-table tbody tr {
+      border-bottom: 1px solid #eef2f6;
+      transition: background 0.12s;
+    }
+    table.qr-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    table.qr-table tbody tr:hover {
+      background: #f8fafc;
+    }
+    table.qr-table tbody td {
+      padding: 12px 14px;
+      vertical-align: middle;
+      color: #1e293b;
     }
 
-    .qr-card {
-      background: #ffffff;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 16px 14px;
-      text-align: center;
+    .qr-thumb-cell {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      page-break-inside: avoid;
-      position: relative;
+      gap: 10px;
     }
-    .qr-card.is-used {
-      border-color: #86efac;
-      background: #fafffe;
+    .qr-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
     }
-    .qr-card.is-linked {
-      border-color: #93c5fd;
-      background: #f8fbff;
-    }
-    .qr-card.is-unlinked {
-      border-color: #fcd34d;
+    .barcode-id-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #0f172a;
+      background: #f1f5f9;
+      padding: 4px 7px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      display: inline-block;
+      max-width: 145px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .status-pill {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 800;
-      letter-spacing: 0.04em;
-      padding: 4px 10px;
+      letter-spacing: 0.02em;
+      padding: 5px 10px;
       border-radius: 999px;
-      margin-bottom: 10px;
-      text-transform: uppercase;
       display: inline-flex;
       align-items: center;
       gap: 5px;
+      white-space: nowrap;
     }
     .status-pill.used {
       background: #dcfce7;
@@ -247,83 +287,56 @@
       border: 1px solid #fcd34d;
     }
 
-    .print-only-header {
-      display: none;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      color: #2563eb;
-      background: #eff6ff;
-      padding: 3px 9px;
-      border-radius: 999px;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-
-    .qr-card img {
-      width: 152px;
-      height: 152px;
-      display: block;
-      margin-bottom: 8px;
-      border-radius: 10px;
-      border: 1px solid #f1f5f9;
-    }
-
-    .qr-title {
-      font-size: 12.5px;
+    .store-cell-title {
       font-weight: 800;
       color: #0f172a;
-      margin-bottom: 2px;
+      font-size: 13px;
+      margin-bottom: 3px;
     }
-
-    .qr-sub {
+    .mode-badge {
+      display: inline-block;
       font-size: 10.5px;
-      color: #64748b;
-      margin-bottom: 8px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    .wa-link {
+      color: #15803d;
+      font-weight: 700;
+      text-decoration: none;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      padding: 4px 8px;
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+    }
+    .wa-link:hover {
+      background: #dcfce7;
     }
 
-    .store-info-box {
-      width: 100%;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 8px 10px;
-      margin-bottom: 10px;
-      text-align: left;
-      font-size: 11px;
-      color: #334155;
-      line-height: 1.45;
-    }
-    .store-info-box strong {
-      color: #0f172a;
-      display: block;
-      font-size: 11.5px;
-      margin-bottom: 2px;
-    }
-
-    .qr-actions {
+    .table-actions {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
       gap: 6px;
-      width: 100%;
-      margin-top: auto;
-    }
-    .qr-row-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
+      align-items: center;
     }
     .qr-mini-btn {
-      width: 100%;
-      padding: 8px 8px;
-      font-size: 11px;
+      padding: 7px 10px;
+      font-size: 11.5px;
       font-weight: 700;
       border-radius: 8px;
       border: 1px solid #dbeafe;
       background: #eff6ff;
       color: #1d4ed8;
       cursor: pointer;
-      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.12s;
     }
     .qr-mini-btn:hover { background: #dbeafe; }
     .qr-mini-btn.nfc-write {
@@ -347,7 +360,6 @@
     }
 
     .empty-state {
-      grid-column: 1 / -1;
       background: #ffffff;
       border: 1.5px dashed #cbd5e1;
       border-radius: 16px;
@@ -365,7 +377,11 @@
       display: none;
     }
 
-    /* Mode Print Kertas / Stiker: Sembunyikan status admin dan cetak bersih */
+    /* Area Cetak Stiker QR (Hanya Muncul Saat Print Kertas) */
+    .print-sheet {
+      display: none;
+    }
+
     @media print {
       body {
         background: #ffffff;
@@ -374,17 +390,42 @@
       .no-print {
         display: none !important;
       }
-      .print-only-header {
-        display: inline-block !important;
-      }
-      .qr-grid {
+      .print-sheet {
+        display: grid !important;
         grid-template-columns: repeat(3, 1fr);
         gap: 12px;
       }
-      .qr-card {
-        border: 1px solid #cbd5e1 !important;
-        background: #ffffff !important;
-        box-shadow: none;
+      .print-qr-card {
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        padding: 14px 10px;
+        text-align: center;
+        page-break-inside: avoid;
+      }
+      .print-qr-card .badge {
+        display: inline-block;
+        font-size: 9.5px;
+        font-weight: 800;
+        color: #1d4ed8;
+        background: #eff6ff;
+        padding: 3px 8px;
+        border-radius: 999px;
+        margin-bottom: 6px;
+      }
+      .print-qr-card img {
+        width: 145px;
+        height: 145px;
+        display: block;
+        margin: 0 auto 6px;
+      }
+      .print-qr-card .title {
+        font-size: 12px;
+        font-weight: 800;
+        color: #0f172a;
+      }
+      .print-qr-card .sub {
+        font-size: 10px;
+        color: #64748b;
       }
     }
 
@@ -398,7 +439,7 @@
 <!-- Layar Kunci Khusus Admin -->
 <div class="login-wrap no-print" id="login-wrap">
   <h1>🔐 Panel Cetak &amp; Link Barcode ke NFC (Admin)</h1>
-  <p class="sub">Masukkan password Admin untuk mencetak Barcode, menanamkan <strong>Barcode ID ke Kartu NFC</strong> (tanpa perlu isi alamat toko), dan memantau kartu yang sudah digunakan customer.</p>
+  <p class="sub">Masukkan password Admin untuk mengelola tabel Barcode, menanamkan <strong>Barcode ID ke Kartu NFC</strong>, dan memantau data toko &amp; No. WhatsApp customer.</p>
   <div class="field" style="margin-bottom:14px;">
     <label for="admin-key">Password Admin</label>
     <input type="password" id="admin-key" placeholder="Masukkan password admin..." />
@@ -410,8 +451,8 @@
 <!-- Panel Produksi & Monitoring Barcode -->
 <div class="container" id="main-container">
   <div class="panel no-print">
-    <h1>🖨️ Produksi Barcode &amp; Link ke Kartu NFC (Tanpa Isi Alamat Toko)</h1>
-    <p class="sub">Saat Anda klik <strong>"📡 Link Barcode ID ke Kartu NFC"</strong> pada kartu di bawah, HP Anda langsung menyimpan <strong>Barcode ID</strong> tersebut ke dalam chip kartu NFC (masih kosong tanpa alamat toko). Saat diterima Customer, barulah Customer yang mengisi alamat tokonya!</p>
+    <h1>📊 Tabel Manajemen Barcode &amp; Link Kartu NFC</h1>
+    <p class="sub">Klik <strong>"📡 Link ke NFC"</strong> pada baris tabel untuk menanamkan <strong>Barcode ID</strong> ke chip kartu NFC (masih kosong tanpa alamat toko). Saat diaktifkan Customer, Nama Toko, Mode, dan <strong>No. WhatsApp</strong> akan otomatis tercatat di tabel ini.</p>
 
     <div class="stats-row">
       <div class="stat-box">
@@ -451,10 +492,10 @@
 
       <div class="controls-right">
         <button type="button" class="btn btn-outline" id="refresh-btn">
-          🔄 Refresh Status
+          🔄 Refresh Tabel
         </button>
         <button type="button" class="btn btn-dark" id="print-btn">
-          🖨️ Print yang Tampil di Layar
+          🖨️ Print Semua QR yang Tampil
         </button>
       </div>
     </div>
@@ -467,7 +508,11 @@
     </div>
   </div>
 
-  <div class="qr-grid" id="qr-grid"></div>
+  <!-- Tabel Utama di Layar -->
+  <div id="table-container" class="no-print"></div>
+
+  <!-- Lembar Stiker QR Khusus Saat Print -->
+  <div class="print-sheet" id="print-sheet"></div>
 </div>
 
 <script>
@@ -477,7 +522,8 @@
   const unlockBtn = document.getElementById("unlock-btn");
   const loginErr = document.getElementById("login-err");
 
-  const qrGrid = document.getElementById("qr-grid");
+  const tableContainer = document.getElementById("table-container");
+  const printSheet = document.getElementById("print-sheet");
   const qtySelect = document.getElementById("qty-select");
   const genBtn = document.getElementById("gen-btn");
   const refreshBtn = document.getElementById("refresh-btn");
@@ -574,7 +620,7 @@
       alert(err.message);
     } finally {
       refreshBtn.disabled = false;
-      refreshBtn.textContent = "🔄 Refresh Status";
+      refreshBtn.textContent = "🔄 Refresh Tabel";
     }
   });
 
@@ -613,82 +659,117 @@
       return true;
     });
 
-    qrGrid.replaceChildren();
+    tableContainer.replaceChildren();
+    printSheet.replaceChildren();
 
     if (filtered.length === 0) {
       const empty = document.createElement("div");
-      empty.className = "empty-state no-print";
+      empty.className = "empty-state";
       empty.innerHTML = allCards.length === 0
         ? "Belum ada stok barcode di database.<br>Klik tombol biru <strong>'➕ Buat &amp; Simpan Barcode Baru'</strong> di atas untuk membuat kartu pertama Anda."
         : "Tidak ada kartu pada kategori filter ini.";
-      qrGrid.appendChild(empty);
+      tableContainer.appendChild(empty);
       return;
     }
 
-    filtered.forEach((item) => {
+    const tableWrap = document.createElement("div");
+    tableWrap.className = "table-wrap";
+
+    const table = document.createElement("table");
+    table.className = "qr-table";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th style="width:48px;">No</th>
+          <th>QR &amp; Barcode ID</th>
+          <th>Status Kartu</th>
+          <th>Nama Toko &amp; Mode Tujuan</th>
+          <th>No. WhatsApp</th>
+          <th>PIN Customer</th>
+          <th>Aksi Kartu</th>
+        </tr>
+      </thead>
+      <tbody id="qr-tbody"></tbody>
+    `;
+
+    const tbody = table.querySelector("#qr-tbody");
+
+    filtered.forEach((item, idx) => {
       const secretToken = item.cardId;
-      // URL yang ditanam ke Barcode QR dan Chip NFC adalah URL Barcode ID ini (/c/BARCODE_ID)
       const dynamicUrl = `${window.location.origin}/c/${secretToken}`;
       const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
 
-      const card = document.createElement("div");
-      const cardClass = item.isUsed ? "is-used" : item.nfcLinked ? "is-linked" : "is-unlinked";
-      card.className = `qr-card ${cardClass}`;
-
-      let statusBadgeHtml = "";
-      let storeInfoHtml = "";
-
+      // Status Pill
+      let statusHtml = "";
       if (item.isUsed) {
-        statusBadgeHtml = `<span class="status-pill used no-print">🟢 SUDAH DIGUNAKAN CUSTOMER</span>`;
-        storeInfoHtml = `
-          <div class="store-info-box no-print">
-            <strong>🏪 ${escapeHtml(item.storeName || "Toko Aktif")}</strong>
-            <div>📱 WA: ${escapeHtml(item.wa || "-")}</div>
-            <div>🔐 PIN: ${item.hasPin ? "Aktif (4 Angka)" : "Belum Ada PIN"}</div>
-          </div>`;
+        statusHtml = `<span class="status-pill used">🟢 Sudah Digunakan</span>`;
       } else if (item.nfcLinked) {
-        statusBadgeHtml = `<span class="status-pill linked no-print">🔵 SUDAH DI-LINK KE KARTU NFC</span>`;
-        storeInfoHtml = `
-          <div class="store-info-box no-print" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af;">
-            <strong>📡 Barcode ID Tersimpan di Kartu</strong>
-            <div>Belum ada alamat toko (Siap dikirim &amp; diisi oleh Customer).</div>
-          </div>`;
+        statusHtml = `<span class="status-pill linked">🔵 Di-Link ke NFC (Siap Jual)</span>`;
       } else {
-        statusBadgeHtml = `<span class="status-pill unlinked no-print">🟡 BELUM DI-LINK KE NFC</span>`;
-        storeInfoHtml = `
-          <div class="store-info-box no-print" style="background:#fffbeb;border-color:#fde68a;color:#92400e;">
-            <strong>⏳ Menunggu Di-Link ke Kartu</strong>
-            <div>Klik tombol <em>Link ke NFC</em> di bawah untuk menanamkan Barcode ID ini ke kartu fisik.</div>
-          </div>`;
+        statusHtml = `<span class="status-pill unlinked">🟡 Belum Di-Link ke NFC</span>`;
       }
 
-      card.innerHTML = `
-        ${statusBadgeHtml}
-        <span class="print-only-header">SCAN UNTUK ULASAN</span>
-        <img src="${qrImgUrl}" alt="QR Code" loading="lazy" />
-        <div class="qr-title">Tap NFC atau Scan QR</div>
-        <div class="qr-sub">Beri Penilaian &amp; Review Kami</div>
-        ${storeInfoHtml}
-        <div class="qr-actions no-print">
-          <button type="button" class="qr-mini-btn nfc-write ${item.nfcLinked ? "written" : ""}">
-            ${item.nfcLinked ? "✅ Tulis Ulang Barcode ID ke NFC" : "📡 Link Barcode ID ke Kartu NFC"}
-          </button>
-          <div class="qr-row-2">
-            <button type="button" class="qr-mini-btn dl-btn">⬇️ PNG</button>
+      // Store & Mode
+      let storeHtml = `<span style="color:#94a3b8;font-weight:600;">— Belum Diisi Customer —</span>`;
+      if (item.isUsed) {
+        const modeLabel = item.mode === "maps" ? "📍 Aplikasi Maps" : "⭐ Halaman Rating";
+        storeHtml = `
+          <div class="store-cell-title">🏪 ${escapeHtml(item.storeName || "Toko Aktif")}</div>
+          <span class="mode-badge">${modeLabel}</span>
+        `;
+      }
+
+      // WhatsApp
+      let waHtml = `<span style="color:#94a3b8;">-</span>`;
+      if (item.wa) {
+        const cleanWa = String(item.wa).replace(/\D/g, "");
+        waHtml = `<a href="https://wa.me/${cleanWa}" target="_blank" rel="noopener" class="wa-link">📱 ${escapeHtml(cleanWa)}</a>`;
+      }
+
+      // PIN
+      const pinHtml = item.hasPin
+        ? `<span style="color:#166534;font-weight:700;">🔐 Aktif (4 Angka)</span>`
+        : `<span style="color:#94a3b8;">⚪ Belum Ada</span>`;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-weight:800;color:#64748b;">${idx + 1}</td>
+        <td>
+          <div class="qr-thumb-cell">
+            <img src="${qrImgUrl}" alt="QR" class="qr-thumb" title="Klik untuk perbesar QR" loading="lazy" />
+            <div>
+              <div class="barcode-id-code" title="${escapeHtml(secretToken)}">${escapeHtml(secretToken)}</div>
+              <div style="font-size:10.5px;color:#64748b;margin-top:3px;">/c/${escapeHtml(secretToken.slice(0, 10))}...</div>
+            </div>
+          </div>
+        </td>
+        <td>${statusHtml}</td>
+        <td>${storeHtml}</td>
+        <td>${waHtml}</td>
+        <td>${pinHtml}</td>
+        <td>
+          <div class="table-actions">
+            <button type="button" class="qr-mini-btn nfc-write ${item.nfcLinked ? "written" : ""}">
+              ${item.nfcLinked ? "✅ Tulis Ulang NFC" : "📡 Link ke NFC"}
+            </button>
+            <button type="button" class="qr-mini-btn dl-btn" title="Download gambar QR PNG">⬇️ PNG</button>
             ${item.isUsed ? `
-              <button type="button" class="qr-mini-btn warn reset-pin-btn" title="Jika customer lupa PIN">🔑 Reset PIN</button>
+              <button type="button" class="qr-mini-btn warn reset-pin-btn" title="Reset jika customer lupa PIN">🔑 Reset PIN</button>
+              <button type="button" class="qr-mini-btn danger reset-card-btn" title="Kosongkan toko agar siap jual kembali">♻️ Kosongkan</button>
             ` : `
-              <button type="button" class="qr-mini-btn danger del-btn">🗑️ Hapus</button>
+              <button type="button" class="qr-mini-btn danger del-btn" title="Hapus barcode dari stok">🗑️ Hapus</button>
             `}
           </div>
-          ${item.isUsed ? `
-            <button type="button" class="qr-mini-btn danger reset-card-btn">♻️ Kosongkan Toko (Kembali Siap Jual)</button>
-          ` : ""}
-        </div>
+        </td>
       `;
 
+      // Klik thumbnail buka QR penuh
+      tr.querySelector(".qr-thumb").addEventListener("click", () => {
+        window.open(qrImgUrl, "_blank");
+      });
+
       // Download PNG
-      card.querySelector(".dl-btn").addEventListener("click", async () => {
+      tr.querySelector(".dl-btn").addEventListener("click", async () => {
         try {
           const res = await fetch(qrImgUrl);
           const blob = await res.blob();
@@ -705,8 +786,8 @@
         }
       });
 
-      // Link Barcode ID ke Chip NFC (Tanpa Mengisi Alamat Toko!)
-      const writeBtn = card.querySelector(".nfc-write");
+      // Link Barcode ID ke Chip NFC
+      const writeBtn = tr.querySelector(".nfc-write");
       writeBtn.addEventListener("click", async () => {
         if (!("NDEFReader" in window)) {
           if (confirm("Browser ini tidak mendukung NFC langsung (gunakan Chrome Android untuk menulis ke chip NFC).\n\nApakah Anda ingin menandai barcode ini sebagai 'Sudah Di-Link ke Kartu' secara manual?")) {
@@ -717,12 +798,11 @@
           return;
         }
         try {
-          writeBtn.textContent = "⏳ Tempelkan Kartu NFC...";
+          writeBtn.textContent = "⏳ Tempel NFC...";
           const ndef = new NDEFReader();
           await ndef.write({
             records: [{ recordType: "url", data: dynamicUrl }]
           });
-          // Setelah berhasil ditanam ke chip fisik NFC, langsung update statusnya di Cloud menjadi "Sudah Di-Link ke Kartu NFC"
           const data = await adminApi({ adminAction: "mark_linked", cardId: secretToken });
           allCards = data.cards || [];
           renderCards();
@@ -731,8 +811,8 @@
         }
       });
 
-      // Reset PIN Customer (Jika Lupa PIN)
-      const resetPinBtn = card.querySelector(".reset-pin-btn");
+      // Reset PIN Customer
+      const resetPinBtn = tr.querySelector(".reset-pin-btn");
       if (resetPinBtn) {
         resetPinBtn.addEventListener("click", async () => {
           if (!confirm(`Reset PIN 4 angka untuk toko "${item.storeName}"?\nSetelah di-reset, customer bisa membuat 4 angka PIN baru.`)) return;
@@ -742,8 +822,8 @@
         });
       }
 
-      // Kosongkan Kartu (Kembali jadi Sudah Di-Link ke NFC / Siap Jual)
-      const resetCardBtn = card.querySelector(".reset-card-btn");
+      // Kosongkan Kartu
+      const resetCardBtn = tr.querySelector(".reset-card-btn");
       if (resetCardBtn) {
         resetCardBtn.addEventListener("click", async () => {
           if (!confirm(`Kosongkan alamat toko "${item.storeName}" agar kartu ini kembali kosong (Siap Jual)?`)) return;
@@ -754,7 +834,7 @@
       }
 
       // Hapus Kartu
-      const delBtn = card.querySelector(".del-btn");
+      const delBtn = tr.querySelector(".del-btn");
       if (delBtn) {
         delBtn.addEventListener("click", async () => {
           if (!confirm("Hapus barcode stok ini dari database?")) return;
@@ -764,8 +844,22 @@
         });
       }
 
-      qrGrid.appendChild(card);
+      tbody.appendChild(tr);
+
+      // Siapkan juga kartu stiker bersih untuk mode Print kertas
+      const printCard = document.createElement("div");
+      printCard.className = "print-qr-card";
+      printCard.innerHTML = `
+        <span class="badge">SCAN UNTUK ULASAN</span>
+        <img src="${qrImgUrl}" alt="QR Code" />
+        <div class="title">Tap NFC atau Scan QR</div>
+        <div class="sub">Beri Penilaian &amp; Review Kami</div>
+      `;
+      printSheet.appendChild(printCard);
     });
+
+    tableWrap.appendChild(table);
+    tableContainer.appendChild(tableWrap);
   }
 
   function escapeHtml(str) {

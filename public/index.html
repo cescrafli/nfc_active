@@ -798,11 +798,11 @@
       </label>
     </div>
 
-    <!-- Nomor WhatsApp untuk penampung komplain bintang 1-3 -->
+    <!-- Nomor WhatsApp untuk penampung komplain bintang 1-3 & data pemilik kartu -->
     <div class="wa-box" id="wa-box">
-      <label class="wa-label" for="wa-input">💬 Nomor WhatsApp Penerima Masukan (Bintang 1–3)</label>
+      <label class="wa-label" id="wa-label" for="wa-input">💬 Nomor WhatsApp Pemilik / Penerima Masukan</label>
       <input id="wa-input" type="tel" inputmode="numeric" placeholder="Contoh: 081234567890" autocomplete="tel" />
-      <div class="wa-hint">Jika pelanggan memilih bintang 1–3, keluhan mereka langsung diarahkan ke nomor WhatsApp ini (tidak masuk ke Google Maps).</div>
+      <div class="wa-hint" id="wa-hint">Jika pelanggan memilih bintang 1–3, keluhan mereka langsung diarahkan ke nomor WhatsApp ini (dan tersimpan sebagai data kontak kartu Anda).</div>
     </div>
   </div>
 
@@ -919,6 +919,8 @@
   const storeInput = document.getElementById("store-input");
   const waInput = document.getElementById("wa-input");
   const waBox = document.getElementById("wa-box");
+  const waLabel = document.getElementById("wa-label");
+  const waHint = document.getElementById("wa-hint");
   const searchCheck = document.getElementById("search-check");
   const dropdown = document.getElementById("dropdown");
   const modeSection = document.getElementById("mode-section");
@@ -1136,7 +1138,15 @@
       const isReview = getSelectedMode() === "review";
       cardReview.classList.toggle("active", isReview);
       cardMaps.classList.toggle("active", !isReview);
-      waBox.style.display = isReview ? "block" : "none";
+      // Form WhatsApp tetap tampil di kedua mode (untuk data di barcode & penampung masukan)
+      waBox.style.display = "block";
+      if (isReview) {
+        waLabel.textContent = "💬 Nomor WhatsApp Penerima Masukan (Bintang 1–3)";
+        waHint.textContent = "Jika pelanggan memilih bintang 1–3, keluhan mereka langsung diarahkan ke nomor WhatsApp ini (tidak masuk ke Google Maps).";
+      } else {
+        waLabel.textContent = "💬 Nomor WhatsApp Pemilik Bisnis (Data Kartu & Barcode)";
+        waHint.textContent = "Nomor WhatsApp ini disimpan sebagai data identitas pemilik pada Barcode & Kartu NFC Anda.";
+      }
       updateTargetUrl();
     });
   });
@@ -1234,7 +1244,7 @@
     selectedPlace = place;
     searchCheck.classList.add("visible");
     modeSection.style.display = "block";
-    waBox.style.display = getSelectedMode() === "review" ? "block" : "none";
+    waBox.style.display = "block";
 
     previewName.textContent = place.title;
 
@@ -1421,9 +1431,9 @@
       showStatus("#fdecea", "#b71c1c", "Masukkan 4 angka password kartu Anda terlebih dahulu.");
       return;
     }
-    if (getSelectedMode() === "review" && !normalizeWaNumber(waInput.value)) {
+    if (!normalizeWaNumber(waInput.value)) {
       waInput.focus();
-      showStatus("#fff8e1", "#b45309", "💬 Masukkan Nomor WhatsApp terlebih dahulu agar masukan bintang 1–3 dapat dikirim ke WhatsApp Anda.");
+      showStatus("#fff8e1", "#b45309", "💬 Masukkan Nomor WhatsApp terlebih dahulu untuk disimpan pada data kartu & barcode Anda.");
       return;
     }
 
@@ -1458,9 +1468,9 @@
       return;
     }
 
-    if (getSelectedMode() === "review" && !normalizeWaNumber(waInput.value)) {
+    if (!normalizeWaNumber(waInput.value)) {
       waInput.focus();
-      showStatus("#fff8e1", "#b45309", "💬 Masukkan Nomor WhatsApp terlebih dahulu agar masukan bintang 1–3 dapat dikirim ke WhatsApp Anda.");
+      showStatus("#fff8e1", "#b45309", "💬 Masukkan Nomor WhatsApp terlebih dahulu untuk disimpan pada data kartu & barcode Anda.");
       return;
     }
 

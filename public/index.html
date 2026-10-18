@@ -720,27 +720,31 @@
   </div>
   <p class="subtitle">Hubungkan Kartu NFC &amp; Barcode Dinamis dengan Google Maps bisnis Anda. Ganti lokasi toko kapan saja tanpa perlu cetak ulang barcode!</p>
 
-  <!-- ID Kartu & Barcode Dinamis -->
+  <!-- ID Kartu & Barcode Dinamis (Otomatis & Rahasia) -->
   <div class="card-id-box">
     <div class="card-id-head">
       <span class="card-id-label">
-        🏷️ ID Kartu / Kode Barcode
+        🔐 Token Rahasia Kartu &amp; Barcode
       </span>
-      <span class="dynamic-badge">QR Dinamis (Tanpa Print Ulang)</span>
+      <span class="dynamic-badge">Auto-Generated</span>
     </div>
     <div class="card-id-row">
-      <input id="card-id-input" type="text" placeholder="Contoh: KARTU01 atau 001" value="001" autocomplete="off" />
-      <button type="button" class="qr-toggle-btn" id="qr-toggle-btn">📱 Lihat Barcode QR</button>
+      <input id="card-id-input" type="password" readonly autocomplete="off" title="Token rahasia di-generate otomatis" />
+      <button type="button" class="qr-toggle-btn" id="gen-token-btn" title="Buat Token Rahasia Baru">🎲 Acak Baru</button>
+      <button type="button" class="qr-toggle-btn" id="qr-toggle-btn">🖨️ Cetak QR</button>
     </div>
     <div class="card-id-hint">
-      Setiap kartu memiliki 1 ID tetap. Saat Anda mengganti lokasi toko di bawah, <strong>Barcode/QR ini otomatis ter-update ke toko baru</strong> tanpa perlu di-print ulang.
+      Kode barcode bersifat <strong>rahasia &amp; di-generate otomatis</strong>. Cetak QR ini sekali saja — setiap kali Anda ganti lokasi toko di bawah, QR otomatis pindah ke toko baru tanpa print ulang! (<a href="/print" target="_blank" style="color:#1d4ed8;font-weight:700;text-decoration:none;">Buka Menu Print Massal →</a>)
     </div>
     <div class="current-card-status" id="current-card-status"></div>
 
     <div class="qr-drawer" id="qr-drawer">
       <img id="qr-img" alt="QR Code Kartu" src="" />
-      <span class="qr-url-pill" id="qr-url-text"></span>
-      <button type="button" class="qr-dl-btn" id="qr-dl-btn">⬇️ Download Barcode QR (Cetak Sekali Selamanya)</button>
+      <span class="qr-url-pill" id="qr-url-text">🔒 Link Barcode Rahasia Terenkripsi</span>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px;">
+        <button type="button" class="qr-dl-btn" id="qr-dl-btn">⬇️ Download Gambar QR</button>
+        <button type="button" class="qr-dl-btn" id="qr-print-single-btn" style="background:#0f172a;">🖨️ Print Langsung</button>
+      </div>
     </div>
   </div>
 
@@ -906,11 +910,13 @@
   let cardCheckTimer = null;
 
   const cardIdInput = document.getElementById("card-id-input");
+  const genTokenBtn = document.getElementById("gen-token-btn");
   const qrToggleBtn = document.getElementById("qr-toggle-btn");
   const qrDrawer = document.getElementById("qr-drawer");
   const qrImg = document.getElementById("qr-img");
   const qrUrlText = document.getElementById("qr-url-text");
   const qrDlBtn = document.getElementById("qr-dl-btn");
+  const qrPrintSingleBtn = document.getElementById("qr-print-single-btn");
   const currentCardStatus = document.getElementById("current-card-status");
 
   const storeInput = document.getElementById("store-input");
@@ -939,10 +945,32 @@
   const cloudOnlyBtn = document.getElementById("cloud-only-btn");
   const statusBox = document.getElementById("status");
 
-  // --- Inisialisasi ID Kartu dari URL ?card=... ---
+  // --- Generator Token Rahasia Kriptografis ---
+  function generateSecretToken() {
+    const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const arr = new Uint8Array(10);
+    window.crypto.getRandomValues(arr);
+    let token = "";
+    for (let i = 0; i < arr.length; i++) {
+      token += alphabet[arr[i] % alphabet.length];
+    }
+    return token.slice(0, 5) + "-" + token.slice(5, 10);
+  }
+
+  // Ambil token dari URL (?card=...), atau localStorage, atau generate baru otomatis
   const initParams = new URLSearchParams(window.location.search);
-  if (initParams.get("card")) {
-    cardIdInput.value = initParams.get("card").trim().toUpperCase();
+  const urlCardToken = (initParams.get("card") || "").trim().toUpperCase();
+  if (urlCardToken) {
+    cardIdInput.value = urlCardToken;
+    try { localStorage.setItem("nfc_secret_card_token", urlCardToken); } catch {}
+  } else {
+    let savedToken = "";
+    try { savedToken = localStorage.getItem("nfc_secret_card_token") || ""; } catch {}
+    if (!savedToken) {
+      savedToken = generateSecretToken();
+      try { localStorage.setItem("nfc_secret_card_token", savedToken); } catch {}
+    }
+    cardIdInput.value = savedToken;
   }
 
   function getCleanCardId() {
@@ -950,13 +978,13 @@
   }
 
   function getDynamicCardUrl() {
-    const id = getCleanCardId() || "001";
+    const id = getCleanCardId();
     return `${window.location.origin}/c/${encodeURIComponent(id)}`;
   }
 
   function updateQrPreview() {
     const dynUrl = getDynamicCardUrl();
-    qrUrlText.textContent = dynUrl;
+    qrUrlText.textContent = "🔒 Barcode Terenkripsi (Otomatis Update Saat Ganti Toko)";
     qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=12&data=${encodeURIComponent(dynUrl)}`;
   }
 
@@ -970,13 +998,13 @@
       const res = await fetch(`/api/card?id=${encodeURIComponent(id)}`);
       if (!res.ok) {
         currentCardStatus.style.display = "block";
-        currentCardStatus.innerHTML = `🆕 ID Kartu <strong>${id}</strong> belum pernah diaktifkan. Pilih toko di bawah untuk mengaktifkannya.`;
+        currentCardStatus.innerHTML = `🆕 <strong>Kartu Baru Siap Diaktifkan:</strong> Pilih toko di bawah untuk menghubungkan kartu &amp; barcode ini.`;
         return;
       }
       const data = await res.json();
       if (data.found && data.card) {
         currentCardStatus.style.display = "block";
-        currentCardStatus.innerHTML = `✅ Kartu <strong>${id}</strong> saat ini aktif ke: <strong>${data.card.storeName || "Toko"}</strong>. Pilih toko baru di bawah jika ingin mengganti lokasinya tanpa print ulang barcode.`;
+        currentCardStatus.innerHTML = `✅ Kartu/Barcode ini sedang aktif ke: <strong>${data.card.storeName || "Toko"}</strong>. Pilih toko baru di bawah jika ingin mengganti lokasinya tanpa print ulang barcode.`;
       }
     } catch {
       currentCardStatus.style.display = "none";
@@ -986,28 +1014,29 @@
   updateQrPreview();
   checkExistingCard();
 
-  cardIdInput.addEventListener("input", () => {
+  genTokenBtn.addEventListener("click", () => {
+    const newToken = generateSecretToken();
+    cardIdInput.value = newToken;
+    try { localStorage.setItem("nfc_secret_card_token", newToken); } catch {}
     updateQrPreview();
-    clearTimeout(cardCheckTimer);
-    cardCheckTimer = setTimeout(checkExistingCard, 400);
+    checkExistingCard();
   });
 
   qrToggleBtn.addEventListener("click", () => {
     const isHidden = qrDrawer.style.display !== "block";
     qrDrawer.style.display = isHidden ? "block" : "none";
-    qrToggleBtn.textContent = isHidden ? "🔼 Tutup Barcode" : "📱 Lihat Barcode QR";
+    qrToggleBtn.textContent = isHidden ? "🔼 Tutup QR" : "🖨️ Cetak QR";
     if (isHidden) updateQrPreview();
   });
 
   qrDlBtn.addEventListener("click", async () => {
-    const id = getCleanCardId() || "001";
     try {
       const response = await fetch(qrImg.src);
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = blobUrl;
-      a.download = `QR-KARTU-${id}.png`;
+      a.download = `QR-NFC-SMARTCARD.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1015,6 +1044,21 @@
     } catch {
       window.open(qrImg.src, "_blank");
     }
+  });
+
+  qrPrintSingleBtn.addEventListener("click", () => {
+    const w = window.open("", "_blank", "width=450,height=550");
+    if (!w) return;
+    w.document.write(`
+      <html><head><title>Print Barcode NFC</title>
+      <style>body{font-family:sans-serif;text-align:center;padding:30px;}img{width:240px;height:240px;border:1px solid #ddd;padding:10px;border-radius:12px;}</style>
+      </head><body>
+      <h3>SCAN UNTUK ULASAN</h3>
+      <img src="${qrImg.src}" onload="window.print();" />
+      <p style="font-size:12px;color:#555;">Tap Kartu NFC atau Scan QR Code</p>
+      </body></html>
+    `);
+    w.document.close();
   });
 
   function getSelectedMode() {

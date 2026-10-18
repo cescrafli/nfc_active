@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Generator & Print Barcode QR Rahasia — Admin NFC</title>
+  <title>Panel Produksi & Print Barcode QR — Khusus Admin</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -18,9 +18,21 @@
       min-height: 100vh;
     }
 
+    /* Login Card */
+    .login-wrap {
+      max-width: 440px;
+      margin: 60px auto 0;
+      background: #ffffff;
+      padding: 28px 26px;
+      border-radius: 20px;
+      border: 1px solid #eef2f6;
+      box-shadow: 0 12px 36px rgba(15, 23, 42, 0.06);
+    }
+
     .container {
-      max-width: 920px;
+      max-width: 960px;
       margin: 0 auto;
+      display: none;
     }
 
     .panel {
@@ -34,7 +46,7 @@
 
     h1 {
       margin: 0 0 6px;
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 800;
       color: #0f172a;
     }
@@ -82,6 +94,7 @@
       border: none;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 7px;
       transition: all 0.15s;
     }
@@ -105,13 +118,13 @@
       border-radius: 12px;
       font-size: 12.5px;
       color: #1e40af;
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     /* Grid Kartu QR Siap Cetak */
     .qr-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
       gap: 16px;
     }
 
@@ -140,34 +153,35 @@
     }
 
     .qr-card img {
-      width: 148px;
-      height: 148px;
+      width: 152px;
+      height: 152px;
       display: block;
       margin-bottom: 8px;
     }
 
     .qr-title {
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 800;
       color: #0f172a;
       margin-bottom: 2px;
     }
 
     .qr-sub {
-      font-size: 10px;
+      font-size: 10.5px;
       color: #64748b;
       margin-bottom: 10px;
     }
 
     .qr-actions {
       display: flex;
+      flex-direction: column;
       gap: 6px;
       width: 100%;
     }
     .qr-mini-btn {
-      flex: 1;
-      padding: 7px 8px;
-      font-size: 11px;
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 11.5px;
       font-weight: 700;
       border-radius: 8px;
       border: 1px solid #dbeafe;
@@ -177,6 +191,23 @@
       text-decoration: none;
     }
     .qr-mini-btn:hover { background: #dbeafe; }
+    .qr-mini-btn.nfc-write {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+    .qr-mini-btn.nfc-write.written {
+      background: #16a34a;
+      border-color: #16a34a;
+    }
+
+    .err-msg {
+      margin-top: 10px;
+      font-size: 12.5px;
+      color: #b91c1c;
+      font-weight: 600;
+      display: none;
+    }
 
     /* Mode Print Kertas / Stiker: Sembunyikan tombol dan panel atas */
     @media print {
@@ -200,24 +231,37 @@
 </head>
 <body>
 
-<div class="container">
+<!-- Layar Kunci Khusus Admin -->
+<div class="login-wrap no-print" id="login-wrap">
+  <h1>🔐 Panel Cetak Barcode (Khusus Admin)</h1>
+  <p class="sub">Halaman ini khusus untuk Anda (Admin) mencetak Barcode QR rahasia dan menanamkannya ke kartu NFC sebelum dijual ke customer.</p>
+  <div class="field" style="margin-bottom:14px;">
+    <label for="admin-key">Kunci Rahasia Admin</label>
+    <input type="password" id="admin-key" placeholder="Masukkan kunci rahasia admin..." />
+  </div>
+  <button type="button" class="btn btn-primary" id="unlock-btn" style="width:100%;">🔓 Buka Panel Produksi Barcode</button>
+  <div class="err-msg" id="login-err"></div>
+</div>
+
+<!-- Panel Produksi Barcode (Tampil Setelah Login Admin) -->
+<div class="container" id="main-container">
   <div class="panel no-print">
-    <h1>🖨️ Generator &amp; Print Barcode QR Dinamis (Kode Rahasia)</h1>
-    <p class="sub">Setiap QR Code di bawah dibuat dengan <strong>Token Rahasia Acak</strong> yang tidak bisa ditebak orang lain. Cetak sekali saja di kartu NFC / akrilik — lokasi toko bisa di-update kapan saja tanpa print ulang!</p>
+    <h1>🖨️ Generator &amp; Print Barcode QR Dinamis (Khusus Admin)</h1>
+    <p class="sub">Customer <strong>tidak bisa</strong> melihat halaman ini. Setiap kartu yang Anda cetak memiliki <strong>Token Rahasia Acak</strong> yang permanen — ketika customer ganti lokasi toko di web, barcode fisik yang sudah Anda cetak ini otomatis pindah ke toko baru mereka!</p>
 
     <div class="controls">
       <div class="field">
-        <label for="qty-select">Jumlah Barcode</label>
+        <label for="qty-select">Jumlah Cetak Kartu</label>
         <select id="qty-select">
-          <option value="1">1 Barcode (Satuan)</option>
-          <option value="6">6 Barcode (1 Lembar Kecil)</option>
-          <option value="12" selected>12 Barcode (1 Lembar A4)</option>
-          <option value="24">24 Barcode (Stok Produksi)</option>
+          <option value="1">1 Kartu (Satuan)</option>
+          <option value="6">6 Kartu (1 Lembar Kecil)</option>
+          <option value="12" selected>12 Kartu (1 Lembar A4)</option>
+          <option value="24">24 Kartu (Stok Produksi)</option>
         </select>
       </div>
 
       <button type="button" class="btn btn-primary" id="gen-btn">
-        🎲 Generate Barcode Rahasia Baru
+        🎲 Buat Batch Barcode Rahasia Baru
       </button>
 
       <button type="button" class="btn btn-dark" id="print-btn">
@@ -226,10 +270,10 @@
     </div>
 
     <div class="info-banner">
-      💡 <strong>Cara Pakai Saat Kartu Mau Diaktifkan:</strong><br>
-      1. Cetak QR Code di bawah ke fisik kartu NFC.<br>
-      2. Saat kartu masih baru (belum ada tokonya) dan QR-nya di-scan pakai kamera HP, dia <strong>otomatis membuka halaman Aktivasi</strong> dengan kode rahasia kartu tersebut langsung terisi!<br>
-      3. Atau klik tombol <strong>"Aktifkan"</strong> pada salah satu kartu di bawah untuk langsung menuliskan ke kartu NFC dan meng-update lokasinya.
+      💡 <strong>Alur Produksi Kartu untuk Anda (Admin):</strong><br>
+      1. <strong>Print / Download PNG</strong> QR Code di bawah lalu tempel/cetak ke kartu fisik.<br>
+      2. <em>(Opsional tapi Direkomendasikan)</em> Klik tombol <strong>"📡 Tanam ke Chip NFC"</strong> pada kartu yang bersangkutan agar chip NFC dan QR Code di kartu fisik tersebut memiliki kode rahasia yang sama.<br>
+      3. Saat kartu diterima Customer, Customer cukup <strong>Scan QR / Tap NFC</strong> kartu tersebut -> otomatis masuk ke halaman Aktivasi -> pilih toko &amp; masukkan OTP -> <strong>baik NFC maupun Barcode cetakan Anda langsung aktif ke toko mereka (dan bisa diganti-ganti selamanya tanpa print ulang)!</strong>
     </div>
   </div>
 
@@ -237,12 +281,65 @@
 </div>
 
 <script>
+  const loginWrap = document.getElementById("login-wrap");
+  const mainContainer = document.getElementById("main-container");
+  const adminKeyInput = document.getElementById("admin-key");
+  const unlockBtn = document.getElementById("unlock-btn");
+  const loginErr = document.getElementById("login-err");
+
   const qrGrid = document.getElementById("qr-grid");
   const qtySelect = document.getElementById("qty-select");
   const genBtn = document.getElementById("gen-btn");
   const printBtn = document.getElementById("print-btn");
 
-  // Menghasilkan Token Rahasia 10 Karakter Kriptografis (Huruf & Angka tanpa karakter membingungkan 0/O/1/I)
+  const savedKey = sessionStorage.getItem("nfc_admin_key");
+  if (savedKey) {
+    adminKeyInput.value = savedKey;
+    verifyAdmin(savedKey);
+  }
+
+  unlockBtn.addEventListener("click", () => {
+    verifyAdmin(adminKeyInput.value.trim());
+  });
+
+  adminKeyInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") verifyAdmin(adminKeyInput.value.trim());
+  });
+
+  async function verifyAdmin(key) {
+    if (!key) return;
+    loginErr.style.display = "none";
+    unlockBtn.disabled = true;
+    unlockBtn.textContent = "Memverifikasi...";
+
+    try {
+      const res = await fetch("/api/otp/current", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        loginErr.style.display = "block";
+        loginErr.textContent = "❌ Kunci Rahasia Admin salah.";
+        unlockBtn.disabled = false;
+        unlockBtn.textContent = "🔓 Buka Panel Produksi Barcode";
+        return;
+      }
+
+      sessionStorage.setItem("nfc_admin_key", key);
+      loginWrap.style.display = "none";
+      mainContainer.style.display = "block";
+      renderBatch();
+    } catch {
+      loginErr.style.display = "block";
+      loginErr.textContent = "❌ Gagal menghubungi server.";
+      unlockBtn.disabled = false;
+      unlockBtn.textContent = "🔓 Buka Panel Produksi Barcode";
+    }
+  }
+
+  // Menghasilkan Token Rahasia 10 Karakter Kriptografis
   function generateSecretCardToken() {
     const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     const arr = new Uint8Array(10);
@@ -261,8 +358,7 @@
     for (let i = 0; i < count; i++) {
       const secretToken = generateSecretCardToken();
       const dynamicUrl = `${window.location.origin}/c/${secretToken}`;
-      const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
-      const activateUrl = `${window.location.origin}/?card=${encodeURIComponent(secretToken)}`;
+      const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
 
       const card = document.createElement("div");
       card.className = "qr-card";
@@ -273,8 +369,8 @@
         <div class="qr-title">Tap NFC atau Scan QR</div>
         <div class="qr-sub">Beri Penilaian &amp; Review Kami</div>
         <div class="qr-actions no-print">
-          <button type="button" class="qr-mini-btn dl-btn">⬇️ PNG</button>
-          <a href="${activateUrl}" target="_blank" class="qr-mini-btn">⚡ Aktifkan</a>
+          <button type="button" class="qr-mini-btn dl-btn">⬇️ Download PNG</button>
+          <button type="button" class="qr-mini-btn nfc-write">📡 Tanam ke Chip NFC</button>
         </div>
       `;
 
@@ -286,13 +382,32 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = `QR-NFC-${secretToken}.png`;
+          a.download = `QR-NFC-CARD-${i + 1}.png`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         } catch {
           window.open(qrImgUrl, "_blank");
+        }
+      });
+
+      const writeBtn = card.querySelector(".nfc-write");
+      writeBtn.addEventListener("click", async () => {
+        if (!("NDEFReader" in window)) {
+          alert("Gunakan Google Chrome di HP Android dengan NFC aktif untuk menanamkan link ke chip NFC.");
+          return;
+        }
+        try {
+          writeBtn.textContent = "⏳ Tempelkan Kartu...";
+          const ndef = new NDEFReader();
+          await ndef.write({
+            records: [{ recordType: "url", data: dynamicUrl }]
+          });
+          writeBtn.classList.add("written");
+          writeBtn.textContent = "✅ Chip NFC Terisi!";
+        } catch (err) {
+          writeBtn.textContent = "❌ Gagal, Coba Lagi";
         }
       });
 
@@ -303,8 +418,6 @@
   genBtn.addEventListener("click", renderBatch);
   qtySelect.addEventListener("change", renderBatch);
   printBtn.addEventListener("click", () => window.print());
-
-  renderBatch();
 </script>
 
 </body>

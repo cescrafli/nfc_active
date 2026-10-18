@@ -68,6 +68,7 @@ async function fetchEmbed(params) {
   try {
     const res = await fetch(url, {
       signal: controller.signal,
+      cache: "no-store",
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
@@ -77,6 +78,18 @@ async function fetchEmbed(params) {
     return await res.text();
   } finally {
     clearTimeout(timer);
+  }
+}
+
+function isGoogleUrl(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    return (
+      (u.protocol === "http:" || u.protocol === "https:") &&
+      /(\.|^)(google\.[a-z.]+|goo\.gl|maps\.app\.goo\.gl|g\.page)$/i.test(u.hostname)
+    );
+  } catch {
+    return false;
   }
 }
 
@@ -91,22 +104,46 @@ export default async (req) => {
   try {
     // Dukungan Khusus: Jika customer mem-paste Link Google Maps langsung
     if (/^https?:\/\//i.test(q)) {
+      if (!isGoogleUrl(q)) {
+        return json({ items: [] });
+      }
       try {
-        const resp = await fetch(q, {
-          method: "GET",
-          redirect: "follow",
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
-            "Accept-Language": "id-ID,id;q=0.9",
-          },
-        });
+        const fetchController = new AbortController();
+        const fetchTimeout = setTimeout(() => fetchController.abort(), 6000);
+        let resp;
+        try {
+          resp = await fetch(q, {
+            method: "GET",
+            redirect: "follow",
+            cache: "no-store",
+            signal: fetchController.signal,
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+              "Accept-Language": "id-ID,id;q=0.9",
+            },
+          });
+        } finally {
+          clearTimeout(fetchTimeout);
+        }
+
         const finalUrl = resp.url || q;
         const html = await resp.text();
 
-        // Cari CID dari URL tujuan atau dari body HTML
+        // 1. Cari CID desimal dari URL tujuan atau dari body HTML
         const cidMatch = finalUrl.match(/cid[=:](\d+)/i) || html.match(/\["\d{10,22}","(\d{10,22})"\]/);
-        const cid = cidMatch ? (cidMatch[1] || cidMatch[0]) : "";
+        let cid = cidMatch ? (cidMatch[1] || cidMatch[0]) : "";
+
+        // 2. Jika belum ada CID desimal, cari Hex CID (:0x...) dari URL Google Maps:
+        // Contoh: /data=!3m1!4b1!4m6!3m5!1s0x2e69...:0x89abcdef01234567
+        if (!cid) {
+          const hexMatch = finalUrl.match(/:0x([0-9a-f]{8,18})/i) || html.match(/:0x([0-9a-f]{8,18})/i);
+          if (hexMatch && hexMatch[1]) {
+            try {
+              cid = BigInt("0x" + hexMatch[1]).toString(10);
+            } catch {}
+          }
+        }
 
         if (cid) {
           const cidHtml = await fetchEmbed(`cid=${encodeURIComponent(cid)}`);
@@ -123,27 +160,43 @@ export default async (req) => {
         if (titleMatch) {
           title = titleMatch[1].replace(/\s*·\s*Google Maps.*$/i, "").replace(/\s*-\s*Google Maps.*$/i, "").trim();
         }
+        if (!title || /^google\s*maps$/i.test(title)) {
+          const placePathMatch = finalUrl.match(/\/place\/([^/@?]+)/i);
+          if (placePathMatch) {
+            title = decodeURIComponent(placePathMatch[1].replace(/\+/g, " ")).trim();
+          }
+        }
 
-        if (placeId && title) {
+        if (title && !/^google\s*maps$/i.test(title)) {
+          // Coba cari data lengkap tempat via embed pencarian nama toko
+          try {
+            const queryHtml = await fetchEmbed(`q=${encodeURIComponent(title)}`);
+            const spotlit = parseSpotlit(queryHtml);
+            if (spotlit) {
+              return json({ items: [spotlit] });
+            }
+          } catch {}
+
           return json({
             items: [
               {
                 title,
-                address: "Google Maps",
-                placeId,
+                address: "",
+                placeId: placeId || "",
                 cid: cid || "",
                 rating: null,
                 reviews: null,
                 category: null,
-                reviewUrl: `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`,
+                reviewUrl: placeId ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}` : "",
                 mapsUrl: cid ? `https://www.google.com/maps?cid=${encodeURIComponent(cid)}` : finalUrl,
               },
             ],
           });
         }
       } catch {
-        // Lanjut ke pencarian teks biasa jika fetch URL eksternal gagal
+        // Abaikan error fetch URL
       }
+      return json({ items: [] });
     }
 
     // Pencarian Teks Standar
@@ -188,7 +241,7 @@ function json(data, status = 200) {
     status,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "public, max-age=120",
+      "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
     },
   });
 }

@@ -98,6 +98,25 @@ export function normalizeWaNumber(raw) {
   return digits.slice(0, 16);
 }
 
+export function isSafeHttpUrl(urlStr) {
+  if (!urlStr || typeof urlStr !== "string") return false;
+  const trimmed = urlStr.trim();
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+    try {
+      const u = new URL(trimmed, "https://example.com");
+      return u.pathname === "/rate" || u.pathname === "/rate.html";
+    } catch {
+      return false;
+    }
+  }
+  try {
+    const u = new URL(trimmed);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function generateSecretCardToken() {
   const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
   const bytes = randomBytes(10);
@@ -189,7 +208,12 @@ export default async (req) => {
     if (!id) {
       return json({ error: "Parameter id kartu diperlukan" }, 400);
     }
-    const card = await getCardFromRedis(id);
+    let card = null;
+    try {
+      card = await getCardFromRedis(id);
+    } catch {
+      card = null;
+    }
 
     // Jika Barcode ID sama sekali tidak terdaftar di stok Admin
     if (!card) {
@@ -202,6 +226,9 @@ export default async (req) => {
       }, 200);
     }
 
+    const isLocked = Boolean(card.lockUntil && new Date(card.lockUntil).getTime() > Date.now());
+    const lockUntil = isLocked ? card.lockUntil : null;
+
     // Jika terdaftar di stok Admin tapi belum diisi alamat toko oleh customer (Siap Jual / Kosong)
     if (!card.targetUrl || !card.storeName) {
       return json({
@@ -209,6 +236,7 @@ export default async (req) => {
         existsInStock: true,
         nfcLinked: Boolean(card.nfcLinked),
         hasPin: Boolean(card.pinHash),
+        lockUntil,
         cardId: id,
       }, 200);
     }
@@ -219,8 +247,10 @@ export default async (req) => {
       existsInStock: true,
       nfcLinked: Boolean(card.nfcLinked),
       hasPin: Boolean(pinHash),
+      lockUntil,
       card: {
         ...publicCard,
+        lockUntil,
         wa: normalizeWaNumber(publicCard.wa || ""),
       },
     });
@@ -336,12 +366,23 @@ export default async (req) => {
       // 6. Hapus barcode dari database
       if (body.adminAction === "delete") {
         const id = normalizeCardId(body.cardId || "");
-        if (id) {
-          await redisPipeline([
-            ["DEL", `nfc:card:${id}`],
-            ["SREM", "nfc:cards:index", id],
-          ]);
+        if (!id) {
+          return json({ valid: false, error: "Barcode ID kosong." }, 400);
         }
+        const existing = await getCardFromRedis(id);
+        if (existing && existing.targetUrl && existing.storeName) {
+          return json(
+            {
+              valid: false,
+              error: `Kartu "${id}" sudah aktif digunakan oleh customer (${existing.storeName}) dan dilindungi dari penghapusan. Gunakan tombol 'Kosongkan' jika Anda ingin mereset kartu ini.`,
+            },
+            400
+          );
+        }
+        await redisPipeline([
+          ["DEL", `nfc:card:${id}`],
+          ["SREM", "nfc:cards:index", id],
+        ]);
         const cards = await listAllCardsFromRedis();
         return json({ valid: true, cards });
       }
@@ -354,13 +395,26 @@ export default async (req) => {
           return json({ valid: false, error: "Tidak ada Barcode ID yang dipilih untuk dihapus." }, 400);
         }
 
+        // Ambil semua data kartu sekaligus dengan 1 batch MGET (menghindari timeout)
+        const keys = cleanIds.map((id) => `nfc:card:${id}`);
+        const rawValues = (await redisCommand(["MGET", ...keys])) || [];
+
         const cmds = [];
-        for (const id of cleanIds) {
-          const card = await getCardFromRedis(id);
-          // Proteksi: Hanya hapus jika belum digunakan oleh customer
-          if (card && (!card.targetUrl || !card.storeName)) {
+        let deletedCount = 0;
+        for (let i = 0; i < cleanIds.length; i++) {
+          const id = cleanIds[i];
+          const raw = rawValues[i];
+          let card = null;
+          if (raw) {
+            try {
+              card = typeof raw === "string" ? JSON.parse(raw) : raw;
+            } catch {}
+          }
+          // Proteksi: Hanya hapus jika belum digunakan oleh customer (atau jika data rusak/kosong)
+          if (!card || !card.targetUrl || !card.storeName) {
             cmds.push(["DEL", `nfc:card:${id}`]);
             cmds.push(["SREM", "nfc:cards:index", id]);
+            deletedCount++;
           }
         }
 
@@ -368,7 +422,7 @@ export default async (req) => {
           await redisPipeline(cmds);
         }
         const cards = await listAllCardsFromRedis();
-        return json({ valid: true, deletedCount: cmds.length / 2, cards });
+        return json({ valid: true, deletedCount, cards });
       }
 
       return json({ valid: false, error: "Aksi admin tidak dikenal" }, 400);
@@ -404,7 +458,41 @@ export default async (req) => {
           },
           429
         );
+      } else {
+        // Masa kunci 15 menit sudah berakhir, bersihkan counter agar customer mendapat 5 kuota percobaan baru
+        delete existingCard.failedPinAttempts;
+        delete existingCard.lockUntil;
+        await saveCardToRedis(cardId, existingCard);
       }
+    }
+
+    // Aksi Sinkronkan Chip Fisik NFC langsung dari portal pengguna
+    if (body.action === "link_physical_nfc") {
+      // Jika kartu sudah memiliki PIN, verifikasi PIN pemiliknya
+      if (existingCard.pinHash) {
+        const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
+        if (!/^\d{4}$/.test(rawPin)) {
+          return json({ valid: false, error: "Password 4 angka diperlukan untuk menautkan chip NFC." }, 400);
+        }
+        const inputPinHash = hashPin(cardId, rawPin);
+        if (!safeEqual(inputPinHash, existingCard.pinHash)) {
+          const attempts = (existingCard.failedPinAttempts || 0) + 1;
+          existingCard.failedPinAttempts = attempts;
+          if (attempts >= 5) {
+            existingCard.lockUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+            await saveCardToRedis(cardId, existingCard);
+            return json({ valid: false, error: "Password salah 5 kali! Kartu dikunci selama 15 menit." }, 429);
+          }
+          await saveCardToRedis(cardId, existingCard);
+          return json({ valid: false, error: `Password 4 angka salah! (Percobaan ${attempts} dari 5).` }, 401);
+        }
+        delete existingCard.failedPinAttempts;
+        delete existingCard.lockUntil;
+      }
+      existingCard.nfcLinked = true;
+      existingCard.linkedAt = new Date().toISOString();
+      await saveCardToRedis(cardId, existingCard);
+      return json({ valid: true, nfcLinked: true, message: "Chip fisik NFC berhasil dihubungkan ke sistem!" });
     }
 
     const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
@@ -446,15 +534,21 @@ export default async (req) => {
     }
 
     const targetUrl = String(body.targetUrl || "").trim();
-    const storeName = String(body.storeName || "").trim();
-    const mode = String(body.mode || "review").trim();
-    const placeId = String(body.placeId || "").trim();
-    const cid = String(body.cid || "").trim();
-    const wa = normalizeWaNumber(body.wa || "");
-    const address = String(body.address || "").trim();
+    const storeName = String(body.storeName || "").trim().slice(0, 120);
+    const mode = String(body.mode || "review").trim().toLowerCase() === "maps" ? "maps" : "review";
+    const placeId = String(body.placeId || "").trim().slice(0, 100);
+    const cid = String(body.cid || "").trim().slice(0, 50);
+    const wa = normalizeWaNumber(body.wa || "").slice(0, 25);
+    const address = String(body.address || "").trim().slice(0, 300);
+    const rawMapsUrl = String(body.mapsUrl || "").trim().slice(0, 500);
+    const mapsUrl = isSafeHttpUrl(rawMapsUrl) ? rawMapsUrl : "";
 
     if (!targetUrl || !storeName) {
       return json({ valid: false, error: "Silakan pilih lokasi bisnis Anda di Google Maps terlebih dahulu." }, 400);
+    }
+
+    if (!isSafeHttpUrl(targetUrl)) {
+      return json({ valid: false, error: "Tautan URL tidak valid atau tidak aman (harus berawalan https:// atau http://)." }, 400);
     }
 
     if (!wa || wa.length < 9) {
@@ -471,7 +565,9 @@ export default async (req) => {
         cid,
         wa,
         address,
-        nfcLinked: Boolean(existingCard.nfcLinked),
+        mapsUrl,
+        nfcLinked: body.linkNfcPhysical ? true : Boolean(existingCard.nfcLinked),
+        linkedAt: body.linkNfcPhysical ? (existingCard.linkedAt || new Date().toISOString()) : existingCard.linkedAt,
         pinHash: existingCard.pinHash || inputPinHash,
         createdAt: existingCard.createdAt || new Date().toISOString(),
       });

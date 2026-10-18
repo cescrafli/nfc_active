@@ -128,34 +128,6 @@
     }
     .scan-action-btn.secondary:hover { background: #f1f5f9; }
 
-    .manual-id-row {
-      display: none;
-      gap: 6px;
-      margin-top: 10px;
-    }
-    .manual-id-row input {
-      flex: 1;
-      padding: 9px 11px;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 8px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 13px;
-      font-weight: 800;
-      text-transform: uppercase;
-      color: #0f172a;
-      outline: none;
-    }
-    .manual-id-row button {
-      padding: 9px 13px;
-      border-radius: 8px;
-      border: none;
-      background: #0f172a;
-      color: #ffffff;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
     .current-card-status {
       margin-top: 10px;
       padding: 10px 12px;
@@ -709,9 +681,6 @@
         <button type="button" id="reset-card-id-btn" style="display:none;background:none;border:none;color:#dc2626;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;">
           🔄 Ganti Kartu
         </button>
-        <button type="button" id="toggle-manual-id-btn" style="background:none;border:none;color:#2563eb;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;">
-          ⌨️ Ketik Kode ID
-        </button>
       </div>
     </div>
 
@@ -724,12 +693,6 @@
       </button>
     </div>
 
-    <!-- Input Manual Kode ID (Jika ingin ketik kode ID yang tertulis di bawah stiker QR) -->
-    <div class="manual-id-row" id="manual-id-row">
-      <input type="text" id="manual-id-input" placeholder="Ketik Kode ID (misal: AB23K-9P4LM)" />
-      <button type="button" id="apply-manual-id-btn">Cek Kartu</button>
-    </div>
-
     <!-- Kamera Scanner Barcode di dalam Web (Tanpa Keluar Halaman!) -->
     <div id="qr-reader-wrap" style="display:none;margin-top:10px;">
       <div id="qr-reader" style="width:100%;border-radius:10px;overflow:hidden;"></div>
@@ -739,6 +702,7 @@
     </div>
 
     <div class="current-card-status" id="current-card-status"></div>
+    <div id="nfc-chip-status-wrap" style="display:none;margin-top:8px;"></div>
   </div>
   <input id="card-id-input" type="hidden" />
 
@@ -911,10 +875,6 @@
   const currentCardStatus = document.getElementById("current-card-status");
   const scanQrBtn = document.getElementById("scan-qr-btn");
   const readNfcBtn = document.getElementById("read-nfc-btn");
-  const toggleManualIdBtn = document.getElementById("toggle-manual-id-btn");
-  const manualIdRow = document.getElementById("manual-id-row");
-  const manualIdInput = document.getElementById("manual-id-input");
-  const applyManualIdBtn = document.getElementById("apply-manual-id-btn");
   const qrReaderWrap = document.getElementById("qr-reader-wrap");
   const closeQrBtn = document.getElementById("close-qr-btn");
   const pinTitle = document.getElementById("pin-title");
@@ -949,10 +909,28 @@
   const cloudOnlyBtn = document.getElementById("cloud-only-btn");
   const cloudOnlyBtnText = document.getElementById("cloud-only-btn-text");
   const statusBox = document.getElementById("status");
+  const nfcChipWrap = document.getElementById("nfc-chip-status-wrap");
+  let loadedCardNfcLinked = false;
+
+  // Bersihkan seluruh sisa cache localStorage & sessionStorage lama agar tidak ada ID nyangkut
+  try {
+    localStorage.removeItem("nfc_secret_card_token");
+    localStorage.clear();
+  } catch {}
+
+  function isSafeHttpUrl(urlStr) {
+    if (!urlStr || typeof urlStr !== "string") return false;
+    try {
+      const u = new URL(urlStr, window.location.origin);
+      return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
 
   // Ekstrak Token Kartu dari URL hasil scan QR atau baca NFC (misal https://nfcactive.vercel.app/c/ABCDE-12345)
   function extractTokenFromScannedText(rawText) {
-    const text = String(rawText || "").trim();
+    let text = String(rawText || "").trim();
     try {
       const u = new URL(text);
       if (u.searchParams.get("card")) return u.searchParams.get("card").toUpperCase();
@@ -962,84 +940,59 @@
     } catch {}
     const simpleMatch = text.match(/\/c\/([A-Za-z0-9_-]+)/i);
     if (simpleMatch && simpleMatch[1]) return simpleMatch[1].toUpperCase();
+    text = text.replace(/^(?:ID|TOKEN)\s*[:=\-]?\s*/i, "");
     return text.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
   }
 
-  function applyDetectedCardToken(token) {
-    const clean = String(token || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
-    if (!clean) return;
-
-    // Sinkronkan ke URL address bar browser agar saat F5/refresh tetap pada kartu yang sama
-    window.history.replaceState(null, "", "/?card=" + encodeURIComponent(clean));
-
-    // Reset pilihan jika berganti kartu
-    if (cardIdInput.value !== clean) {
-      clearPinBoxes();
-      selectedPlace = null;
-      previewBox.style.display = "none";
-      searchCheck.classList.remove("visible");
-      statusBox.style.display = "none";
-    }
-
-    cardIdInput.value = clean;
-    manualIdInput.value = clean;
-    try { localStorage.setItem("nfc_secret_card_token", clean); } catch {}
-    checkExistingCard();
-  }
-
-  // Ambil Barcode ID dari ?card=... saat customer tap/scan kartu
-  const initParams = new URLSearchParams(window.location.search);
-  const urlCardToken = (initParams.get("card") || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
-  if (urlCardToken) {
-    cardIdInput.value = urlCardToken;
-    try { localStorage.setItem("nfc_secret_card_token", urlCardToken); } catch {}
-  } else {
-    let savedToken = "";
-    try { savedToken = localStorage.getItem("nfc_secret_card_token") || ""; } catch {}
-    cardIdInput.value = savedToken.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
-  }
-
-  function getCleanCardId() {
-    return cardIdInput.value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
-  }
-
-  toggleManualIdBtn.addEventListener("click", () => {
-    const isHidden = manualIdRow.style.display !== "flex";
-    manualIdRow.style.display = isHidden ? "flex" : "none";
-    if (isHidden) {
-      manualIdInput.value = getCleanCardId();
-      manualIdInput.focus();
-    }
-  });
-
-  applyManualIdBtn.addEventListener("click", () => {
-    const val = extractTokenFromScannedText(manualIdInput.value);
-    if (!val) return;
-    manualIdRow.style.display = "none";
-    applyDetectedCardToken(val);
-  });
-
-  resetCardIdBtn.addEventListener("click", () => {
-    cardIdInput.value = "";
-    manualIdInput.value = "";
-    try { localStorage.removeItem("nfc_secret_card_token"); } catch {}
-    window.history.replaceState(null, "", "/");
+  function resetCardFormState() {
+    storeInput.value = "";
+    waInput.value = "";
+    clearPinBoxes();
     selectedPlace = null;
+    targetUrl = "";
     originalCardData = null;
     previewBox.style.display = "none";
     modeSection.style.display = "none";
     waBox.style.display = "none";
     otpSection.style.display = "none";
     searchCheck.classList.remove("visible");
-    storeInput.value = "";
-    waInput.value = "";
-    clearPinBoxes();
+    dropdown.style.display = "none";
+    applyModeRadio("review");
+    updateButtonState();
+  }
+
+  function applyDetectedCardToken(token) {
+    const clean = String(token || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
+    if (!clean) return;
+
+    // Sinkronkan ke URL address bar browser tanpa menyimpan ke localStorage cache
+    window.history.replaceState(null, "", "/?card=" + encodeURIComponent(clean));
+
+    // Reset pilihan & form jika berganti kartu
+    if (cardIdInput.value !== clean) {
+      resetCardFormState();
+      statusBox.style.display = "none";
+    }
+
+    cardIdInput.value = clean;
+    checkExistingCard();
+  }
+
+  // Ambil Barcode ID murni dari parameter URL ?card=... (tanpa cache localStorage)
+  const initParams = new URLSearchParams(window.location.search);
+  const urlCardToken = (initParams.get("card") || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+  cardIdInput.value = urlCardToken || "";
+
+  function getCleanCardId() {
+    return cardIdInput.value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+  }
+
+  resetCardIdBtn.addEventListener("click", () => {
+    cardIdInput.value = "";
+    window.history.replaceState(null, "", "/");
+    resetCardFormState();
     resetCardIdBtn.style.display = "none";
     checkExistingCard();
-  });
-
-  manualIdInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") applyManualIdBtn.click();
   });
 
   function updatePinUiMode(hasPin, isUsed) {
@@ -1085,10 +1038,123 @@
     }
   }
 
+  function renderNfcChipStatus(cardId, isLinked) {
+    if (!nfcChipWrap) return;
+    if (!cardExistsInStock || !cardId) {
+      nfcChipWrap.style.display = "none";
+      nfcChipWrap.innerHTML = "";
+      return;
+    }
+    if (isLinked) {
+      nfcChipWrap.style.display = "block";
+      nfcChipWrap.innerHTML = `
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:9px 12px;font-size:12px;color:#166534;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🔵</span>
+          <div><strong>Chip Fisik Kartu NFC:</strong> Sudah Terkunci &amp; Siap Ditap Pelanggan.</div>
+        </div>
+      `;
+    } else {
+      nfcChipWrap.style.display = "block";
+      nfcChipWrap.innerHTML = `
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;font-size:12px;color:#92400e;">
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
+            <span style="font-size:16px;">⚠️</span>
+            <div style="line-height:1.45;"><strong>Chip Fisik NFC Belum Terisi:</strong> Kartu ini baru aktif via stiker QR. Jika Anda memegang kartu fisik NFC dan menggunakan Chrome di HP Android, Anda dapat langsung mengunci link ke chip fisik kartu sekarang:</div>
+          </div>
+          <button type="button" id="btn-sync-physical-nfc" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#b45309;color:#ffffff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">
+            📡 Sinkronkan &amp; Tulis ke Chip Kartu NFC
+          </button>
+        </div>
+      `;
+      const btnSync = document.getElementById("btn-sync-physical-nfc");
+      if (btnSync) {
+        btnSync.addEventListener("click", () => handleSyncPhysicalNfc(cardId));
+      }
+    }
+  }
+
+  let activeSyncNfcController = null;
+
+  async function handleSyncPhysicalNfc(cardId) {
+    if (!("NDEFReader" in window)) {
+      alert("Browser ini tidak mendukung Web NFC langsung. Untuk menulis ke chip fisik kartu NFC, silakan buka halaman ini menggunakan browser Google Chrome di HP Android.");
+      return;
+    }
+    const pin = getPinCode();
+    if (cardHasPin && pin.length !== 4) {
+      alert("Masukkan 4 angka password kartu Anda di bawah terlebih dahulu untuk mengunci chip NFC.");
+      if (otpDigits[0]) otpDigits[0].focus();
+      return;
+    }
+
+    const btnSync = document.getElementById("btn-sync-physical-nfc");
+    if (activeSyncNfcController) {
+      try { activeSyncNfcController.abort(); } catch {}
+      activeSyncNfcController = null;
+      if (btnSync) {
+        btnSync.disabled = false;
+        btnSync.textContent = "📡 Sinkronkan & Tulis ke Chip Kartu NFC";
+      }
+      showStatus("#f8fafc", "#475569", "Pindaian NFC dibatalkan.");
+      return;
+    }
+
+    const dynamicUrl = `${window.location.origin}/c/${cardId}`;
+    try {
+      activeSyncNfcController = new AbortController();
+      if (btnSync) {
+        btnSync.disabled = false;
+        btnSync.textContent = "✖️ Batalkan Tulis NFC (Tempelkan Kartu...)";
+      }
+      showStatus("#e8f0fe", "#174ea6", "⏳ Tempelkan kartu fisik NFC Anda ke bagian belakang HP sekarang...");
+      const ndef = new NDEFReader();
+      await ndef.write({
+        records: [{ recordType: "url", data: dynamicUrl }]
+      }, { signal: activeSyncNfcController.signal });
+
+      if (btnSync) {
+        btnSync.disabled = true;
+        btnSync.textContent = "⏳ Memperbarui Database...";
+      }
+
+      // Update nfcLinked di server
+      const res = await fetch("/api/card", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "link_physical_nfc",
+          cardId,
+          pin,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        throw new Error(data.error || "Gagal memperbarui status di server");
+      }
+
+      loadedCardNfcLinked = true;
+      renderNfcChipStatus(cardId, true);
+      showStatus("#e8f5e9", "#1b5e20", "✅ Chip fisik kartu NFC berhasil ditulis & disinkronkan!");
+    } catch (err) {
+      if (btnSync) {
+        btnSync.disabled = false;
+        btnSync.textContent = "📡 Sinkronkan & Tulis ke Chip Kartu NFC";
+      }
+      if (err.name === "AbortError") return;
+      showStatus("#fdecea", "#b71c1c", "❌ Gagal menulis NFC: " + (err.message || "Pastikan NFC HP aktif dan kartu ditempelkan dengan benar"));
+    } finally {
+      activeSyncNfcController = null;
+    }
+  }
+
   async function checkExistingCard() {
     const id = getCleanCardId();
     if (!id) {
       cardExistsInStock = false;
+      loadedCardNfcLinked = false;
+      resetCardFormState();
+      renderNfcChipStatus("", false);
       resetCardIdBtn.style.display = "none";
       detectedIdBadge.textContent = "Belum Terdeteksi";
       detectedIdBadge.style.background = "#fef3c7";
@@ -1104,13 +1170,15 @@
     }
 
     try {
-      const res = await fetch(`/api/card?id=${encodeURIComponent(id)}`);
+      const res = await fetch(`/api/card?id=${encodeURIComponent(id)}`, { cache: "no-store" });
       const data = await res.json();
 
       if (!data.existsInStock) {
         cardExistsInStock = false;
-        resetCardIdBtn.style.display = "none";
-        try { localStorage.removeItem("nfc_secret_card_token"); } catch {}
+        loadedCardNfcLinked = false;
+        resetCardFormState();
+        renderNfcChipStatus("", false);
+        resetCardIdBtn.style.display = "inline-block";
         detectedIdBadge.textContent = "Tidak Terdaftar";
         detectedIdBadge.style.background = "#fef2f2";
         detectedIdBadge.style.color = "#b91c1c";
@@ -1119,12 +1187,14 @@
         currentCardStatus.style.background = "#fef2f2";
         currentCardStatus.style.borderColor = "#fecaca";
         currentCardStatus.style.color = "#b91c1c";
-        currentCardStatus.innerHTML = `⚠️ Barcode ID <strong>${escapeHtml(id)}</strong> tidak ditemukan di stok resmi. Silakan klik <strong>"📷 Scan Barcode Kartu"</strong> atau <strong>"📡 Tap Baca NFC"</strong> pada kartu fisik Anda.`;
+        currentCardStatus.innerHTML = `⚠️ Barcode ID <strong>${escapeHtml(id)}</strong> tidak ditemukan di stok resmi. Silakan klik tombol <strong>"🔄 Ganti Kartu"</strong> di atas untuk memindai kartu yang sah.`;
         updatePinUiMode(false, false);
         return;
       }
 
       cardExistsInStock = true;
+      loadedCardNfcLinked = Boolean(data.nfcLinked);
+      renderNfcChipStatus(id, loadedCardNfcLinked);
       resetCardIdBtn.style.display = "inline-block";
       detectedIdBadge.textContent = `ID: ${id}`;
       detectedIdBadge.style.background = "#dbeafe";
@@ -1138,6 +1208,8 @@
           wa: normalizeWaNumber(data.card.wa || ""),
           placeId: data.card.placeId || "",
           cid: data.card.cid || "",
+          address: data.card.address || "",
+          mapsUrl: data.card.mapsUrl || "",
         };
 
         currentCardStatus.style.display = "block";
@@ -1157,9 +1229,11 @@
           ? `https://www.google.com/maps?cid=${encodeURIComponent(data.card.cid)}`
           : data.card.placeId
             ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.card.storeName)}&query_place_id=${encodeURIComponent(data.card.placeId)}`
-            : (data.card.mode === "maps" && data.card.targetUrl)
-              ? data.card.targetUrl
-              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.card.storeName)}`;
+            : (data.card.mapsUrl && isSafeHttpUrl(data.card.mapsUrl))
+              ? data.card.mapsUrl
+              : (data.card.mode === "maps" && data.card.targetUrl)
+                ? data.card.targetUrl
+                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.card.storeName)}`;
 
         // Pre-fill data toko yang sedang aktif ke dalam form
         storeInput.value = data.card.storeName || "";
@@ -1171,12 +1245,13 @@
           mapsUrl: realMapsUrl,
           category: "",
           rating: null,
+          isManualUrl: Boolean(!data.card.placeId && !data.card.cid && data.card.mapsUrl),
         });
 
         updatePinUiMode(data.hasPin, true);
         updateTargetUrl();
       } else {
-        originalCardData = null;
+        resetCardFormState();
         updatePinUiMode(data.hasPin, false);
         currentCardStatus.style.display = "block";
         currentCardStatus.style.background = "#eff6ff";
@@ -1184,10 +1259,27 @@
         currentCardStatus.style.color = "#1e40af";
         currentCardStatus.innerHTML = `✨ <strong>Kartu Baru Terdeteksi (ID: ${escapeHtml(id)}):</strong> Pilih lokasi bisnis Anda di Google Maps, isi No. WhatsApp, dan buat 4 angka password baru untuk mengaktifkan kartu ini.`;
       }
+
+      // Tampilkan peringatan jika kartu sedang dalam masa lockout 15 menit
+      const lockUntilStr = data.lockUntil || data.card?.lockUntil;
+      if (lockUntilStr) {
+        const lockTime = new Date(lockUntilStr).getTime();
+        if (lockTime > Date.now()) {
+          const remMin = Math.ceil((lockTime - Date.now()) / 60000);
+          currentCardStatus.style.display = "block";
+          currentCardStatus.style.background = "#fef2f2";
+          currentCardStatus.style.borderColor = "#fecaca";
+          currentCardStatus.style.color = "#b91c1c";
+          currentCardStatus.innerHTML = `⏳ <strong>Kartu Terkunci Sementara:</strong> Salah password 5 kali berturut-turut. Silakan tunggu <strong>${remMin} menit lagi</strong>, atau hubungi Admin untuk bantuan reset (ID: <strong>${escapeHtml(id)}</strong>).`;
+          pinHintText.innerHTML = `<span style="color:#b91c1c;font-weight:700;">⚠️ Kartu ini sedang terkunci sementara selama ${remMin} menit ke depan.</span>`;
+        }
+      }
+
       updateButtonState();
     } catch {
-      originalCardData = null;
+      resetCardFormState();
       currentCardStatus.style.display = "none";
+      renderNfcChipStatus("", false);
       updateButtonState();
     }
   }
@@ -1205,10 +1297,19 @@
   }
 
   scanQrBtn.addEventListener("click", async () => {
+    // Batalkan pemindaian NFC jika sedang berjalan
+    if (activeNfcCustomerController) {
+      activeNfcCustomerController.abort();
+      activeNfcCustomerController = null;
+      readNfcBtn.textContent = "📡 Tap Baca NFC";
+    }
+
     if (qrReaderWrap.style.display === "block") {
       await stopQrScanner();
       return;
     }
+
+    scanQrBtn.disabled = true;
     qrReaderWrap.style.display = "block";
     try {
       html5QrScanner = new Html5Qrcode("qr-reader");
@@ -1228,6 +1329,8 @@
     } catch {
       qrReaderWrap.style.display = "none";
       showStatus("#fdecea", "#b71c1c", "Tidak dapat mengakses kamera. Pastikan izin kamera diizinkan di browser Anda.");
+    } finally {
+      scanQrBtn.disabled = false;
     }
   });
 
@@ -1235,6 +1338,9 @@
 
   // --- Fitur 2: Baca / Intercept Kartu NFC Langsung di Halaman Ini (Tanpa Mental ke Toko Lama!) ---
   readNfcBtn.addEventListener("click", async () => {
+    // Hentikan kamera scanner jika sedang terbuka
+    await stopQrScanner();
+
     if (!("NDEFReader" in window)) {
       showStatus("#fff8e1", "#b45309", "Untuk pengguna iPhone/Laptop, silakan klik tombol '📷 Scan Barcode Kartu' di sebelah kiri untuk mendeteksi kartu Anda.");
       return;
@@ -1324,8 +1430,11 @@
     u.searchParams.set("n", place.title || "Toko Kami");
     if (place.placeId) u.searchParams.set("p", place.placeId);
     else if (place.cid) u.searchParams.set("c", place.cid);
+    else if (place.mapsUrl && isSafeHttpUrl(place.mapsUrl)) u.searchParams.set("m", place.mapsUrl);
     const wa = normalizeWaNumber(waInput.value);
     if (wa) u.searchParams.set("w", wa);
+    const cardId = getCleanCardId();
+    if (cardId) u.searchParams.set("card", cardId);
     return u.toString();
   }
 
@@ -1362,29 +1471,74 @@
 
     // Cek apakah ada perubahan belum disimpan jika kartu sudah aktif
     if (cardIsUsed && originalCardData) {
-      const curStore = selectedPlace ? selectedPlace.title : "";
-      const curPlaceId = selectedPlace ? (selectedPlace.placeId || "") : "";
-      const curCid = selectedPlace ? (selectedPlace.cid || "") : "";
-      const curMode = getSelectedMode();
-      const curWa = normalizeWaNumber(waInput.value);
-      const isDirty = (curStore && curStore !== originalCardData.storeName) ||
-                      (curPlaceId !== (originalCardData.placeId || "")) ||
-                      (curCid !== (originalCardData.cid || "")) ||
-                      (curMode !== originalCardData.mode) ||
-                      (curWa !== originalCardData.wa);
-
-      if (isDirty) {
+      if (!selectedPlace) {
         currentCardStatus.style.display = "block";
-        currentCardStatus.style.background = "#fffbeb";
-        currentCardStatus.style.borderColor = "#fde68a";
-        currentCardStatus.style.color = "#92400e";
-        currentCardStatus.innerHTML = `⚠️ <strong>Perubahan Belum Disimpan:</strong> Anda telah mengubah data toko / mode / WhatsApp. Masukkan 4 angka password Anda di bawah lalu klik tombol Simpan.`;
+        currentCardStatus.style.background = "#eff6ff";
+        currentCardStatus.style.borderColor = "#bfdbfe";
+        currentCardStatus.style.color = "#1e40af";
+        currentCardStatus.innerHTML = `
+          <div>
+            🔍 <strong>Sedang Mengganti Lokasi:</strong> Silakan pilih salah satu lokasi bisnis dari daftar pencarian di bawah untuk mengganti toko <strong>${escapeHtml(originalCardData.storeName || "Toko")}</strong>.
+          </div>
+          <div style="margin-top:8px;">
+            <button type="button" id="btn-restore-original-place" style="padding:4px 10px;font-size:11.5px;font-weight:700;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;border-radius:6px;cursor:pointer;">
+              ↩️ Batal Ganti &amp; Pulihkan Toko Semula (${escapeHtml(originalCardData.storeName || "Toko")})
+            </button>
+          </div>
+        `;
+        const btnRestore = document.getElementById("btn-restore-original-place");
+        if (btnRestore) {
+          btnRestore.addEventListener("click", () => {
+            storeInput.value = originalCardData.storeName || "";
+            if (originalCardData.wa) waInput.value = originalCardData.wa;
+            applyModeRadio(originalCardData.mode || "review");
+            selectPlace({
+              title: originalCardData.storeName,
+              address: originalCardData.address || "",
+              placeId: originalCardData.placeId || "",
+              cid: originalCardData.cid || "",
+              mapsUrl: originalCardData.mapsUrl || "",
+              category: "",
+              rating: null,
+              isManualUrl: Boolean(!originalCardData.placeId && !originalCardData.cid && originalCardData.mapsUrl),
+            });
+          });
+        }
       } else {
-        currentCardStatus.style.display = "block";
-        currentCardStatus.style.background = "#f0fdf4";
-        currentCardStatus.style.borderColor = "#bbf7d0";
-        currentCardStatus.style.color = "#166534";
-        currentCardStatus.innerHTML = `✅ <strong>Kartu Aktif Terdeteksi!</strong> Terhubung ke: <strong>${escapeHtml(originalCardData.storeName || "Toko")}</strong>.<br>Seluruh data toko &amp; mode Anda saat ini sudah dimuat di bawah. Anda bisa langsung mengubah Mode, No. WA, atau memilih toko baru.`;
+        const curStore = selectedPlace.title || "";
+        const curPlaceId = selectedPlace.placeId || "";
+        const curCid = selectedPlace.cid || "";
+        const curAddress = selectedPlace.address || "";
+        const curMapsUrl = selectedPlace.mapsUrl || "";
+        const curMode = getSelectedMode();
+        const curWa = normalizeWaNumber(waInput.value);
+        const isDirty = (curStore !== originalCardData.storeName) ||
+                        (curPlaceId !== (originalCardData.placeId || "")) ||
+                        (curCid !== (originalCardData.cid || "")) ||
+                        (curAddress !== (originalCardData.address || "")) ||
+                        (curMapsUrl && originalCardData.mapsUrl && curMapsUrl !== originalCardData.mapsUrl) ||
+                        (curMode !== originalCardData.mode) ||
+                        (curWa !== originalCardData.wa);
+
+        if (isDirty) {
+          currentCardStatus.style.display = "block";
+          currentCardStatus.style.background = "#fffbeb";
+          currentCardStatus.style.borderColor = "#fde68a";
+          currentCardStatus.style.color = "#92400e";
+          currentCardStatus.innerHTML = `⚠️ <strong>Perubahan Belum Disimpan:</strong> Anda telah mengubah data toko / mode / WhatsApp. Masukkan 4 angka password Anda di bawah lalu klik tombol Simpan.`;
+        } else if (cardIsUsed && !cardHasPin) {
+          currentCardStatus.style.display = "block";
+          currentCardStatus.style.background = "#fffbeb";
+          currentCardStatus.style.borderColor = "#fde68a";
+          currentCardStatus.style.color = "#92400e";
+          currentCardStatus.innerHTML = `🔑 <strong>Password Telah Di-Reset oleh Admin:</strong> Toko <strong>${escapeHtml(originalCardData.storeName || "Toko")}</strong> tetap aktif. Masukkan 4 angka password baru Anda di bawah lalu klik 'Simpan Password Baru'.`;
+        } else {
+          currentCardStatus.style.display = "block";
+          currentCardStatus.style.background = "#f0fdf4";
+          currentCardStatus.style.borderColor = "#bbf7d0";
+          currentCardStatus.style.color = "#166534";
+          currentCardStatus.innerHTML = `✅ <strong>Kartu Aktif Terdeteksi!</strong> Terhubung ke: <strong>${escapeHtml(originalCardData.storeName || "Toko")}</strong>.<br>Seluruh data toko &amp; mode Anda saat ini sudah dimuat di bawah. Anda bisa langsung mengubah Mode, No. WA, atau memilih toko baru.`;
+        }
       }
     }
 
@@ -1396,7 +1550,7 @@
       isReady = false;
       isPromptScan = true;
       labelText = "📷 Scan Barcode / Tap Kartu Anda Terlebih Dahulu (Klik di Sini)";
-    } else if (!selectedPlace) {
+    } else if (!selectedPlace || !String(selectedPlace.title || "").trim()) {
       isReady = false;
       labelText = "👆 Pilih Lokasi Bisnis di Google Maps Terlebih Dahulu";
     } else if (!cleanWa || cleanWa.length < 9) {
@@ -1459,6 +1613,9 @@
         otpDigits[idx - 1].focus();
       } else if (e.key === "ArrowRight" && idx < otpDigits.length - 1) {
         otpDigits[idx + 1].focus();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        handleSaveCardLocation();
       }
     });
 
@@ -1476,13 +1633,24 @@
     box.addEventListener("focus", () => box.select());
   });
 
+  function isPlaceholderAddress(addr) {
+    if (!addr) return true;
+    const clean = String(addr).trim().toLowerCase();
+    return (
+      clean === "indonesia" ||
+      clean === "lokasi google maps" ||
+      clean === "lokasi dari link google maps" ||
+      clean === "pencarian langsung google maps"
+    );
+  }
+
   function selectPlace(place) {
     selectedPlace = place;
     searchCheck.classList.add("visible");
     modeSection.style.display = "block";
     waBox.style.display = "block";
 
-    previewName.textContent = place.title;
+    previewName.textContent = place.title || "Toko Anda";
 
     if (place.category && place.category.length <= 40) {
       previewCategory.textContent = place.category;
@@ -1491,7 +1659,7 @@
       previewCategory.style.display = "none";
     }
 
-    mapsPillLink.href = place.mapsUrl;
+    mapsPillLink.href = place.mapsUrl || "#";
 
     if (place.rating) {
       ratingRow.style.display = "flex";
@@ -1503,7 +1671,8 @@
       ratingRow.style.display = "none";
     }
 
-    previewAddr.textContent = place.address || "Indonesia";
+    const cleanAddress = isPlaceholderAddress(place.address) ? "" : place.address.trim();
+    previewAddr.textContent = cleanAddress || (place.title ? "Terdaftar di Google Maps" : "Indonesia");
     previewBox.style.display = "block";
     otpSection.style.display = "block";
 
@@ -1513,7 +1682,7 @@
 
     const embedParam = place.cid
       ? `cid=${encodeURIComponent(place.cid)}`
-      : `q=${encodeURIComponent(place.title + " " + (place.address || ""))}`;
+      : `q=${encodeURIComponent((place.title || "") + (cleanAddress ? " " + cleanAddress : ""))}`;
     const embedUrl = `https://maps.google.com/maps?${embedParam}&hl=id&z=16&output=embed`;
     if (mapPreview.src !== embedUrl) {
       mapPreview.src = embedUrl;
@@ -1522,8 +1691,24 @@
 
   storeInput.addEventListener("input", () => {
     const q = storeInput.value.trim();
-    searchCheck.classList.remove("visible");
     clearTimeout(debounceTimer);
+
+    // Jika sedang dalam mode Tautan Maps Manual dan user mengetik nama toko (bukan menempelkan URL baru)
+    if (selectedPlace && selectedPlace.isManualUrl && !/^https?:\/\//i.test(q)) {
+      selectedPlace.title = q;
+      previewName.textContent = q || "Nama Toko Belum Diisi";
+      if (q.length > 0) {
+        searchCheck.classList.add("visible");
+      } else {
+        searchCheck.classList.remove("visible");
+      }
+      dropdown.style.display = "none";
+      updateTargetUrl();
+      updateButtonState();
+      return;
+    }
+
+    searchCheck.classList.remove("visible");
 
     // Reset selectedPlace jika user mulai mengetik nama baru agar tidak tersimpan toko lama
     if (selectedPlace && selectedPlace.title !== q) {
@@ -1553,13 +1738,42 @@
     dropdown.appendChild(loading);
 
     try {
-      const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`, { signal: searchController.signal });
+      const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`, { signal: searchController.signal, cache: "no-store" });
       const data = await res.json();
       const items = data.items || [];
 
       dropdown.replaceChildren();
 
       if (items.length === 0) {
+        const isUrl = /^https?:\/\//i.test(q);
+        if (isUrl) {
+          dropdown.appendChild(
+            createDropdownItem(
+              "🔗 Gunakan Tautan Google Maps Langsung",
+              null,
+              "Tautan terdeteksi. Klik di sini untuk menggunakannya sebagai lokasi review bisnis Anda.",
+              () => {
+                dropdown.style.display = "none";
+                const customTitle = "Toko Saya";
+                storeInput.value = customTitle;
+                storeInput.focus();
+                storeInput.select();
+                selectPlace({
+                  title: customTitle,
+                  address: "Lokasi dari Link Google Maps",
+                  category: "",
+                  placeId: "",
+                  cid: "",
+                  reviewUrl: "",
+                  mapsUrl: q,
+                  isManualUrl: true,
+                });
+              }
+            )
+          );
+          return;
+        }
+
         dropdown.appendChild(
           createDropdownItem(
             `Gunakan pencarian: "${q}"`,
@@ -1594,7 +1808,54 @@
       });
     } catch (err) {
       if (err.name === "AbortError") return;
-      dropdown.style.display = "none";
+      dropdown.replaceChildren();
+      const isUrl = /^https?:\/\//i.test(q);
+      if (isUrl) {
+        dropdown.appendChild(
+          createDropdownItem(
+            "🔗 Gunakan Tautan Google Maps Langsung",
+            null,
+            "Tautan terdeteksi. Klik di sini untuk menggunakannya sebagai lokasi review bisnis Anda.",
+            () => {
+              dropdown.style.display = "none";
+              const customTitle = "Toko Saya";
+              storeInput.value = customTitle;
+              storeInput.focus();
+              storeInput.select();
+              selectPlace({
+                title: customTitle,
+                address: "Lokasi dari Link Google Maps",
+                category: "",
+                placeId: "",
+                cid: "",
+                reviewUrl: "",
+                mapsUrl: q,
+                isManualUrl: true,
+              });
+            }
+          )
+        );
+      } else {
+        dropdown.appendChild(
+          createDropdownItem(
+            `Gunakan pencarian: "${q}"`,
+            null,
+            "Koneksi ke Google Maps sedang lambat. Klik di sini untuk menggunakan nama ini secara langsung.",
+            () => {
+              dropdown.style.display = "none";
+              selectPlace({
+                title: q,
+                address: "Pencarian langsung Google Maps",
+                category: "",
+                placeId: "",
+                cid: "",
+                reviewUrl: "",
+                mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`,
+              });
+            }
+          )
+        );
+      }
     }
   }
 
@@ -1651,6 +1912,7 @@
     const cardId = getCleanCardId();
     const res = await fetch("/api/card", {
       method: "POST",
+      cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         pin: pinCode,
@@ -1662,6 +1924,7 @@
         cid: selectedPlace.cid || "",
         wa: normalizeWaNumber(waInput.value),
         address: selectedPlace.address || "",
+        mapsUrl: selectedPlace ? (selectedPlace.mapsUrl || "") : "",
       }),
     });
     const data = await res.json();
@@ -1727,7 +1990,11 @@
       showStatus("#e8f5e9", "#1b5e20", successHtml, true);
     } catch (err) {
       showStatus("#fdecea", "#b71c1c", "❌ " + err.message);
-      updateButtonState();
+      if (/dikunci/i.test(err.message || "")) {
+        await checkExistingCard();
+      } else {
+        updateButtonState();
+      }
     }
   }
 

@@ -2,22 +2,28 @@
 // Vercel Serverless Function: GET /api/go?id=... (atau /c/:id)
 // Redirect otomatis saat pelanggan Scan Barcode/QR Code atau Tap Kartu
 // =============================================================
-import { getCardFromRedis, normalizeCardId, normalizeWaNumber } from "../netlify/functions/card.mjs";
+import { getCardFromRedis, normalizeCardId, normalizeWaNumber, isSafeHttpUrl } from "../netlify/functions/card.mjs";
 
 export default {
   async fetch(req) {
     const url = new URL(req.url);
-    const rawId = url.searchParams.get("id") || url.pathname.replace(/^\/c\//i, "");
+    const pathMatch = url.pathname.match(/^\/c\/([^/?#]+)/i);
+    const rawId = url.searchParams.get("id") || (pathMatch ? pathMatch[1] : "");
     const cardId = normalizeCardId(rawId);
 
     if (!cardId) {
       return Response.redirect(new URL("/", url.origin).toString(), 302);
     }
 
-    const card = await getCardFromRedis(cardId);
+    let card = null;
+    try {
+      card = await getCardFromRedis(cardId);
+    } catch {
+      card = null;
+    }
 
     // Jika kartu sudah diaktifkan di Cloud Database, arahkan ke tujuan terbarunya
-    if (card && card.targetUrl && card.storeName) {
+    if (card && card.targetUrl && card.storeName && isSafeHttpUrl(card.targetUrl)) {
       let dest = card.targetUrl;
       try {
         const parsedDest = new URL(dest, url.origin);
@@ -26,6 +32,7 @@ export default {
           rateUrl.searchParams.set("n", card.storeName);
           if (card.placeId) rateUrl.searchParams.set("p", card.placeId);
           else if (card.cid) rateUrl.searchParams.set("c", card.cid);
+          else if (card.mapsUrl) rateUrl.searchParams.set("m", card.mapsUrl);
           const cleanWa = normalizeWaNumber(card.wa || "");
           if (cleanWa) rateUrl.searchParams.set("w", cleanWa);
           rateUrl.searchParams.set("card", cardId);
@@ -35,13 +42,15 @@ export default {
         // biarkan dest apa adanya jika URL eksternal
       }
 
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: dest,
-          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-        },
-      });
+      if (isSafeHttpUrl(dest)) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: dest,
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          },
+        });
+      }
     }
 
     // Jika kartu belum pernah diaktifkan, arahkan ke halaman aktivasi dengan Barcode ID langsung terisi

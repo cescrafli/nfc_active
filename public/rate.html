@@ -207,7 +207,7 @@
 <body>
 
 <div class="card">
-  <span class="store-badge">⭐ PENILAIAN PELANGGAN</span>
+  <span class="store-badge" id="store-badge">⭐ PENILAIAN PELANGGAN</span>
   <h1 id="store-title">Bagaimana Pengalaman Anda?</h1>
   <p class="sub">Ketuk bintang di bawah untuk memberikan penilaian terhadap layanan kami.</p>
 
@@ -235,7 +235,7 @@
   <div class="redirect-box" id="redirect-box">
     🎉 Terima kasih atas penilaian positif Anda!<br>
     Mengarahkan langsung ke halaman ulasan <strong>Google Maps</strong>...<br>
-    <a id="manual-google-link" href="#">Buka Google Maps Sekarang →</a>
+    <a id="manual-google-link" href="#" rel="noopener" target="_blank">Buka Google Maps Sekarang →</a>
   </div>
 
   <!-- Tampil saat klik Bintang 1 sampai 3 (Form Masukan ke WhatsApp) -->
@@ -273,7 +273,59 @@
   else if (rawWa.startsWith("8")) rawWa = "62" + rawWa;
   const cardToken = (params.get("card") || "").trim();
 
-  document.getElementById("store-title").textContent = currentStoreName;
+  function updateStoreDisplay() {
+    const badgeEl = document.getElementById("store-badge");
+    const titleEl = document.getElementById("store-title");
+    if (currentStoreName && currentStoreName.toLowerCase() !== "kami") {
+      if (badgeEl) badgeEl.textContent = `⭐ ${currentStoreName.toUpperCase()}`;
+      if (titleEl) titleEl.textContent = `Bagaimana Pengalaman Anda di ${currentStoreName}?`;
+    } else {
+      if (badgeEl) badgeEl.textContent = "⭐ PENILAIAN PELANGGAN";
+      if (titleEl) titleEl.textContent = "Bagaimana Pengalaman Anda?";
+    }
+  }
+  updateStoreDisplay();
+
+  let currentGoogleReviewUrl = "";
+  let currentMapsUrl = (params.get("m") || "").trim();
+  let currentAddress = "";
+
+  function isSafeHttpUrl(urlStr) {
+    if (!urlStr || typeof urlStr !== "string") return false;
+    try {
+      const u = new URL(urlStr, window.location.origin);
+      return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+
+  function isPlaceholderAddress(addr) {
+    if (!addr) return true;
+    const clean = String(addr).trim().toLowerCase();
+    return (
+      clean === "indonesia" ||
+      clean === "lokasi google maps" ||
+      clean === "lokasi dari link google maps" ||
+      clean === "pencarian langsung google maps"
+    );
+  }
+
+  function updateGoogleReviewLink() {
+    if (currentPlaceId) {
+      currentGoogleReviewUrl = `https://search.google.com/local/writereview?placeid=${encodeURIComponent(currentPlaceId)}`;
+    } else if (currentCid) {
+      currentGoogleReviewUrl = `https://www.google.com/maps?cid=${encodeURIComponent(currentCid)}`;
+    } else if (currentMapsUrl && isSafeHttpUrl(currentMapsUrl)) {
+      currentGoogleReviewUrl = currentMapsUrl;
+    } else {
+      const cleanAddr = isPlaceholderAddress(currentAddress) ? "" : currentAddress.trim();
+      const searchTarget = cleanAddr ? `${currentStoreName} ${cleanAddr}` : currentStoreName;
+      currentGoogleReviewUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchTarget)}`;
+    }
+    document.getElementById("manual-google-link").href = currentGoogleReviewUrl;
+  }
+  updateGoogleReviewLink();
 
   let cardSyncPromise = null;
   if (cardToken) {
@@ -283,53 +335,46 @@
     editLink.href = `/?card=${encodeURIComponent(cardToken)}`;
 
     // Sinkronisasi Live: Cek apakah kartu di database sudah dipindah cabang atau diganti ke Mode Maps
-    cardSyncPromise = fetch(`/api/card?id=${encodeURIComponent(cardToken)}`)
+    cardSyncPromise = fetch(`/api/card?id=${encodeURIComponent(cardToken)}`, { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!data || !data.found || !data.card) {
-          // Jika kartu telah dikosongkan atau dihapus oleh Admin, arahkan ke halaman aktivasi
+        if (!data) return;
+        if (data.existsInStock && (!data.found || !data.card)) {
+          // Hanya redirect jika kartu memang berstatus kosong / belum diaktifkan
           window.location.replace(`/?card=${encodeURIComponent(cardToken)}`);
           return;
         }
+        if (!data.card) return;
         const c = data.card;
 
         // Jika pemilik telah mengubah mode ke 'maps', redirect langsung ke profil Google Maps
-        if (c.mode === "maps" && c.targetUrl) {
+        if (c.mode === "maps" && c.targetUrl && isSafeHttpUrl(c.targetUrl)) {
           window.location.replace(c.targetUrl);
           return;
         }
 
         if (c.storeName) {
           currentStoreName = c.storeName;
-          document.getElementById("store-title").textContent = c.storeName;
+          updateStoreDisplay();
         }
         if (c.wa) rawWa = c.wa;
         currentPlaceId = c.placeId || "";
         currentCid = c.cid || "";
+        currentMapsUrl = c.mapsUrl || "";
+        currentAddress = c.address || "";
         updateGoogleReviewLink();
       })
       .catch(() => {});
   }
 
-  async function ensureCardSynced() {
+  async function ensureCardSynced(timeoutMs = 800) {
     if (cardSyncPromise) {
       await Promise.race([
         cardSyncPromise,
-        new Promise((r) => setTimeout(r, 800))
+        new Promise((r) => setTimeout(r, timeoutMs))
       ]);
     }
   }
-
-  let currentGoogleReviewUrl = "";
-  function updateGoogleReviewLink() {
-    currentGoogleReviewUrl = currentPlaceId
-      ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(currentPlaceId)}`
-      : currentCid
-        ? `https://www.google.com/maps?cid=${encodeURIComponent(currentCid)}`
-        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentStoreName)}`;
-    document.getElementById("manual-google-link").href = currentGoogleReviewUrl;
-  }
-  updateGoogleReviewLink();
 
   const captions = {
     1: "😞 Sangat Kurang Puas (1/5)",
@@ -360,6 +405,8 @@
     ratingCaption.textContent = "Pilih 1 sampai 5 bintang";
     redirectBox.style.display = "none";
     formArea.style.display = "none";
+    const successBox = document.getElementById("feedback-success-box");
+    if (successBox) successBox.style.display = "none";
     submitBtn.disabled = false;
     submitBtn.textContent = "💬 Kirim Masukan ke WhatsApp Manajemen";
   }
@@ -384,6 +431,9 @@
       });
       ratingCaption.textContent = captions[currentStar] || "";
 
+      const successBox = document.getElementById("feedback-success-box");
+      if (successBox) successBox.style.display = "none";
+
       if (currentStar <= 3) {
         // Bintang 1 - 3 -> Munculkan form keluhan ke WhatsApp
         redirectBox.style.display = "none";
@@ -392,8 +442,11 @@
         // Bintang 4 - 5 -> Langsung arahkan ke Google Maps Review
         formArea.style.display = "none";
         redirectBox.style.display = "block";
+        const starSelectedAtClick = currentStar;
         redirectTimer = setTimeout(async () => {
           await ensureCardSynced();
+          // Cek kembali: Jangan redirect jika user beralih ke bintang 1-3 saat sync sedang berlangsung
+          if (currentStar !== starSelectedAtClick || currentStar <= 3) return;
           window.location.href = currentGoogleReviewUrl;
         }, 300);
       }
@@ -410,13 +463,43 @@
       return;
     }
     submitBtn.disabled = true;
+    submitBtn.textContent = "⏳ Memproses Masukan...";
+
+    // Jika nomor WA belum tersinkron, tunggu hingga 3500ms
+    if (!rawWa && cardSyncPromise) {
+      await ensureCardSynced(3500);
+    } else {
+      await ensureCardSynced(800);
+    }
+
+    const cleanPhone = (rawWa || "").replace(/\D/g, "");
+
+    // Jika toko memang tidak mengisi nomor WA atau kurang dari 8 digit, tampilkan box konfirmasi terima kasih di halaman
+    if (!cleanPhone || cleanPhone.length < 8) {
+      formArea.style.display = "none";
+      let successBox = document.getElementById("feedback-success-box");
+      if (!successBox) {
+        successBox = document.createElement("div");
+        successBox.id = "feedback-success-box";
+        successBox.style.cssText = "background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:20px;text-align:center;margin-top:16px;";
+        successBox.innerHTML = `
+          <div style="font-size:36px;margin-bottom:8px;">🙏</div>
+          <h3 style="color:#166534;font-size:16.5px;font-weight:700;margin-bottom:6px;">Terima Kasih Atas Masukan Anda!</h3>
+          <p style="color:#15803d;font-size:13.5px;line-height:1.5;margin:0;">Pesan masukan Anda telah kami catat untuk perbaikan dan evaluasi kualitas layanan manajemen.</p>
+        `;
+        formArea.parentNode.appendChild(successBox);
+      }
+      successBox.style.display = "block";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "💬 Kirim Masukan ke WhatsApp Manajemen";
+      return;
+    }
+
     submitBtn.textContent = "⏳ Membuka WhatsApp...";
     setTimeout(() => {
       submitBtn.disabled = false;
       submitBtn.textContent = "💬 Kirim Masukan ke WhatsApp Manajemen";
-    }, 1500);
-
-    await ensureCardSynced();
+    }, 2000);
 
     const sender = custName.value.trim();
     const starsStr = "⭐".repeat(currentStar) + ` (${currentStar}/5)`;
@@ -429,11 +512,7 @@
     ].filter(Boolean);
 
     const waText = encodeURIComponent(waLines.join("\n"));
-    const waTarget = rawWa
-      ? `https://wa.me/${rawWa}?text=${waText}`
-      : `https://api.whatsapp.com/send?text=${waText}`;
-
-    window.location.href = waTarget;
+    window.location.href = `https://wa.me/${cleanPhone}?text=${waText}`;
   });
 </script>
 

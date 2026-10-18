@@ -9,7 +9,7 @@
 // =============================================================
 import { createHash, timingSafeEqual, randomBytes } from "node:crypto";
 
-const DEFAULT_PRINT_PASSWORD = "print-password-admin";
+const DEFAULT_PRINT_PASSWORD = "print-password";
 
 function getPrintPassword() {
   return (process.env.PRINT_ADMIN_PASSWORD || DEFAULT_PRINT_PASSWORD).trim();

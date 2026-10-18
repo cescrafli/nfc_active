@@ -1,6 +1,11 @@
 // =============================================================
 // Sistem Kartu Dinamis, Barcode/QR Permanen & PIN 4 Angka Customer
 // + Manajemen Daftar Barcode Admin (/print) di Upstash Redis
+//
+// 3 Status Barcode di /print:
+// 1. Belum Di-Link ke Kartu (nfcLinked: false, isUsed: false)
+// 2. Sudah Di-Link ke Kartu NFC / Siap Jual (nfcLinked: true, isUsed: false) -> hanya berisi Barcode ID di kartu, belum ada alamat toko
+// 3. Sudah Digunakan Customer (isUsed: true) -> sudah diisi alamat toko & PIN 4 angka oleh customer
 // =============================================================
 import { createHash, timingSafeEqual, randomBytes } from "node:crypto";
 
@@ -141,18 +146,19 @@ export async function listAllCardsFromRedis() {
     try {
       const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
       const { pinHash, ...publicCard } = parsed;
+      const isUsed = Boolean(parsed.targetUrl && parsed.storeName);
       cards.push({
         ...publicCard,
         cardId: parsed.cardId || ids[i],
         hasPin: Boolean(pinHash),
-        isUsed: Boolean(parsed.targetUrl && parsed.storeName),
+        nfcLinked: Boolean(parsed.nfcLinked || isUsed),
+        isUsed,
       });
     } catch {
       // skip invalid json
     }
   }
 
-  // Urutkan yang terbaru dibuat di paling atas
   cards.sort((a, b) => {
     const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
     const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
@@ -165,18 +171,19 @@ export async function listAllCardsFromRedis() {
 export default async (req) => {
   const reqUrl = new URL(req.url);
 
-  // GET /api/card?id=... -> Cek status 1 kartu untuk Customer
+  // GET /api/card?id=... -> Cek status 1 kartu (berdasarkan Barcode ID)
   if (req.method === "GET") {
     const id = normalizeCardId(reqUrl.searchParams.get("id") || "");
     if (!id) {
       return json({ error: "Parameter id kartu diperlukan" }, 400);
     }
     const card = await getCardFromRedis(id);
-    // Hanya dianggap ditemukan/aktif jika sudah memiliki targetUrl (sudah diaktifkan customer)
+    // Jika belum ada alamat toko (masih kosong / baru di-link Barcode ID saja ke kartu)
     if (!card || !card.targetUrl) {
       return json({
         found: false,
         existsInStock: Boolean(card),
+        nfcLinked: Boolean(card?.nfcLinked),
         hasPin: Boolean(card?.pinHash),
         cardId: id,
       }, 404);
@@ -184,6 +191,7 @@ export default async (req) => {
     const { pinHash, ...publicCard } = card;
     return json({
       found: true,
+      nfcLinked: true,
       hasPin: Boolean(pinHash),
       card: publicCard,
     });
@@ -205,13 +213,13 @@ export default async (req) => {
         return json({ valid: false, error: "Password Admin salah." }, 401);
       }
 
-      // 1. Ambil semua daftar barcode (mana yang sudah digunakan & belum digunakan)
+      // 1. Ambil semua daftar barcode
       if (body.adminAction === "list") {
         const cards = await listAllCardsFromRedis();
         return json({ valid: true, cards });
       }
 
-      // 2. Generate stok barcode baru & simpan ke database sebagai "Belum Digunakan"
+      // 2. Generate stok barcode baru & simpan ke database
       if (body.adminAction === "generate") {
         const qty = Math.max(1, Math.min(50, Number(body.qty) || 6));
         const nowIso = new Date().toISOString();
@@ -223,6 +231,7 @@ export default async (req) => {
           createdIds.push(id);
           const payload = JSON.stringify({
             cardId: id,
+            nfcLinked: false,
             targetUrl: "",
             storeName: "",
             mode: "review",
@@ -238,7 +247,24 @@ export default async (req) => {
         return json({ valid: true, createdIds, cards });
       }
 
-      // 3. Reset PIN Customer (Jika customer lupa PIN 4 angkanya)
+      // 3. Tandai Barcode ID sudah ditanam/di-link ke fisik Kartu NFC (tanpa mengisi alamat toko!)
+      if (body.adminAction === "mark_linked") {
+        const id = normalizeCardId(body.cardId || "");
+        const existing = (await getCardFromRedis(id)) || {
+          cardId: id,
+          targetUrl: "",
+          storeName: "",
+          mode: "review",
+          createdAt: new Date().toISOString(),
+        };
+        existing.nfcLinked = true;
+        existing.linkedAt = new Date().toISOString();
+        await saveCardToRedis(id, existing);
+        const cards = await listAllCardsFromRedis();
+        return json({ valid: true, cards });
+      }
+
+      // 4. Reset PIN Customer (Jika customer lupa PIN 4 angkanya)
       if (body.adminAction === "reset_pin") {
         const id = normalizeCardId(body.cardId || "");
         const existing = await getCardFromRedis(id);
@@ -251,7 +277,7 @@ export default async (req) => {
         return json({ valid: true, cards });
       }
 
-      // 4. Kosongkan / Reset Kartu kembali menjadi Belum Digunakan
+      // 5. Kosongkan alamat toko pada kartu (tetap berstatus Sudah Di-Link ke Kartu NFC, siap dipakai toko baru)
       if (body.adminAction === "reset_card") {
         const id = normalizeCardId(body.cardId || "");
         const existing = await getCardFromRedis(id);
@@ -260,6 +286,7 @@ export default async (req) => {
         }
         await saveCardToRedis(id, {
           cardId: id,
+          nfcLinked: Boolean(existing.nfcLinked),
           targetUrl: "",
           storeName: "",
           mode: "review",
@@ -269,7 +296,7 @@ export default async (req) => {
         return json({ valid: true, cards });
       }
 
-      // 5. Hapus barcode dari database
+      // 6. Hapus barcode dari database
       if (body.adminAction === "delete") {
         const id = normalizeCardId(body.cardId || "");
         if (id) {
@@ -285,10 +312,10 @@ export default async (req) => {
       return json({ valid: false, error: "Aksi admin tidak dikenal" }, 400);
     }
 
-    // --- AKSI CUSTOMER (Aktivasi Pertama / Update Lokasi dengan PIN 4 Angka) ---
+    // --- AKSI CUSTOMER (Mengisi Alamat Toko & PIN 4 Angka ke Barcode ID yang sudah ada di Kartu) ---
     const cardId = normalizeCardId(body.cardId || "");
     if (!cardId) {
-      return json({ valid: false, error: "Token kartu tidak ditemukan." }, 400);
+      return json({ valid: false, error: "Barcode ID kartu tidak ditemukan." }, 400);
     }
 
     const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
@@ -330,6 +357,7 @@ export default async (req) => {
           cid,
           wa,
           address,
+          nfcLinked: true,
           pinHash: existingCard?.pinHash || inputPinHash,
           createdAt: existingCard?.createdAt || new Date().toISOString(),
         });

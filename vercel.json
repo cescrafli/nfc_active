@@ -6,9 +6,7 @@
   "rewrites": [
     { "source": "/c/:id", "destination": "/api/go?id=:id" },
     { "source": "/print", "destination": "/print.html" },
-    { "source": "/otp", "destination": "/otp.html" },
-    { "source": "/rate", "destination": "/rate.html" },
-    { "source": "/admin", "destination": "/admin.html" }
+    { "source": "/rate", "destination": "/rate.html" }
   ],
   "headers": [
     {

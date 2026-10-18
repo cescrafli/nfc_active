@@ -313,7 +313,7 @@
     unlockBtn.textContent = "Memverifikasi...";
 
     try {
-      const res = await fetch("/api/otp/current", {
+      const res = await fetch("/api/print-auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key })
@@ -321,7 +321,7 @@
       const data = await res.json();
       if (!res.ok || !data.valid) {
         loginErr.style.display = "block";
-        loginErr.textContent = "❌ Kunci Rahasia Admin salah.";
+        loginErr.textContent = "❌ Password Admin salah.";
         unlockBtn.disabled = false;
         unlockBtn.textContent = "🔓 Buka Panel Produksi Barcode";
         return;

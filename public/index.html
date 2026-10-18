@@ -897,6 +897,8 @@
   let cardIsUsed = false;
   let cardExistsInStock = false;
   let html5QrScanner = null;
+  let activeNfcCustomerController = null;
+  let originalCardData = null;
 
   const cardIdInput = document.getElementById("card-id-input");
   const detectedIdBadge = document.getElementById("detected-id-badge");
@@ -1102,6 +1104,12 @@
       detectedIdBadge.style.borderColor = "#93c5fd";
 
       if (data.found && data.card) {
+        originalCardData = {
+          storeName: data.card.storeName || "",
+          mode: data.card.mode || "review",
+          wa: normalizeWaNumber(data.card.wa || ""),
+        };
+
         currentCardStatus.style.display = "block";
         currentCardStatus.style.background = "#f0fdf4";
         currentCardStatus.style.borderColor = "#bbf7d0";
@@ -1138,6 +1146,7 @@
         updatePinUiMode(data.hasPin, true);
         updateTargetUrl();
       } else {
+        originalCardData = null;
         updatePinUiMode(data.hasPin, false);
         currentCardStatus.style.display = "block";
         currentCardStatus.style.background = "#eff6ff";
@@ -1147,6 +1156,7 @@
       }
       updateButtonState();
     } catch {
+      originalCardData = null;
       currentCardStatus.style.display = "none";
       updateButtonState();
     }
@@ -1199,26 +1209,58 @@
       showStatus("#fff8e1", "#b45309", "Untuk pengguna iPhone/Laptop, silakan klik tombol '📷 Scan Barcode Kartu' di sebelah kiri untuk mendeteksi kartu Anda.");
       return;
     }
+
+    if (activeNfcCustomerController) {
+      activeNfcCustomerController.abort();
+      activeNfcCustomerController = null;
+      readNfcBtn.textContent = "📡 Tap Baca NFC";
+      showStatus("#f8fafc", "#475569", "Pindaian NFC dibatalkan.");
+      return;
+    }
+
     try {
-      const ndef = new NDEFReader();
-      await ndef.scan();
+      activeNfcCustomerController = new AbortController();
+      readNfcBtn.textContent = "✖️ Batal Baca NFC";
       showStatus("#e8f0fe", "#174ea6", "📡 Tempelkan Kartu NFC Anda ke belakang HP sekarang untuk mendeteksi kartu...");
+      const ndef = new NDEFReader();
+      await ndef.scan({ signal: activeNfcCustomerController.signal });
+
       ndef.onreading = (event) => {
+        let foundToken = null;
         for (const record of event.message.records) {
           if (record.recordType === "url") {
             const decoder = new TextDecoder();
             const urlStr = decoder.decode(record.data);
             const token = extractTokenFromScannedText(urlStr);
             if (token) {
-              applyDetectedCardToken(token);
-              showStatus("#e8f5e9", "#1b5e20", `✅ Kartu NFC (${token}) Berhasil Terdeteksi!`);
-              return;
+              foundToken = token;
+              break;
             }
           }
         }
+
+        if (foundToken) {
+          if (activeNfcCustomerController) {
+            activeNfcCustomerController.abort();
+            activeNfcCustomerController = null;
+          }
+          readNfcBtn.textContent = "📡 Tap Baca NFC";
+          applyDetectedCardToken(foundToken);
+          showStatus("#e8f5e9", "#1b5e20", `✅ Kartu NFC (${foundToken}) Berhasil Terdeteksi!`);
+        } else {
+          showStatus("#fff8e1", "#b45309", "⚠️ Chip NFC pada kartu ini belum berisi kode ID resmi. Silakan klik tombol '📷 Scan Barcode Kartu' di sebelah kiri untuk memindai stiker QR fisik kartu Anda.");
+        }
       };
+
+      activeNfcCustomerController.signal.addEventListener("abort", () => {
+        readNfcBtn.textContent = "📡 Tap Baca NFC";
+      });
     } catch (err) {
-      showStatus("#fdecea", "#b71c1c", "Gagal membaca NFC (" + err.message + "). Anda juga bisa klik '📷 Scan Barcode Kartu'.");
+      activeNfcCustomerController = null;
+      readNfcBtn.textContent = "📡 Tap Baca NFC";
+      if (err.name !== "AbortError") {
+        showStatus("#fdecea", "#b71c1c", "Gagal membaca NFC (" + err.message + "). Anda juga bisa klik '📷 Scan Barcode Kartu'.");
+      }
     }
   });
 
@@ -1286,6 +1328,22 @@
   function updateButtonState() {
     const code = getPinCode();
     const cleanWa = normalizeWaNumber(waInput.value);
+
+    // Cek apakah ada perubahan belum disimpan jika kartu sudah aktif
+    if (cardIsUsed && originalCardData) {
+      const curStore = selectedPlace ? selectedPlace.title : "";
+      const curMode = getSelectedMode();
+      const curWa = normalizeWaNumber(waInput.value);
+      const isDirty = (curStore && curStore !== originalCardData.storeName) || (curMode !== originalCardData.mode) || (curWa !== originalCardData.wa);
+
+      if (isDirty) {
+        currentCardStatus.style.display = "block";
+        currentCardStatus.style.background = "#fffbeb";
+        currentCardStatus.style.borderColor = "#fde68a";
+        currentCardStatus.style.color = "#92400e";
+        currentCardStatus.innerHTML = `⚠️ <strong>Perubahan Belum Disimpan:</strong> Anda telah mengubah data toko / mode / WhatsApp. Masukkan 4 angka password Anda di bawah lalu klik tombol Simpan.`;
+      }
+    }
 
     let isReady = true;
     let labelText = "";

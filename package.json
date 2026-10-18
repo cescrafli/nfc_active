@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node scripts/build-config.mjs",
     "dev": "npm run build && npx netlify-cli dev",
-    "check": "node --check netlify/functions/card.mjs && node --check netlify/functions/places.mjs && node --check api/card.mjs && node --check api/go.mjs && node --check api/places.mjs",
+    "check": "node --check netlify/functions/card.mjs && node --check netlify/functions/places.mjs && node --check netlify/functions/go.mjs && node --check api/card.mjs && node --check api/go.mjs && node --check api/places.mjs",
     "token": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\""
   },
   "engines": {

@@ -813,6 +813,8 @@
             <option value="6" selected>+ 6 Kartu Baru</option>
             <option value="12">+ 12 Kartu Baru (1 Lembar)</option>
             <option value="24">+ 24 Kartu Baru</option>
+            <option value="36">+ 36 Kartu Baru</option>
+            <option value="48">+ 48 Kartu Baru (Kertas A3)</option>
           </select>
         </div>
 
@@ -854,6 +856,9 @@
       </button>
       <button type="button" class="btn btn-outline" id="btn-select-unlinked" style="padding:7px 12px;font-size:12px;background:#fffbeb;border-color:#fde68a;color:#b45309;">
         🟡 Pilih Belum Dikunci
+      </button>
+      <button type="button" class="btn btn-outline" id="btn-bulk-delete" style="padding:7px 12px;font-size:12px;background:#fef2f2;border-color:#fecaca;color:#b91c1c;display:none;">
+        🗑️ Hapus Barcode Terpilih
       </button>
       <button type="button" class="btn btn-outline" id="btn-clear-selection" style="padding:7px 12px;font-size:12px;display:none;">
         ❌ Batal Pilihan
@@ -983,6 +988,7 @@
   const bulkCountPill = document.getElementById("bulk-count-pill");
   const btnSelectAllVisible = document.getElementById("btn-select-all-visible");
   const btnSelectUnlinked = document.getElementById("btn-select-unlinked");
+  const btnBulkDelete = document.getElementById("btn-bulk-delete");
   const btnClearSelection = document.getElementById("btn-clear-selection");
   const btnOpenBulkModal = document.getElementById("btn-open-bulk-modal");
 
@@ -1006,6 +1012,8 @@
   let adminQrScanner = null;
   let scannedCardId = null;
   let lastLockedCardId = null;
+  let activeNfcController = null;
+  let renderSessionId = 0;
 
   const savedKey = sessionStorage.getItem("nfc_admin_key");
   if (savedKey) {
@@ -1130,7 +1138,13 @@
   // Langkah 2: Setelah stiker di-scan, periksa status dan siapkan tombol User-Gesture
   function handleScannedSticker(cardId) {
     scannedCardId = cardId;
+    lastLockedCardId = cardId;
     const cardData = allCards.find((c) => c.cardId === cardId);
+
+    // Sorot baris kartu di tabel dan gulir ke pandangan
+    renderCards();
+    const rowEl = document.querySelector("tr.highlight-row");
+    if (rowEl) rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
     if (!cardData) {
       lockStepStatus.style.background = "#fef2f2";
@@ -1183,6 +1197,11 @@
     const cardId = scannedCardId;
     const dynamicUrl = `${window.location.origin}/c/${cardId}`;
 
+    if (activeNfcController) {
+      activeNfcController.abort();
+      activeNfcController = null;
+    }
+
     if (!("NDEFReader" in window)) {
       if (confirm(`Perangkat ini tidak mendukung Web NFC langsung (gunakan Chrome Android untuk menulis ke chip fisik NFC).\n\nTandai Barcode ID ${cardId} sebagai '🔵 Terkunci di Kartu (Siap Jual)' di database?`)) {
         try {
@@ -1203,6 +1222,7 @@
     }
 
     try {
+      activeNfcController = new AbortController();
       btnExecuteLock.disabled = true;
       btnExecuteLock.textContent = "⏳ Tempelkan Kartu ke Punggung HP Sekarang...";
 
@@ -1216,7 +1236,7 @@
       const ndef = new NDEFReader();
       await ndef.write({
         records: [{ recordType: "url", data: dynamicUrl }],
-      });
+      }, { signal: activeNfcController.signal });
 
       const data = await adminApi({ adminAction: "mark_linked", cardId });
       allCards = data.cards || [];
@@ -1232,6 +1252,7 @@
       btnExecuteLock.style.display = "none";
       scanNextCardBtn.style.display = "inline-flex";
     } catch (err) {
+      if (err.name === "AbortError") return;
       lockStepStatus.style.background = "#fef2f2";
       lockStepStatus.style.borderColor = "#fecaca";
       lockStepStatus.innerHTML = `
@@ -1240,21 +1261,36 @@
       `;
       btnExecuteLock.disabled = false;
       btnExecuteLock.textContent = `📡 COBA LAGI: KLIK & TEMPEL KARTU (${cardId})`;
+    } finally {
+      activeNfcController = null;
     }
   });
 
   const btnVerifyCard = document.getElementById("btn-verify-card");
   btnVerifyCard.addEventListener("click", async () => {
+    if (activeNfcController) {
+      activeNfcController.abort();
+      activeNfcController = null;
+      btnVerifyCard.disabled = false;
+      btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
+      return;
+    }
+
     if (!("NDEFReader" in window)) {
       alert("Fitur tes kartu NFC langsung memerlukan browser Google Chrome di HP Android.");
       return;
     }
     try {
-      btnVerifyCard.disabled = true;
-      btnVerifyCard.textContent = "📡 Tempelkan Kartu ke Punggung HP...";
+      activeNfcController = new AbortController();
+      btnVerifyCard.disabled = false;
+      btnVerifyCard.textContent = "❌ Batalkan Tes NFC (Tempelkan Kartu...)";
       const ndef = new NDEFReader();
-      await ndef.scan();
+      await ndef.scan({ signal: activeNfcController.signal });
       ndef.onreading = (event) => {
+        if (activeNfcController) {
+          activeNfcController.abort();
+          activeNfcController = null;
+        }
         btnVerifyCard.disabled = false;
         btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
         for (const record of event.message.records) {
@@ -1277,6 +1313,11 @@
         alert("Kartu terdeteksi namun tidak berisi link Barcode ID yang valid.");
       };
     } catch (err) {
+      if (err.name === "AbortError") {
+        btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
+        return;
+      }
+      activeNfcController = null;
       btnVerifyCard.disabled = false;
       btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
       alert("Gagal membaca NFC: " + err.message);
@@ -1338,6 +1379,10 @@
     try {
       const data = await adminApi({ adminAction: "generate", qty });
       allCards = data.cards || [];
+      if (Array.isArray(data.createdIds) && data.createdIds.length > 0) {
+        selectedCardIds.clear();
+        data.createdIds.forEach((id) => selectedCardIds.add(id));
+      }
       renderCards();
     } catch (err) {
       alert(err.message);
@@ -1397,11 +1442,21 @@
   }
 
   window.addEventListener("afterprint", () => {
+    const s = document.getElementById("dynamic-print-page-style");
+    if (s) s.remove();
     renderPrintSheet(getFilteredCards());
   });
 
   printBtn.addEventListener("click", () => {
-    safePrintCards(getFilteredCards());
+    const filtered = getFilteredCards();
+    if (filtered.length === 0) {
+      alert("Tidak ada kartu yang cocok untuk dicetak.");
+      return;
+    }
+    selectedCardIds.clear();
+    filtered.forEach((c) => selectedCardIds.add(c.cardId));
+    updateBulkBar();
+    openBulkModal();
   });
 
   // Download Stiker QR Lengkap dengan Kode ID menggunakan Canvas
@@ -1486,6 +1541,11 @@
     btnOpenBulkModal.textContent = `📄 Bulk Print / Preview PDF (${count} Barcode)`;
     btnClearSelection.style.display = count > 0 ? "inline-flex" : "none";
 
+    // Hapus massal hanya untuk barcode yang belum digunakan customer
+    const deletableCount = allCards.filter((c) => selectedCardIds.has(c.cardId) && !c.isUsed).length;
+    btnBulkDelete.style.display = deletableCount > 0 ? "inline-flex" : "none";
+    btnBulkDelete.textContent = `🗑️ Hapus ${deletableCount} Terpilih`;
+
     const headerCb = document.getElementById("header-select-all");
     if (headerCb) {
       const filtered = getFilteredCards();
@@ -1507,6 +1567,32 @@
       }
     }
   }
+
+  btnBulkDelete.addEventListener("click", async () => {
+    const deletableCards = allCards.filter((c) => selectedCardIds.has(c.cardId) && !c.isUsed);
+    if (deletableCards.length === 0) {
+      alert("Tidak ada kartu terpilih yang bisa dihapus. Kartu yang sudah aktif digunakan customer dilindungi dari penghapusan.");
+      return;
+    }
+
+    const deletableIds = deletableCards.map((c) => c.cardId);
+    if (!confirm(`Hapus ${deletableIds.length} barcode stok yang belum aktif dari database?\n\n(Tindakan ini permanen dan tidak dapat dibatalkan)`)) {
+      return;
+    }
+
+    btnBulkDelete.disabled = true;
+    btnBulkDelete.textContent = "⏳ Menghapus...";
+    try {
+      const data = await adminApi({ adminAction: "bulk_delete", cardIds: deletableIds });
+      allCards = data.cards || [];
+      deletableIds.forEach((id) => selectedCardIds.delete(id));
+      renderCards();
+    } catch (err) {
+      alert("Gagal menghapus barcode: " + err.message);
+    } finally {
+      btnBulkDelete.disabled = false;
+    }
+  });
 
   btnSelectAllVisible.addEventListener("click", () => {
     getFilteredCards().forEach((c) => selectedCardIds.add(c.cardId));
@@ -1549,12 +1635,16 @@
 
   // Render Pratinjau Kertas 1 Halaman ke Canvas
   async function renderSheetCanvas() {
+    const currentSession = ++renderSessionId;
     const selectedCards = allCards.filter((c) => selectedCardIds.has(c.cardId));
     const N = selectedCards.length;
     if (N === 0) {
       closeBulkModal();
       return;
     }
+
+    modalDirectPrintBtn.disabled = true;
+    modalDownloadPdfBtn.disabled = true;
 
     const paperKey = (modalPaperSize.value || "A4").toUpperCase();
     const spec = PAPER_SPECS[paperKey] || PAPER_SPECS.A4;
@@ -1638,6 +1728,8 @@
       );
     }
 
+    if (currentSession !== renderSessionId) return;
+
     // Gambar Ulang Kertas Bersih
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
@@ -1677,10 +1769,11 @@
 
       const centerX = cardX + (cardW / 2);
 
+      // Desain Proporsional Bebas Tumpukan:
       // Badge Atas
-      const badgeH = Math.max(10, cardH * 0.08);
+      const badgeH = cardH * 0.08;
       const badgeW = Math.min(cardW * 0.84, toPx(42));
-      const badgeY = cardY + Math.max(3, cardH * 0.035);
+      const badgeY = cardY + (cardH * 0.03);
 
       ctx.fillStyle = "#eff6ff";
       ctx.fillRect(centerX - (badgeW / 2), badgeY, badgeW, badgeH);
@@ -1689,16 +1782,15 @@
       ctx.strokeRect(centerX - (badgeW / 2), badgeY, badgeW, badgeH);
 
       ctx.fillStyle = "#1d4ed8";
-      ctx.font = `bold ${Math.max(8, badgeH * 0.52)}px sans-serif`;
+      ctx.font = `bold ${badgeH * 0.52}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("SCAN UNTUK ULASAN", centerX, badgeY + (badgeH / 2));
+      ctx.fillText("SCAN UNTUK ULASAN", centerX, badgeY + (badgeH / 2), badgeW * 0.9);
 
       // Gambar QR Code
       const qrImg = qrImageCache.get(item.cardId);
-      const qrAvailableH = cardH * 0.53;
-      const qrSize = Math.min(cardW * 0.78, qrAvailableH);
-      const qrY = badgeY + badgeH + Math.max(3, cardH * 0.03);
+      const qrSize = Math.min(cardW * 0.76, cardH * 0.48);
+      const qrY = badgeY + badgeH + (cardH * 0.025);
 
       if (qrImg) {
         ctx.drawImage(qrImg, centerX - (qrSize / 2), qrY, qrSize, qrSize);
@@ -1707,24 +1799,24 @@
         ctx.fillRect(centerX - (qrSize / 2), qrY, qrSize, qrSize);
         ctx.fillStyle = "#64748b";
         ctx.font = `${Math.max(9, qrSize * 0.1)}px sans-serif`;
-        ctx.fillText("QR Code", centerX, qrY + (qrSize / 2));
+        ctx.fillText("QR Code", centerX, qrY + (qrSize / 2), qrSize * 0.9);
       }
 
       // Judul & Subjudul
-      const text1Y = qrY + qrSize + Math.max(4, cardH * 0.045);
+      const titleY = qrY + qrSize + (cardH * 0.055);
       ctx.fillStyle = "#0f172a";
-      ctx.font = `bold ${Math.max(9, cardH * 0.052)}px sans-serif`;
-      ctx.fillText("Tap NFC atau Scan QR", centerX, text1Y);
+      ctx.font = `bold ${cardH * 0.046}px sans-serif`;
+      ctx.fillText("Tap NFC atau Scan QR", centerX, titleY, cardW * 0.9);
 
-      const text2Y = text1Y + Math.max(8, cardH * 0.045);
+      const subY = titleY + (cardH * 0.048);
       ctx.fillStyle = "#64748b";
-      ctx.font = `${Math.max(7.5, cardH * 0.038)}px sans-serif`;
-      ctx.fillText("Beri Penilaian & Review Kami", centerX, text2Y);
+      ctx.font = `${cardH * 0.036}px sans-serif`;
+      ctx.fillText("Beri Penilaian & Review Kami", centerX, subY, cardW * 0.9);
 
       // Tag Barcode ID di Bawah
-      const idBadgeH = Math.max(11, cardH * 0.095);
+      const idBadgeH = cardH * 0.085;
       const idBadgeW = Math.min(cardW * 0.88, toPx(48));
-      const idBadgeY = Math.min(cardY + cardH - idBadgeH - toPx(1.5), text2Y + Math.max(5, cardH * 0.04));
+      const idBadgeY = cardY + cardH - idBadgeH - (cardH * 0.03);
 
       ctx.fillStyle = "#f8fafc";
       ctx.fillRect(centerX - (idBadgeW / 2), idBadgeY, idBadgeW, idBadgeH);
@@ -1733,9 +1825,12 @@
       ctx.strokeRect(centerX - (idBadgeW / 2), idBadgeY, idBadgeW, idBadgeH);
 
       ctx.fillStyle = "#0f172a";
-      ctx.font = `bold ${Math.max(8, idBadgeH * 0.52)}px monospace`;
-      ctx.fillText(`ID: ${item.cardId}`, centerX, idBadgeY + (idBadgeH / 2));
+      ctx.font = `bold ${idBadgeH * 0.55}px monospace`;
+      ctx.fillText(`ID: ${item.cardId}`, centerX, idBadgeY + (idBadgeH / 2), idBadgeW * 0.9);
     });
+
+    modalDirectPrintBtn.disabled = false;
+    modalDownloadPdfBtn.disabled = false;
   }
 
   // Download PDF 1 Halaman via jsPDF
@@ -1974,9 +2069,12 @@
         window.open(qrImgUrl, "_blank");
       });
 
-      // Print 1 QR ini saja dengan aman
+      // Print 1 QR ini saja lewat Modal Pratinjau 1 Halaman
       tr.querySelector(".print-one-btn").addEventListener("click", () => {
-        safePrintCards([item]);
+        selectedCardIds.clear();
+        selectedCardIds.add(secretToken);
+        updateBulkBar();
+        openBulkModal();
       });
 
       // Download Stiker PNG Lengkap dengan Kode ID
@@ -1993,6 +2091,11 @@
           }
         }
 
+        if (activeNfcController) {
+          activeNfcController.abort();
+          activeNfcController = null;
+        }
+
         if (!("NDEFReader" in window)) {
           if (confirm(`Browser ini tidak mendukung NFC langsung (gunakan Chrome Android untuk menulis ke chip NFC).\n\nApakah Anda ingin menandai Barcode ID "${secretToken}" sebagai '🔵 Terkunci di Kartu (Siap Jual)' secara manual?`)) {
             const data = await adminApi({ adminAction: "mark_linked", cardId: secretToken });
@@ -2003,17 +2106,21 @@
           return;
         }
         try {
+          activeNfcController = new AbortController();
           writeBtn.textContent = "⏳ Tempel NFC...";
           const ndef = new NDEFReader();
           await ndef.write({
             records: [{ recordType: "url", data: dynamicUrl }]
-          });
+          }, { signal: activeNfcController.signal });
           const data = await adminApi({ adminAction: "mark_linked", cardId: secretToken });
           allCards = data.cards || [];
           lastLockedCardId = secretToken;
           renderCards();
-        } catch {
+        } catch (err) {
+          if (err.name === "AbortError") return;
           writeBtn.textContent = "❌ Gagal, Tap Ulang";
+        } finally {
+          activeNfcController = null;
         }
       });
 

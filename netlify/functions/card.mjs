@@ -346,6 +346,31 @@ export default async (req) => {
         return json({ valid: true, cards });
       }
 
+      // 7. Hapus massal (Bulk Delete) barcode yang belum digunakan customer
+      if (body.adminAction === "bulk_delete") {
+        const rawIds = Array.isArray(body.cardIds) ? body.cardIds : [];
+        const cleanIds = rawIds.map(normalizeCardId).filter(Boolean);
+        if (cleanIds.length === 0) {
+          return json({ valid: false, error: "Tidak ada Barcode ID yang dipilih untuk dihapus." }, 400);
+        }
+
+        const cmds = [];
+        for (const id of cleanIds) {
+          const card = await getCardFromRedis(id);
+          // Proteksi: Hanya hapus jika belum digunakan oleh customer
+          if (card && (!card.targetUrl || !card.storeName)) {
+            cmds.push(["DEL", `nfc:card:${id}`]);
+            cmds.push(["SREM", "nfc:cards:index", id]);
+          }
+        }
+
+        if (cmds.length > 0) {
+          await redisPipeline(cmds);
+        }
+        const cards = await listAllCardsFromRedis();
+        return json({ valid: true, deletedCount: cmds.length / 2, cards });
+      }
+
       return json({ valid: false, error: "Aksi admin tidak dikenal" }, 400);
     }
 
@@ -474,3 +499,7 @@ function json(data, status = 200) {
     },
   });
 }
+
+export const config = {
+  path: "/api/card",
+};

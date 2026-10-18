@@ -286,7 +286,13 @@
     cardSyncPromise = fetch(`/api/card?id=${encodeURIComponent(cardToken)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!data || !data.found || !data.card) return;
+        if (!data) return;
+        // Jika kartu telah dikosongkan oleh Admin (Siap Diaktifkan Ulang), arahkan ke halaman aktivasi
+        if (data.existsInStock && !data.found) {
+          window.location.replace(`/?card=${encodeURIComponent(cardToken)}`);
+          return;
+        }
+        if (!data.found || !data.card) return;
         const c = data.card;
 
         // Jika pemilik telah mengubah mode ke 'maps', redirect langsung ke profil Google Maps
@@ -356,6 +362,8 @@
     ratingCaption.textContent = "Pilih 1 sampai 5 bintang";
     redirectBox.style.display = "none";
     formArea.style.display = "none";
+    submitBtn.disabled = false;
+    submitBtn.textContent = "💬 Kirim Masukan ke WhatsApp Manajemen";
   }
 
   // Reset tampilan saat browser kembali via tombol Back (bfcache)
@@ -405,6 +413,11 @@
     }
     submitBtn.disabled = true;
     submitBtn.textContent = "⏳ Membuka WhatsApp...";
+    setTimeout(() => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "💬 Kirim Masukan ke WhatsApp Manajemen";
+    }, 1500);
+
     await ensureCardSynced();
 
     const sender = custName.value.trim();

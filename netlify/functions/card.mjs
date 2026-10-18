@@ -1,24 +1,12 @@
 // =============================================================
-// Sistem Kartu Dinamis & Barcode/QR Permanen (Upstash Redis REST)
+// Sistem Kartu Dinamis, Barcode/QR Permanen & PIN 4 Angka Customer
+// (Upstash Redis REST)
 //
-// Setiap fisik kartu memiliki 1 ID Kartu tetap (misal: "KARTU-01" atau "001")
-// dan 1 Barcode/QR permanen: https://nfcactive.vercel.app/c/001
-//
-// Saat user ganti lokasi toko di halaman utama (/), data kartu di Redis
-// otomatis ter-update. Barcode fisik TIDAK PERLU di-print ulang selamanya!
+// - Pertama kali aktivasi: Customer membuat PIN 4 angka baru (disimpan hash-nya).
+// - Aktivasi/ganti lokasi berikutnya: Customer memasukkan PIN 4 angka miliknya
+//   sendiri (tanpa perlu minta OTP ke Admin lagi!).
 // =============================================================
-import { generate8DigitOtp } from "./otp.mjs";
-import { timingSafeEqual } from "node:crypto";
-
-const DEFAULT_SECRET = "nfc-master-rahasia-2026";
-
-function getSecret() {
-  return (
-    globalThis.Netlify?.env?.get?.("OTP_SECRET") ||
-    process.env.OTP_SECRET ||
-    DEFAULT_SECRET
-  ).trim();
-}
+import { createHash, timingSafeEqual } from "node:crypto";
 
 function getRedisConfig() {
   const url = (
@@ -36,6 +24,12 @@ function getRedisConfig() {
   ).trim();
 
   return { url, token };
+}
+
+function hashPin(cardId, pin) {
+  return createHash("sha256")
+    .update(`nfc-pin-v1:${cardId}:${String(pin).trim()}`)
+    .digest("hex");
 }
 
 function safeEqual(a, b) {
@@ -103,7 +97,7 @@ export async function saveCardToRedis(cardId, payload) {
 export default async (req) => {
   const reqUrl = new URL(req.url);
 
-  // GET /api/card?id=001 -> Ambil info kartu
+  // GET /api/card?id=... -> Cek apakah kartu sudah pernah diaktifkan & punya PIN
   if (req.method === "GET") {
     const id = normalizeCardId(reqUrl.searchParams.get("id") || "");
     if (!id) {
@@ -111,12 +105,18 @@ export default async (req) => {
     }
     const card = await getCardFromRedis(id);
     if (!card) {
-      return json({ found: false, cardId: id }, 404);
+      return json({ found: false, hasPin: false, cardId: id }, 404);
     }
-    return json({ found: true, card });
+    // Jangan kirim pinHash ke client demi keamanan
+    const { pinHash, ...publicCard } = card;
+    return json({
+      found: true,
+      hasPin: Boolean(pinHash),
+      card: publicCard,
+    });
   }
 
-  // POST /api/card -> Verifikasi OTP & Simpan / Update tujuan Kartu + Barcode
+  // POST /api/card -> Buat PIN 4 angka (jika kartu baru) atau Verifikasi PIN 4 angka (jika kartu sudah aktif)
   if (req.method === "POST") {
     let body = {};
     try {
@@ -125,33 +125,32 @@ export default async (req) => {
       body = {};
     }
 
-    const secret = getSecret();
-    const WINDOW_SEC = 300;
-    const nowSec = Math.floor(Date.now() / 1000);
-    const step = Math.floor(nowSec / WINDOW_SEC);
-
-    const rawCode = String(body.code || "").replace(/\s+/g, "");
-    if (!/^\d{8}$/.test(rawCode)) {
-      return json({ valid: false, error: "Kode Lisensi harus berupa 8 angka." }, 400);
-    }
-
-    const currentOtp = generate8DigitOtp(secret, step);
-    const prevOtp = generate8DigitOtp(secret, step - 1);
-    const isValid =
-      safeEqual(rawCode, currentOtp) ||
-      (nowSec % WINDOW_SEC <= 15 && safeEqual(rawCode, prevOtp));
-
-    if (!isValid) {
-      return json(
-        {
-          valid: false,
-          error: "Kode Lisensi salah atau sudah kedaluwarsa (lewat 5 menit). Minta kode terbaru ke admin.",
-        },
-        401
-      );
-    }
-
     const cardId = normalizeCardId(body.cardId || "");
+    if (!cardId) {
+      return json({ valid: false, error: "Token kartu tidak ditemukan." }, 400);
+    }
+
+    const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
+    if (!/^\d{4}$/.test(rawPin)) {
+      return json({ valid: false, error: "Password / PIN harus berupa 4 angka." }, 400);
+    }
+
+    const existingCard = await getCardFromRedis(cardId);
+    const inputPinHash = hashPin(cardId, rawPin);
+
+    // Jika kartu sudah pernah diaktifkan dan memiliki PIN, wajib cocokkan PIN-nya!
+    if (existingCard && existingCard.pinHash) {
+      if (!safeEqual(inputPinHash, existingCard.pinHash)) {
+        return json(
+          {
+            valid: false,
+            error: "Password 4 angka salah! Masukkan 4 angka password yang Anda buat saat pertama kali mengaktifkan kartu ini.",
+          },
+          401
+        );
+      }
+    }
+
     const targetUrl = String(body.targetUrl || "").trim();
     const storeName = String(body.storeName || "").trim();
     const mode = String(body.mode || "review").trim();
@@ -160,7 +159,7 @@ export default async (req) => {
     const wa = String(body.wa || "").trim();
     const address = String(body.address || "").trim();
 
-    if (cardId && targetUrl) {
+    if (targetUrl) {
       try {
         await saveCardToRedis(cardId, {
           targetUrl,
@@ -170,15 +169,18 @@ export default async (req) => {
           cid,
           wa,
           address,
+          pinHash: existingCard?.pinHash || inputPinHash,
+          createdAt: existingCard?.createdAt || new Date().toISOString(),
         });
       } catch (err) {
-        return json({ valid: true, saved: false, error: err.message }, 500);
+        return json({ valid: false, saved: false, error: err.message }, 500);
       }
     }
 
     return json({
       valid: true,
-      saved: Boolean(cardId),
+      isFirstActivation: !existingCard?.pinHash,
+      saved: true,
       cardId,
     });
   }

@@ -595,17 +595,19 @@
     }
     .otp-boxes {
       display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap: 7px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      max-width: 260px;
+      margin: 0 auto;
     }
     .otp-digit {
       width: 100%;
-      height: 46px;
+      height: 52px;
       border: 1.5px solid #fcd34d;
-      border-radius: 10px;
+      border-radius: 12px;
       background: #ffffff;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 800;
       color: #0f172a;
       text-align: center;
@@ -627,8 +629,8 @@
       gap: 6px;
       font-size: 11.5px;
       color: #b45309;
-      margin-top: 11px;
-      line-height: 1.4;
+      margin-top: 12px;
+      line-height: 1.45;
     }
     .otp-hint svg {
       flex-shrink: 0;
@@ -699,8 +701,8 @@
     @media (max-width: 440px) {
       .card { padding: 22px 18px; }
       .mode-grid { grid-template-columns: 1fr; }
-      .otp-boxes { gap: 5px; }
-      .otp-digit { height: 42px; font-size: 16px; }
+      .otp-boxes { gap: 10px; max-width: 230px; }
+      .otp-digit { height: 48px; font-size: 20px; }
     }
   </style>
 </head>
@@ -838,25 +840,21 @@
     </div>
   </div>
 
-  <!-- Password Aktivasi 8 Kotak Angka -->
+  <!-- Password / PIN 4 Kotak Angka Milik Customer -->
   <div class="otp-section" id="otp-section">
-    <div class="otp-title">🔐 3. Kode Lisensi Aktivasi (8 Digit dari Admin)</div>
+    <div class="otp-title" id="pin-title">🔐 3. Buat Password Kartu Baru Anda (4 Angka)</div>
     <div class="otp-boxes" id="otp-boxes">
       <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 1" />
       <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 2" />
       <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 3" />
       <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 4" />
-      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 5" />
-      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 6" />
-      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 7" />
-      <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 8" />
     </div>
     <div class="otp-hint">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <polyline points="12 6 12 12 16 14"></polyline>
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
       </svg>
-      <span>Demi keamanan kartu Anda, masukkan 8 digit kode lisensi (berlaku 5 menit) dari Admin. Anda bisa langsung tempel (paste) 8 angka sekaligus.</span>
+      <span id="pin-hint-text">Buat 4 angka password rahasia Anda sendiri. Ingat baik-baik — password ini akan digunakan setiap kali Anda ingin mengganti lokasi toko di kemudian hari.</span>
     </div>
   </div>
 
@@ -883,9 +881,12 @@
   let targetUrl = "";
   let debounceTimer = null;
   let searchController = null;
+  let cardHasPin = false;
 
   const cardIdInput = document.getElementById("card-id-input");
   const currentCardStatus = document.getElementById("current-card-status");
+  const pinTitle = document.getElementById("pin-title");
+  const pinHintText = document.getElementById("pin-hint-text");
 
   const storeInput = document.getElementById("store-input");
   const waInput = document.getElementById("wa-input");
@@ -950,27 +951,41 @@
     return `${window.location.origin}/c/${encodeURIComponent(id)}`;
   }
 
+  function updatePinUiMode(hasPin) {
+    cardHasPin = Boolean(hasPin);
+    if (cardHasPin) {
+      pinTitle.textContent = "🔒 3. Masukkan Password Kartu Anda (4 Angka)";
+      pinHintText.textContent = "Masukkan 4 angka password yang Anda buat saat pertama kali mengaktifkan kartu ini untuk mengubah lokasi toko.";
+    } else {
+      pinTitle.textContent = "🔐 3. Buat Password Kartu Baru Anda (4 Angka)";
+      pinHintText.textContent = "Buat 4 angka password rahasia Anda sendiri. Ingat baik-baik — password ini akan digunakan setiap kali Anda ingin mengganti lokasi toko di kemudian hari.";
+    }
+  }
+
   async function checkExistingCard() {
     const id = getCleanCardId();
     if (!id) {
       currentCardStatus.style.display = "none";
+      updatePinUiMode(false);
       return;
     }
     try {
       const res = await fetch(`/api/card?id=${encodeURIComponent(id)}`);
       if (!res.ok) {
+        updatePinUiMode(false);
         if (urlCardToken) {
           currentCardStatus.style.display = "block";
-          currentCardStatus.innerHTML = `✨ <strong>Kartu &amp; Barcode Terdeteksi:</strong> Silakan pilih lokasi bisnis Anda di bawah untuk mengaktifkan kartu ini.`;
+          currentCardStatus.innerHTML = `✨ <strong>Kartu Baru Terdeteksi:</strong> Pilih lokasi bisnis Anda di bawah dan buat 4 angka password baru untuk mengaktifkan kartu ini.`;
         } else {
           currentCardStatus.style.display = "none";
         }
         return;
       }
       const data = await res.json();
+      updatePinUiMode(data.hasPin);
       if (data.found && data.card) {
         currentCardStatus.style.display = "block";
-        currentCardStatus.innerHTML = `✅ Kartu &amp; Barcode Anda saat ini terhubung ke: <strong>${data.card.storeName || "Toko"}</strong>. Pilih lokasi baru di bawah jika ingin mengganti toko (Barcode otomatis ikut ter-update).`;
+        currentCardStatus.innerHTML = `✅ Kartu &amp; Barcode Anda saat ini terhubung ke: <strong>${data.card.storeName || "Toko"}</strong>. Pilih lokasi baru &amp; masukkan 4 angka password Anda jika ingin mengganti toko.`;
       }
     } catch {
       currentCardStatus.style.display = "none";
@@ -1028,19 +1043,19 @@
     }
   }
 
-  // --- Logika 8 Kotak OTP ---
-  function getOtpCode() {
+  // --- Logika 4 Kotak PIN Customer ---
+  function getPinCode() {
     return otpDigits.map((el) => el.value.replace(/\D/g, "")).join("");
   }
 
-  function clearOtpBoxes() {
+  function clearPinBoxes() {
     otpDigits.forEach((el) => { el.value = ""; });
     updateButtonState();
   }
 
   function updateButtonState() {
-    const code = getOtpCode();
-    const ready = Boolean(selectedPlace && code.length === 8);
+    const code = getPinCode();
+    const ready = Boolean(selectedPlace && code.length === 4);
     activateBtn.disabled = !ready;
     cloudOnlyBtn.disabled = !ready;
   }
@@ -1077,12 +1092,12 @@
 
     box.addEventListener("paste", (e) => {
       e.preventDefault();
-      const pasted = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 8);
+      const pasted = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 4);
       if (!pasted) return;
       pasted.split("").forEach((ch, i) => {
         if (otpDigits[i]) otpDigits[i].value = ch;
       });
-      otpDigits[Math.min(pasted.length, 8) - 1].focus();
+      otpDigits[Math.min(pasted.length, 4) - 1].focus();
       updateButtonState();
     });
 
@@ -1247,14 +1262,14 @@
     statusBox.textContent = text;
   }
 
-  async function verifyAndSaveCloud(otpCode) {
+  async function verifyAndSaveCloud(pinCode) {
     updateTargetUrl();
-    const cardId = getCleanCardId() || "001";
+    const cardId = getCleanCardId();
     const res = await fetch("/api/card", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        code: otpCode,
+        pin: pinCode,
         cardId,
         targetUrl,
         storeName: selectedPlace.title,
@@ -1267,7 +1282,7 @@
     });
     const data = await res.json();
     if (!res.ok || !data.valid) {
-      throw new Error(data.error || "Kode lisensi tidak valid atau sudah melewati batas 5 menit.");
+      throw new Error(data.error || "Password 4 angka salah.");
     }
     return data;
   }
@@ -1275,9 +1290,9 @@
   // Tombol Update Lokasi Barcode / Kartu Saja (Tanpa Tempel NFC — Bisa dari iPhone / Laptop!)
   cloudOnlyBtn.addEventListener("click", async () => {
     dropdown.style.display = "none";
-    const otpCode = getOtpCode();
-    if (otpCode.length !== 8) {
-      showStatus("#fdecea", "#b71c1c", "Masukkan 8 digit Kode Lisensi Aktivasi terlebih dahulu.");
+    const pinCode = getPinCode();
+    if (pinCode.length !== 4) {
+      showStatus("#fdecea", "#b71c1c", "Masukkan 4 angka password kartu Anda terlebih dahulu.");
       return;
     }
     if (getSelectedMode() === "review" && !normalizeWaNumber(waInput.value)) {
@@ -1288,16 +1303,18 @@
 
     activateBtn.disabled = true;
     cloudOnlyBtn.disabled = true;
-    showStatus("#e8f0fe", "#174ea6", "☁️ Memverifikasi lisensi & meng-update tujuan Barcode/Kartu di Cloud...");
+    showStatus("#e8f0fe", "#174ea6", "☁️ Memverifikasi password & meng-update lokasi kartu Anda...");
 
     try {
-      const saved = await verifyAndSaveCloud(otpCode);
-      clearOtpBoxes();
+      const saved = await verifyAndSaveCloud(pinCode);
+      clearPinBoxes();
       checkExistingCard();
       showStatus(
         "#e8f5e9",
         "#1b5e20",
-        `🎉 Berhasil! Barcode QR & Link Kartu (${saved.cardId}) sekarang otomatis mengarah ke "${selectedPlace.title}" tanpa perlu print ulang barcode!`
+        saved.isFirstActivation
+          ? `🎉 Kartu & Barcode Berhasil Diaktifkan ke "${selectedPlace.title}"! Password 4 angka Anda telah disimpan untuk perubahan lokasi di masa mendatang.`
+          : `🎉 Berhasil! Lokasi Kartu & Barcode sekarang otomatis berpindah ke "${selectedPlace.title}" tanpa perlu cetak ulang barcode!`
       );
     } catch (err) {
       showStatus("#fdecea", "#b71c1c", "❌ " + err.message);
@@ -1308,10 +1325,10 @@
   // Tombol Utama: Update Cloud Barcode + Tulis Link Dinamis ke Chip Kartu NFC
   activateBtn.addEventListener("click", async () => {
     dropdown.style.display = "none";
-    const otpCode = getOtpCode();
+    const pinCode = getPinCode();
 
-    if (otpCode.length !== 8) {
-      showStatus("#fdecea", "#b71c1c", "Masukkan 8 digit Kode Lisensi Aktivasi terlebih dahulu.");
+    if (pinCode.length !== 4) {
+      showStatus("#fdecea", "#b71c1c", "Masukkan 4 angka password kartu Anda terlebih dahulu.");
       return;
     }
 
@@ -1323,10 +1340,11 @@
 
     activateBtn.disabled = true;
     cloudOnlyBtn.disabled = true;
-    showStatus("#e8f0fe", "#174ea6", "🔐 Memverifikasi kode lisensi & menyimpan lokasi ke Barcode Dinamis...");
+    showStatus("#e8f0fe", "#174ea6", "🔐 Memverifikasi password & menyimpan lokasi bisnis Anda...");
 
+    let saved;
     try {
-      await verifyAndSaveCloud(otpCode);
+      saved = await verifyAndSaveCloud(pinCode);
     } catch (err) {
       showStatus("#fdecea", "#b71c1c", "❌ " + err.message);
       updateButtonState();
@@ -1334,36 +1352,37 @@
     }
 
     if (!("NDEFReader" in window)) {
-      clearOtpBoxes();
+      clearPinBoxes();
       checkExistingCard();
       showStatus(
         "#e8f5e9",
         "#1b5e20",
-        `✅ Lokasi Barcode QR (${getCleanCardId() || "001"}) berhasil di-update ke "${selectedPlace.title}"! (Catatan: Untuk menulis ke chip fisik NFC gunakan Chrome Android, tapi Barcode QR Anda sudah langsung aktif sekarang).`
+        `✅ Lokasi Kartu & Barcode berhasil dihubungkan ke "${selectedPlace.title}"! Password 4 angka Anda sudah aktif.`
       );
       return;
     }
 
-    // Tulis Link Dinamis (/c/ID) ke chip NFC agar ke depannya ganti toko cukup lewat Cloud tanpa tap ulang pun bisa!
     const nfcUrlToWrite = getDynamicCardUrl();
 
     try {
       const ndef = new NDEFReader();
-      showStatus("#fff8e1", "#e65100", "📡 Barcode Cloud sudah ter-update! Sekarang tempelkan & tahan kartu NFC di punggung HP Anda selama 2 detik...");
+      showStatus("#fff8e1", "#e65100", "📡 Password tersimpan! Sekarang tempelkan & tahan kartu NFC di punggung HP Anda selama 2 detik...");
 
       await ndef.write({
         records: [{ recordType: "url", data: nfcUrlToWrite }]
       });
 
-      clearOtpBoxes();
+      clearPinBoxes();
       checkExistingCard();
       showStatus(
         "#e8f5e9",
         "#1b5e20",
-        `🎉 Kartu NFC & Barcode Dinamis (${getCleanCardId() || "001"}) Resmi Aktif untuk "${selectedPlace.title}"! Ke depannya Anda bisa ganti toko tanpa perlu print ulang barcode.`
+        saved.isFirstActivation
+          ? `🎉 Kartu NFC Resmi Aktif untuk "${selectedPlace.title}"! Password 4 angka Anda sudah tersimpan untuk ganti toko ke depannya.`
+          : `🎉 Kartu NFC & Barcode berhasil di-update ke "${selectedPlace.title}"!`
       );
     } catch (error) {
-      showStatus("#fdecea", "#b71c1c", "Barcode Cloud sudah ter-update, namun penulisan chip NFC terputus (" + error.message + "). Tempelkan kartu rata dan coba lagi.");
+      showStatus("#fdecea", "#b71c1c", "Lokasi Barcode Cloud sudah ter-update, namun penulisan chip NFC terputus (" + error.message + "). Tempelkan kartu rata dan coba lagi.");
       updateButtonState();
     }
   });

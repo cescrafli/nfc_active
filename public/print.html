@@ -499,6 +499,156 @@
       display: none;
     }
 
+    /* Bulk Selection Bar */
+    .bulk-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      margin-top: 14px;
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 14px;
+      flex-wrap: wrap;
+    }
+    .bulk-bar-left, .bulk-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .bulk-count-pill {
+      font-size: 12px;
+      font-weight: 800;
+      color: #1e40af;
+      background: #dbeafe;
+      padding: 6px 13px;
+      border-radius: 999px;
+      border: 1px solid #93c5fd;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-bulk-preview {
+      background: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+    }
+    .btn-bulk-preview:hover:not(:disabled) { background: #1d4ed8; }
+
+    /* Modal Pratinjau PDF 1 Halaman */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .modal-content {
+      background: #ffffff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 980px;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      border: 1px solid #cbd5e1;
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1.5px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #f8fafc;
+    }
+    .modal-header h2 {
+      margin: 0 0 3px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .modal-header p {
+      margin: 0;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #64748b;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+    .modal-close-btn:hover { background: #e2e8f0; color: #0f172a; }
+    .modal-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: #f1f5f9;
+    }
+    .modal-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #ffffff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+    }
+    .modal-controls-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .modal-preview-wrapper {
+      background: #334155;
+      padding: 20px;
+      border-radius: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: auto;
+      min-height: 460px;
+    }
+    #sheet-canvas {
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+      background: #ffffff;
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1.5px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
     /* Area Cetak Stiker QR (Hanya Muncul Saat Print Kertas) */
     .print-sheet {
       display: none;
@@ -695,6 +845,27 @@
     </div>
   </div>
 
+  <!-- Toolbar Bulk Selection & Print PDF 1 Halaman -->
+  <div class="bulk-bar no-print" id="bulk-bar">
+    <div class="bulk-bar-left">
+      <span class="bulk-count-pill" id="bulk-count-pill">0 Barcode Terpilih</span>
+      <button type="button" class="btn btn-outline" id="btn-select-all-visible" style="padding:7px 12px;font-size:12px;">
+        ☑️ Pilih Semua di Tabel
+      </button>
+      <button type="button" class="btn btn-outline" id="btn-select-unlinked" style="padding:7px 12px;font-size:12px;background:#fffbeb;border-color:#fde68a;color:#b45309;">
+        🟡 Pilih Belum Dikunci
+      </button>
+      <button type="button" class="btn btn-outline" id="btn-clear-selection" style="padding:7px 12px;font-size:12px;display:none;">
+        ❌ Batal Pilihan
+      </button>
+    </div>
+    <div class="bulk-bar-right">
+      <button type="button" class="btn btn-bulk-preview" id="btn-open-bulk-modal" disabled style="padding:9px 18px;font-size:13.5px;">
+        📄 Bulk Print / Preview PDF (0 Barcode)
+      </button>
+    </div>
+  </div>
+
   <!-- Tabel Utama di Layar -->
   <div id="table-container" class="no-print"></div>
 
@@ -702,7 +873,84 @@
   <div class="print-sheet" id="print-sheet"></div>
 </div>
 
+<!-- Modal Bulk Print Preview PDF (1 Lembar Pas A3 / A4 / A5) -->
+<div class="modal-backdrop no-print" id="pdf-preview-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div>
+        <h2>📄 Pratinjau Cetak 1 Lembar PDF (A3 / A4 / A5)</h2>
+        <p>Semua stiker barcode terpilih otomatis disusun dan diskalakan agar <strong>pas dalam 1 lembar</strong> tanpa terpotong ke halaman berikutnya.</p>
+      </div>
+      <button type="button" class="modal-close-btn" id="modal-close-btn" title="Tutup">✖</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-controls">
+        <div class="modal-controls-group">
+          <div class="field">
+            <label for="modal-paper-size">Ukuran Kertas</label>
+            <select id="modal-paper-size">
+              <option value="A4" selected>A4 (210 × 297 mm)</option>
+              <option value="A3">A3 (297 × 420 mm)</option>
+              <option value="A5">A5 (148 × 210 mm)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="modal-orientation">Orientasi</label>
+            <select id="modal-orientation">
+              <option value="portrait" selected>Portrait (Tegak)</option>
+              <option value="landscape">Landscape (Mendatar)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="modal-columns">Susunan Kolom</label>
+            <select id="modal-columns">
+              <option value="auto" selected>⚡ Otomatis Pas Maksimal (1 Lembar)</option>
+              <option value="2">2 Kolom</option>
+              <option value="3">3 Kolom</option>
+              <option value="4">4 Kolom</option>
+              <option value="5">5 Kolom</option>
+              <option value="6">6 Kolom</option>
+              <option value="8">8 Kolom</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <span class="status-pill linked" id="modal-grid-info" style="font-size:12px;padding:6px 12px;">
+            0 Barcode • Pas 1 Halaman
+          </span>
+        </div>
+      </div>
+
+      <div class="modal-preview-wrapper" id="modal-preview-wrapper">
+        <canvas id="sheet-canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div style="font-size:12px;color:#64748b;">
+        ✂️ Garis putus-putus abu-abu pada pratinjau adalah garis panduan untuk memotong stiker kartu.
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button type="button" class="btn btn-outline" id="modal-cancel-btn">
+          Tutup
+        </button>
+        <button type="button" class="btn btn-dark" id="modal-direct-print-btn">
+          🖨️ Cetak Langsung (1 Halaman)
+        </button>
+        <button type="button" class="btn btn-primary" id="modal-download-pdf-btn">
+          ⬇️ Download PDF (1 Halaman)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
   const loginWrap = document.getElementById("login-wrap");
   const mainContainer = document.getElementById("main-container");
@@ -730,6 +978,27 @@
   const statUnlinked = document.getElementById("stat-unlinked");
   const statLinked = document.getElementById("stat-linked");
   const statUsed = document.getElementById("stat-used");
+
+  const bulkBar = document.getElementById("bulk-bar");
+  const bulkCountPill = document.getElementById("bulk-count-pill");
+  const btnSelectAllVisible = document.getElementById("btn-select-all-visible");
+  const btnSelectUnlinked = document.getElementById("btn-select-unlinked");
+  const btnClearSelection = document.getElementById("btn-clear-selection");
+  const btnOpenBulkModal = document.getElementById("btn-open-bulk-modal");
+
+  const pdfPreviewModal = document.getElementById("pdf-preview-modal");
+  const modalCloseBtn = document.getElementById("modal-close-btn");
+  const modalCancelBtn = document.getElementById("modal-cancel-btn");
+  const modalPaperSize = document.getElementById("modal-paper-size");
+  const modalOrientation = document.getElementById("modal-orientation");
+  const modalColumns = document.getElementById("modal-columns");
+  const modalGridInfo = document.getElementById("modal-grid-info");
+  const sheetCanvas = document.getElementById("sheet-canvas");
+  const modalDirectPrintBtn = document.getElementById("modal-direct-print-btn");
+  const modalDownloadPdfBtn = document.getElementById("modal-download-pdf-btn");
+
+  const selectedCardIds = new Set();
+  const qrImageCache = new Map();
 
   let allCards = [];
   let currentFilter = "all";
@@ -1198,6 +1467,367 @@
     }
   }
 
+  // --- Fitur Bulk Selection & Modal Pratinjau PDF 1 Halaman (A3 / A4 / A5) ---
+  const PAPER_SPECS = {
+    A3: { widthMm: 297, heightMm: 420 },
+    A4: { widthMm: 210, heightMm: 297 },
+    A5: { widthMm: 148, heightMm: 210 },
+  };
+
+  function updateBulkBar() {
+    const validIds = new Set(allCards.map((c) => c.cardId));
+    for (const id of selectedCardIds) {
+      if (!validIds.has(id)) selectedCardIds.delete(id);
+    }
+
+    const count = selectedCardIds.size;
+    bulkCountPill.textContent = `${count} Barcode Terpilih`;
+    btnOpenBulkModal.disabled = count === 0;
+    btnOpenBulkModal.textContent = `📄 Bulk Print / Preview PDF (${count} Barcode)`;
+    btnClearSelection.style.display = count > 0 ? "inline-flex" : "none";
+
+    const headerCb = document.getElementById("header-select-all");
+    if (headerCb) {
+      const filtered = getFilteredCards();
+      if (filtered.length === 0) {
+        headerCb.checked = false;
+        headerCb.indeterminate = false;
+      } else {
+        const selectedFiltered = filtered.filter((c) => selectedCardIds.has(c.cardId)).length;
+        if (selectedFiltered === filtered.length) {
+          headerCb.checked = true;
+          headerCb.indeterminate = false;
+        } else if (selectedFiltered > 0) {
+          headerCb.checked = false;
+          headerCb.indeterminate = true;
+        } else {
+          headerCb.checked = false;
+          headerCb.indeterminate = false;
+        }
+      }
+    }
+  }
+
+  btnSelectAllVisible.addEventListener("click", () => {
+    getFilteredCards().forEach((c) => selectedCardIds.add(c.cardId));
+    renderCards();
+  });
+
+  btnSelectUnlinked.addEventListener("click", () => {
+    allCards.filter((c) => !c.isUsed && !c.nfcLinked).forEach((c) => selectedCardIds.add(c.cardId));
+    renderCards();
+  });
+
+  btnClearSelection.addEventListener("click", () => {
+    selectedCardIds.clear();
+    renderCards();
+  });
+
+  function openBulkModal() {
+    if (selectedCardIds.size === 0) {
+      alert("Pilih minimal 1 barcode di tabel untuk melihat pratinjau cetak PDF 1 halaman.");
+      return;
+    }
+    pdfPreviewModal.style.display = "flex";
+    renderSheetCanvas();
+  }
+
+  function closeBulkModal() {
+    pdfPreviewModal.style.display = "none";
+  }
+
+  btnOpenBulkModal.addEventListener("click", openBulkModal);
+  modalCloseBtn.addEventListener("click", closeBulkModal);
+  modalCancelBtn.addEventListener("click", closeBulkModal);
+  pdfPreviewModal.addEventListener("click", (e) => {
+    if (e.target === pdfPreviewModal) closeBulkModal();
+  });
+
+  modalPaperSize.addEventListener("change", () => renderSheetCanvas());
+  modalOrientation.addEventListener("change", () => renderSheetCanvas());
+  modalColumns.addEventListener("change", () => renderSheetCanvas());
+
+  // Render Pratinjau Kertas 1 Halaman ke Canvas
+  async function renderSheetCanvas() {
+    const selectedCards = allCards.filter((c) => selectedCardIds.has(c.cardId));
+    const N = selectedCards.length;
+    if (N === 0) {
+      closeBulkModal();
+      return;
+    }
+
+    const paperKey = (modalPaperSize.value || "A4").toUpperCase();
+    const spec = PAPER_SPECS[paperKey] || PAPER_SPECS.A4;
+    const isLandscape = modalOrientation.value === "landscape";
+    const paperW = isLandscape ? spec.heightMm : spec.widthMm;
+    const paperH = isLandscape ? spec.widthMm : spec.heightMm;
+
+    const marginMm = 8;
+    const gapMm = 3;
+    const usableW = paperW - (marginMm * 2);
+    const usableH = paperH - (marginMm * 2);
+
+    const colPref = modalColumns.value;
+    let cols = 3;
+
+    if (colPref === "auto") {
+      let bestArea = -1;
+      let bestCols = 1;
+      const maxCols = Math.min(N, 12);
+      const targetRatio = 0.82; // width / height
+
+      for (let c = 1; c <= maxCols; c++) {
+        const r = Math.ceil(N / c);
+        const cellW = (usableW - ((c - 1) * gapMm)) / c;
+        const cellH = (usableH - ((r - 1) * gapMm)) / r;
+        if (cellW <= 10 || cellH <= 10) continue;
+
+        const fitW = Math.min(cellW, cellH * targetRatio);
+        const fitH = fitW / targetRatio;
+        const area = fitW * fitH;
+
+        if (area > bestArea) {
+          bestArea = area;
+          bestCols = c;
+        }
+      }
+      cols = bestCols;
+    } else {
+      cols = Math.min(Number(colPref) || 3, N);
+    }
+
+    const rows = Math.ceil(N / cols);
+    const cellW = (usableW - ((cols - 1) * gapMm)) / cols;
+    const cellH = (usableH - ((rows - 1) * gapMm)) / rows;
+
+    modalGridInfo.textContent = `${N} Barcode • ${cols} Kolom × ${rows} Baris • Ukuran Sel: ~${Math.round(cellW)} × ${Math.round(cellH)} mm (1 Lembar Pas)`;
+
+    const dpiScale = 10; // 10 px per mm (~254 DPI)
+    sheetCanvas.width = Math.round(paperW * dpiScale);
+    sheetCanvas.height = Math.round(paperH * dpiScale);
+    const ctx = sheetCanvas.getContext("2d");
+    const toPx = (mm) => Math.round(mm * dpiScale);
+
+    // Kertas Putih Bersih
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+
+    // Preload QR Code jika belum ada di cache
+    const toFetch = selectedCards.filter((c) => !qrImageCache.has(c.cardId));
+    if (toFetch.length > 0) {
+      ctx.fillStyle = "#0f172a";
+      ctx.font = `bold ${toPx(5)}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText("⏳ Memuat gambar stiker QR...", sheetCanvas.width / 2, sheetCanvas.height / 2);
+
+      await Promise.all(
+        toFetch.map((item) => {
+          const dynamicUrl = `${window.location.origin}/c/${item.cardId}`;
+          const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+              qrImageCache.set(item.cardId, img);
+              resolve();
+            };
+            img.onerror = () => resolve();
+            img.src = qrImgUrl;
+          });
+        })
+      );
+    }
+
+    // Gambar Ulang Kertas Bersih
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+
+    selectedCards.forEach((item, index) => {
+      const colIdx = index % cols;
+      const rowIdx = Math.floor(index / cols);
+
+      const cellX = marginMm + colIdx * (cellW + gapMm);
+      const cellY = marginMm + rowIdx * (cellH + gapMm);
+
+      const pxX = toPx(cellX);
+      const pxY = toPx(cellY);
+      const pxW = toPx(cellW);
+      const pxH = toPx(cellH);
+
+      // 1. Garis Panduan Gunting Potong Stiker (Dashed Line)
+      ctx.save();
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = Math.max(1, toPx(0.25));
+      ctx.setLineDash([toPx(1.5), toPx(1.5)]);
+      ctx.strokeRect(pxX, pxY, pxW, pxH);
+      ctx.restore();
+
+      // 2. Kartu Stiker di Dalam Sel
+      const insetMm = 0.8;
+      const cardX = pxX + toPx(insetMm);
+      const cardY = pxY + toPx(insetMm);
+      const cardW = pxW - toPx(insetMm * 2);
+      const cardH = pxH - toPx(insetMm * 2);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(cardX, cardY, cardW, cardH);
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = Math.max(1, toPx(0.3));
+      ctx.strokeRect(cardX, cardY, cardW, cardH);
+
+      const centerX = cardX + (cardW / 2);
+
+      // Badge Atas
+      const badgeH = Math.max(10, cardH * 0.08);
+      const badgeW = Math.min(cardW * 0.84, toPx(42));
+      const badgeY = cardY + Math.max(3, cardH * 0.035);
+
+      ctx.fillStyle = "#eff6ff";
+      ctx.fillRect(centerX - (badgeW / 2), badgeY, badgeW, badgeH);
+      ctx.strokeStyle = "#bfdbfe";
+      ctx.lineWidth = Math.max(1, toPx(0.2));
+      ctx.strokeRect(centerX - (badgeW / 2), badgeY, badgeW, badgeH);
+
+      ctx.fillStyle = "#1d4ed8";
+      ctx.font = `bold ${Math.max(8, badgeH * 0.52)}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("SCAN UNTUK ULASAN", centerX, badgeY + (badgeH / 2));
+
+      // Gambar QR Code
+      const qrImg = qrImageCache.get(item.cardId);
+      const qrAvailableH = cardH * 0.53;
+      const qrSize = Math.min(cardW * 0.78, qrAvailableH);
+      const qrY = badgeY + badgeH + Math.max(3, cardH * 0.03);
+
+      if (qrImg) {
+        ctx.drawImage(qrImg, centerX - (qrSize / 2), qrY, qrSize, qrSize);
+      } else {
+        ctx.fillStyle = "#f1f5f9";
+        ctx.fillRect(centerX - (qrSize / 2), qrY, qrSize, qrSize);
+        ctx.fillStyle = "#64748b";
+        ctx.font = `${Math.max(9, qrSize * 0.1)}px sans-serif`;
+        ctx.fillText("QR Code", centerX, qrY + (qrSize / 2));
+      }
+
+      // Judul & Subjudul
+      const text1Y = qrY + qrSize + Math.max(4, cardH * 0.045);
+      ctx.fillStyle = "#0f172a";
+      ctx.font = `bold ${Math.max(9, cardH * 0.052)}px sans-serif`;
+      ctx.fillText("Tap NFC atau Scan QR", centerX, text1Y);
+
+      const text2Y = text1Y + Math.max(8, cardH * 0.045);
+      ctx.fillStyle = "#64748b";
+      ctx.font = `${Math.max(7.5, cardH * 0.038)}px sans-serif`;
+      ctx.fillText("Beri Penilaian & Review Kami", centerX, text2Y);
+
+      // Tag Barcode ID di Bawah
+      const idBadgeH = Math.max(11, cardH * 0.095);
+      const idBadgeW = Math.min(cardW * 0.88, toPx(48));
+      const idBadgeY = Math.min(cardY + cardH - idBadgeH - toPx(1.5), text2Y + Math.max(5, cardH * 0.04));
+
+      ctx.fillStyle = "#f8fafc";
+      ctx.fillRect(centerX - (idBadgeW / 2), idBadgeY, idBadgeW, idBadgeH);
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = Math.max(1, toPx(0.25));
+      ctx.strokeRect(centerX - (idBadgeW / 2), idBadgeY, idBadgeW, idBadgeH);
+
+      ctx.fillStyle = "#0f172a";
+      ctx.font = `bold ${Math.max(8, idBadgeH * 0.52)}px monospace`;
+      ctx.fillText(`ID: ${item.cardId}`, centerX, idBadgeY + (idBadgeH / 2));
+    });
+  }
+
+  // Download PDF 1 Halaman via jsPDF
+  modalDownloadPdfBtn.addEventListener("click", () => {
+    if (selectedCardIds.size === 0) return;
+    const paperKey = (modalPaperSize.value || "A4").toUpperCase();
+    const orientation = modalOrientation.value;
+
+    modalDownloadPdfBtn.disabled = true;
+    modalDownloadPdfBtn.textContent = "⏳ Menyiapkan PDF...";
+
+    try {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        throw new Error("Library jsPDF belum selesai dimuat di browser.");
+      }
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: orientation === "landscape" ? "l" : "p",
+        unit: "mm",
+        format: paperKey.toLowerCase(),
+      });
+
+      const imgData = sheetCanvas.toDataURL("image/jpeg", 0.96);
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = pdf.internal.pageSize.getHeight();
+
+      pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
+      pdf.save(`STIKER-NFC-${paperKey}-${orientation}-${selectedCardIds.size}-KARTU.pdf`);
+    } catch (err) {
+      alert("Gagal mengunduh PDF: " + err.message);
+    } finally {
+      modalDownloadPdfBtn.disabled = false;
+      modalDownloadPdfBtn.textContent = "⬇️ Download PDF (1 Halaman)";
+    }
+  });
+
+  // Cetak Langsung 1 Halaman Kertas
+  modalDirectPrintBtn.addEventListener("click", () => {
+    if (selectedCardIds.size === 0) return;
+    const paperKey = (modalPaperSize.value || "a4").toLowerCase();
+    const orientation = modalOrientation.value;
+
+    printSheet.replaceChildren();
+    const printImg = document.createElement("img");
+    printImg.src = sheetCanvas.toDataURL("image/png");
+    printImg.style.width = "100%";
+    printImg.style.height = "100%";
+    printImg.style.objectFit = "contain";
+    printImg.style.display = "block";
+    printSheet.appendChild(printImg);
+
+    let printPageStyle = document.getElementById("dynamic-print-page-style");
+    if (!printPageStyle) {
+      printPageStyle = document.createElement("style");
+      printPageStyle.id = "dynamic-print-page-style";
+      document.head.appendChild(printPageStyle);
+    }
+    printPageStyle.textContent = `
+      @page {
+        size: ${paperKey} ${orientation};
+        margin: 0;
+      }
+      @media print {
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          background: #ffffff !important;
+          overflow: hidden !important;
+        }
+        .no-print { display: none !important; }
+        .print-sheet {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-sizing: border-box !important;
+        }
+        .print-sheet img {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: contain !important;
+        }
+      }
+    `;
+    window.print();
+  });
+
   function renderCards() {
     const usedCount = allCards.filter((c) => c.isUsed).length;
     const linkedEmptyCount = allCards.filter((c) => !c.isUsed && c.nfcLinked).length;
@@ -1220,6 +1850,7 @@
         ? "Belum ada stok barcode di database.<br>Klik tombol biru <strong>'➕ Buat &amp; Simpan Barcode Baru'</strong> di atas untuk membuat kartu pertama Anda."
         : "Tidak ada kartu yang cocok dengan filter / pencarian ini.";
       tableContainer.appendChild(empty);
+      updateBulkBar();
       return;
     }
 
@@ -1231,7 +1862,10 @@
     table.innerHTML = `
       <thead>
         <tr>
-          <th style="width:46px;">No</th>
+          <th style="width:36px;text-align:center;">
+            <input type="checkbox" id="header-select-all" title="Pilih Semua Baris" style="width:16px;height:16px;cursor:pointer;" />
+          </th>
+          <th style="width:40px;">No</th>
           <th>QR &amp; Barcode ID</th>
           <th>Status Kartu</th>
           <th>Nama Toko &amp; Mode Tujuan</th>
@@ -1289,6 +1923,9 @@
       }
 
       tr.innerHTML = `
+        <td style="text-align:center;">
+          <input type="checkbox" class="card-row-cb" data-id="${escapeHtml(secretToken)}" ${selectedCardIds.has(secretToken) ? "checked" : ""} style="width:16px;height:16px;cursor:pointer;" />
+        </td>
         <td style="font-weight:800;color:#64748b;">${idx + 1}</td>
         <td>
           <div class="qr-thumb-cell">
@@ -1321,6 +1958,17 @@
         </td>
       `;
 
+      // Checkbox baris
+      const rowCb = tr.querySelector(".card-row-cb");
+      rowCb.addEventListener("change", (e) => {
+        if (e.target.checked) {
+          selectedCardIds.add(secretToken);
+        } else {
+          selectedCardIds.delete(secretToken);
+        }
+        updateBulkBar();
+      });
+
       // Klik thumbnail buka QR penuh
       tr.querySelector(".qr-thumb").addEventListener("click", () => {
         window.open(qrImgUrl, "_blank");
@@ -1339,6 +1987,12 @@
       // Kunci Barcode ID ke Chip NFC langsung dari baris tabel
       const writeBtn = tr.querySelector(".nfc-write");
       writeBtn.addEventListener("click", async () => {
+        if (item.isUsed) {
+          if (!confirm(`⚠️ PERINGATAN:\n\nKartu "${secretToken}" SUDAH DIAKTIFKAN oleh customer untuk toko "${item.storeName || "Toko Aktif"}".\n\nMenimpa chip NFC fisik kartu baru dengan Barcode ID ini berisiko membuat 2 kartu fisik memiliki barcode yang sama (duplikat).\n\nApakah Anda yakin ingin tetap mengunci ulang chip NFC kartu ini?`)) {
+            return;
+          }
+        }
+
         if (!("NDEFReader" in window)) {
           if (confirm(`Browser ini tidak mendukung NFC langsung (gunakan Chrome Android untuk menulis ke chip NFC).\n\nApakah Anda ingin menandai Barcode ID "${secretToken}" sebagai '🔵 Terkunci di Kartu (Siap Jual)' secara manual?`)) {
             const data = await adminApi({ adminAction: "mark_linked", cardId: secretToken });
@@ -1399,8 +2053,24 @@
       tbody.appendChild(tr);
     });
 
+    const headerCb = table.querySelector("#header-select-all");
+    if (headerCb) {
+      headerCb.addEventListener("change", (e) => {
+        const isChecked = e.target.checked;
+        filtered.forEach((c) => {
+          if (isChecked) selectedCardIds.add(c.cardId);
+          else selectedCardIds.delete(c.cardId);
+        });
+        table.querySelectorAll(".card-row-cb").forEach((cb) => {
+          cb.checked = isChecked;
+        });
+        updateBulkBar();
+      });
+    }
+
     tableWrap.appendChild(table);
     tableContainer.appendChild(tableWrap);
+    updateBulkBar();
   }
 
   function escapeHtml(str) {

@@ -275,6 +275,7 @@
 
   document.getElementById("store-title").textContent = currentStoreName;
 
+  let cardSyncPromise = null;
   if (cardToken) {
     const editWrap = document.getElementById("owner-edit-wrap");
     const editLink = document.getElementById("owner-edit-link");
@@ -282,7 +283,7 @@
     editLink.href = `/?card=${encodeURIComponent(cardToken)}`;
 
     // Sinkronisasi Live: Cek apakah kartu di database sudah dipindah cabang atau diganti ke Mode Maps
-    fetch(`/api/card?id=${encodeURIComponent(cardToken)}`)
+    cardSyncPromise = fetch(`/api/card?id=${encodeURIComponent(cardToken)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data || !data.found || !data.card) return;
@@ -304,6 +305,15 @@
         updateGoogleReviewLink();
       })
       .catch(() => {});
+  }
+
+  async function ensureCardSynced() {
+    if (cardSyncPromise) {
+      await Promise.race([
+        cardSyncPromise,
+        new Promise((r) => setTimeout(r, 800))
+      ]);
+    }
   }
 
   let currentGoogleReviewUrl = "";
@@ -376,14 +386,15 @@
         // Bintang 4 - 5 -> Langsung arahkan ke Google Maps Review
         formArea.style.display = "none";
         redirectBox.style.display = "block";
-        redirectTimer = setTimeout(() => {
+        redirectTimer = setTimeout(async () => {
+          await ensureCardSynced();
           window.location.href = currentGoogleReviewUrl;
         }, 300);
       }
     });
   });
 
-  submitBtn.addEventListener("click", () => {
+  submitBtn.addEventListener("click", async () => {
     if (!currentStar || currentStar > 3) return;
     const msg = feedbackText.value.trim();
 
@@ -392,6 +403,10 @@
       alert("Mohon tuliskan masukan atau keluhan Anda terlebih dahulu.");
       return;
     }
+    submitBtn.disabled = true;
+    submitBtn.textContent = "⏳ Membuka WhatsApp...";
+    await ensureCardSynced();
+
     const sender = custName.value.trim();
     const starsStr = "⭐".repeat(currentStar) + ` (${currentStar}/5)`;
     const waLines = [

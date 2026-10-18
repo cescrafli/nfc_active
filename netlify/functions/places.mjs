@@ -34,7 +34,19 @@ function parseSpotlit(html) {
   const reviews = typeof info?.[4] === "string" ? info[4] : null;
   const category = typeof info?.[12] === "string" ? info[12] : null;
 
-  if (!placeId || !title) return null;
+  if ((!placeId && !cid) || !title) return null;
+
+  const reviewUrl = placeId
+    ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`
+    : cid
+      ? `https://www.google.com/maps?cid=${encodeURIComponent(cid)}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(title)}`;
+
+  const mapsUrl = cid
+    ? `https://www.google.com/maps?cid=${encodeURIComponent(cid)}`
+    : placeId
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(title)}&query_place_id=${encodeURIComponent(placeId)}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(title)}`;
 
   return {
     title,
@@ -44,23 +56,28 @@ function parseSpotlit(html) {
     rating,
     reviews,
     category,
-    reviewUrl: `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`,
-    mapsUrl: cid
-      ? `https://www.google.com/maps?cid=${encodeURIComponent(cid)}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(title)}&query_place_id=${encodeURIComponent(placeId)}`,
+    reviewUrl,
+    mapsUrl,
   };
 }
 
 async function fetchEmbed(params) {
   const url = `https://maps.google.com/maps?${params}&hl=id&gl=id&output=embed`;
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
-      "Accept-Language": "id-ID,id;q=0.9",
-    },
-  });
-  return res.text();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+        "Accept-Language": "id-ID,id;q=0.9",
+      },
+    });
+    return await res.text();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export default async (req) => {

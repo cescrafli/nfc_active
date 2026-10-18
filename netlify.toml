@@ -26,8 +26,8 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
     X-Robots-Tag = "noindex, nofollow"
     Permissions-Policy = "camera=(self), microphone=(), geolocation=(), payment=(), usb=()"
-    # Halaman memakai inline <script>/<style>, scanner unpkg, dan gambar QR api.qrserver.com
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google.com https://*.googleapis.com https://*.gstatic.com https://api.qrserver.com; connect-src 'self' https://unpkg.com https://api.qrserver.com; frame-src https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    # Halaman memakai inline <script>/<style>, scanner unpkg, jspdf cdnjs, dan gambar QR api.qrserver.com
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google.com https://*.googleapis.com https://*.gstatic.com https://api.qrserver.com; connect-src 'self' https://unpkg.com https://cdnjs.cloudflare.com https://api.qrserver.com; frame-src https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 # config.js berisi pengaturan yang bisa berubah tiap deploy → jangan di-cache lama
 [[headers]]

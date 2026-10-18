@@ -1020,8 +1020,9 @@
     cardIsUsed = Boolean(isUsed);
 
     if (cardHasPin) {
+      const cardId = getCleanCardId();
       pinTitle.textContent = "🔒 3. Masukkan Password Kartu Anda (4 Angka)";
-      pinHintText.textContent = "Masukkan 4 angka password yang Anda buat saat pertama kali mengaktifkan kartu ini untuk mengubah lokasi toko.";
+      pinHintText.innerHTML = `Masukkan 4 angka password yang Anda buat saat pertama kali mengaktifkan kartu ini untuk mengubah lokasi toko.<br><span style="display:inline-block;margin-top:6px;color:#92400e;font-size:11px;">💡 <em>Lupa password? Hubungi Admin dan sebutkan Kode ID Kartu Anda (ID: <strong>${escapeHtml(cardId)}</strong>) untuk bantuan reset.</em></span>`;
       activateBtn.style.display = "none";
       cloudOnlyBtn.style.display = "inline-flex";
     } else if (cardIsUsed && !cardHasPin) {
@@ -1533,11 +1534,15 @@
     }
   });
 
-  function showStatus(bg, color, text) {
+  function showStatus(bg, color, content, isHtml = false) {
     statusBox.style.display = "block";
     statusBox.style.background = bg;
     statusBox.style.color = color;
-    statusBox.textContent = text;
+    if (isHtml) {
+      statusBox.innerHTML = content;
+    } else {
+      statusBox.textContent = content;
+    }
   }
 
   async function verifyAndSaveCloud(pinCode) {
@@ -1598,13 +1603,27 @@
       const saved = await verifyAndSaveCloud(pinCode);
       clearPinBoxes();
       await checkExistingCard();
-      showStatus(
-        "#e8f5e9",
-        "#1b5e20",
-        saved.isFirstActivation
-          ? `🎉 Kartu NFC & Barcode (${saved.cardId}) Resmi Aktif untuk "${selectedPlace.title}"! Password 4 angka Anda telah dikunci untuk perubahan lokasi di masa mendatang.`
-          : `🎉 Berhasil! Lokasi Kartu NFC & Barcode (${saved.cardId}) sekarang otomatis berpindah ke "${selectedPlace.title}"!`
-      );
+
+      const successHtml = `
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">
+          ${saved.isFirstActivation
+            ? `🎉 Kartu NFC & Barcode (${escapeHtml(saved.cardId)}) Resmi Aktif!`
+            : `🎉 Berhasil! Lokasi Kartu NFC & Barcode (${escapeHtml(saved.cardId)}) Telah Berpindah!`
+          }
+        </div>
+        <div style="font-size:13px;line-height:1.45;color:#14532d;">
+          ${saved.isFirstActivation
+            ? `Toko: <strong>${escapeHtml(selectedPlace.title)}</strong>. Password 4 angka Anda telah dikunci untuk keamanan.`
+            : `Toko: <strong>${escapeHtml(selectedPlace.title)}</strong>.`
+          }
+        </div>
+        <div style="margin-top:12px;">
+          <a href="/c/${encodeURIComponent(saved.cardId)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:9px 15px;background:#166534;color:#ffffff;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;box-shadow:0 3px 10px rgba(22,101,52,0.25);">
+            🔗 Tes / Lihat Tampilan Kartu Anda Sekarang ↗
+          </a>
+        </div>
+      `;
+      showStatus("#e8f5e9", "#1b5e20", successHtml, true);
     } catch (err) {
       showStatus("#fdecea", "#b71c1c", "❌ " + err.message);
       updateButtonState();

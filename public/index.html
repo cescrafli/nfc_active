@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aktivasi Kartu NFCMap — Google Maps & Review Bintang 5</title>
+  <title>Aktivasi NFCMap — Google Maps & Review Bintang 5</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -666,30 +666,30 @@
         <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
       </svg>
     </span>
-    <h1>Aktivasi &amp; Kelola Kartu NFCMap</h1>
+    <h1>Aktivasi &amp; Kelola NFCMap</h1>
   </div>
-  <p class="subtitle">Hubungkan Kartu NFC &amp; QR Anda ke Google Maps bisnis dalam hitungan detik. Tingkatkan ulasan bintang 5, saring masukan pelanggan ke WhatsApp, dan ubah lokasi toko kapan saja.</p>
+  <p class="subtitle">Hubungkan NFCMap &amp; QR Anda ke Google Maps bisnis dalam hitungan detik. Tingkatkan ulasan bintang 5, saring masukan pelanggan ke WhatsApp, dan ubah lokasi toko kapan saja.</p>
 
-  <!-- Kotak Deteksi Kartu & Scan Barcode (Agar saat ganti toko tidak mental ke link lama) -->
+  <!-- Kotak Deteksi NFCMap & Scan Barcode (Agar saat ganti toko tidak mental ke link lama) -->
   <div class="detect-box" id="detect-box">
     <div class="detect-head">
       <span class="detect-title">
-        💳 Status Kartu Anda:
+        💳 Status NFCMap Anda:
         <span class="id-pill" id="detected-id-badge">Belum Terdeteksi</span>
       </span>
       <div style="display:flex;align-items:center;gap:10px;">
         <button type="button" id="reset-card-id-btn" style="display:none;background:none;border:none;color:#dc2626;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;">
-          🔄 Ganti Kartu
+          🔄 Ganti NFCMap
         </button>
       </div>
     </div>
 
     <div class="detect-actions">
       <button type="button" id="scan-qr-btn" class="scan-action-btn primary">
-        📷 Scan QR / Barcode Kartu
+        📷 Scan QR / Barcode NFCMap
       </button>
       <button type="button" id="read-nfc-btn" class="scan-action-btn secondary">
-        📡 Tempel (Tap) Kartu NFC
+        📡 Tempel (Tap) NFCMap
       </button>
     </div>
 
@@ -725,9 +725,9 @@
     <div id="dropdown" class="dropdown-list"></div>
   </div>
 
-  <!-- Pilihan aksi saat kartu di-tap -->
+  <!-- Pilihan aksi saat NFCMap di-tap -->
   <div class="mode-section" id="mode-section">
-    <span class="mode-title">🎯 2. PILIH MODE TUJUAN SAAT KARTU DI-TAP / QR DI-SCAN:</span>
+    <span class="mode-title">🎯 2. PILIH MODE TUJUAN SAAT NFCMAP DI-TAP / QR DI-SCAN:</span>
     <div class="mode-grid">
       <label class="mode-card active" id="card-review">
         <input type="radio" name="target-mode" value="review" checked />
@@ -756,7 +756,7 @@
       </label>
     </div>
 
-    <!-- Nomor WhatsApp untuk penampung komplain bintang 1-3 & data pemilik kartu -->
+    <!-- Nomor WhatsApp untuk penampung komplain bintang 1-3 & data pemilik NFCMap -->
     <div class="wa-box" id="wa-box">
       <label class="wa-label" id="wa-label" for="wa-input">💬 Nomor WhatsApp Penerima Masukan (Bintang 1–3)</label>
       <input id="wa-input" type="tel" inputmode="numeric" placeholder="Contoh: 081234567890" autocomplete="tel" />
@@ -822,7 +822,7 @@
 
   <!-- Password / PIN 4 Kotak Angka Milik Customer -->
   <div class="otp-section" id="otp-section">
-    <div class="otp-title" id="pin-title">🔐 3. BUAT PIN KEAMANAN KARTU (4 ANGKA)</div>
+    <div class="otp-title" id="pin-title">🔐 3. BUAT PIN KEAMANAN NFCMAP (4 ANGKA)</div>
     <div class="otp-boxes" id="otp-boxes">
       <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 1" />
       <input type="tel" inputmode="numeric" maxlength="1" class="otp-digit" placeholder="0" aria-label="Digit 2" />
@@ -834,7 +834,7 @@
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
       </svg>
-      <span id="pin-hint-text">Buat 4 angka PIN rahasia yang mudah Anda ingat. PIN ini wajib dimasukkan setiap kali Anda ingin mengubah lokasi toko atau pengaturan kartu di kemudian hari.</span>
+      <span id="pin-hint-text">Buat 4 angka PIN rahasia yang mudah Anda ingat. PIN ini wajib dimasukkan setiap kali Anda ingin mengubah lokasi toko atau pengaturan NFCMap di kemudian hari.</span>
     </div>
   </div>
 
@@ -845,12 +845,12 @@
       <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
       <path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/>
     </svg>
-    <span id="activate-btn-text">Aktifkan Kartu NFCMap Sekarang</span>
+    <span id="activate-btn-text">Aktifkan NFCMap Sekarang</span>
   </button>
 
-  <!-- Tombol 2: Simpan Perubahan Pengaturan Kartu -->
+  <!-- Tombol 2: Simpan Perubahan Pengaturan NFCMap -->
   <button id="cloud-only-btn" type="button">
-    <span id="cloud-only-btn-text">💾 Simpan Perubahan Pengaturan Kartu</span>
+    <span id="cloud-only-btn-text">💾 Simpan Perubahan Pengaturan NFCMap</span>
   </button>
 
   <div id="status"></div>
@@ -1001,18 +1001,18 @@
 
     if (cardHasPin) {
       const cardId = getCleanCardId();
-      pinTitle.textContent = "🔒 3. MASUKKAN PIN KEAMANAN KARTU (4 ANGKA)";
-      pinHintText.innerHTML = `Masukkan 4 angka PIN yang Anda buat saat aktivasi pertama untuk menyimpan perubahan pengaturan kartu.<br><span style="display:inline-block;margin-top:6px;color:#92400e;font-size:11px;">💡 <em>Lupa PIN? Hubungi Admin dan sebutkan ID Kartu Anda (ID: <strong>${escapeHtml(cardId)}</strong>) untuk bantuan reset PIN.</em></span>`;
+      pinTitle.textContent = "🔒 3. MASUKKAN PIN KEAMANAN NFCMAP (4 ANGKA)";
+      pinHintText.innerHTML = `Masukkan 4 angka PIN yang Anda buat saat aktivasi pertama untuk menyimpan perubahan pengaturan NFCMap.<br><span style="display:inline-block;margin-top:6px;color:#92400e;font-size:11px;">💡 <em>Lupa PIN? Hubungi Admin dan sebutkan ID NFCMap Anda (ID: <strong>${escapeHtml(cardId)}</strong>) untuk bantuan reset PIN.</em></span>`;
       activateBtn.style.display = "none";
       cloudOnlyBtn.style.display = "inline-flex";
     } else if (cardIsUsed && !cardHasPin) {
       pinTitle.textContent = "🔐 3. BUAT PIN 4 ANGKA BARU ANDA";
-      pinHintText.textContent = "PIN lama Anda telah di-reset oleh Admin. Silakan buat 4 angka PIN baru untuk mengamankan kartu ini kembali.";
+      pinHintText.textContent = "PIN lama Anda telah di-reset oleh Admin. Silakan buat 4 angka PIN baru untuk mengamankan NFCMap ini kembali.";
       activateBtn.style.display = "none";
       cloudOnlyBtn.style.display = "inline-flex";
     } else {
-      pinTitle.textContent = "🔐 3. BUAT PIN KEAMANAN KARTU (4 ANGKA)";
-      pinHintText.textContent = "Buat 4 angka PIN rahasia yang mudah Anda ingat. PIN ini wajib dimasukkan setiap kali Anda ingin mengubah lokasi toko atau pengaturan kartu di kemudian hari.";
+      pinTitle.textContent = "🔐 3. BUAT PIN KEAMANAN NFCMAP (4 ANGKA)";
+      pinHintText.textContent = "Buat 4 angka PIN rahasia yang mudah Anda ingat. PIN ini wajib dimasukkan setiap kali Anda ingin mengubah lokasi toko atau pengaturan NFCMap di kemudian hari.";
       activateBtn.style.display = "inline-flex";
       cloudOnlyBtn.style.display = "none";
     }
@@ -1028,7 +1028,7 @@
       cardReview.classList.remove("active");
       cardMaps.classList.add("active");
       waLabel.textContent = "💬 Nomor WhatsApp Pemilik Bisnis";
-      waHint.textContent = "Disimpan sebagai kontak resmi pemilik kartu untuk kemudahan pengelolaan kartu Anda.";
+      waHint.textContent = "Disimpan sebagai kontak resmi pemilik NFCMap untuk kemudahan pengelolaan NFCMap Anda.";
     } else {
       radioReview.checked = true;
       cardReview.classList.add("active");
@@ -1050,7 +1050,7 @@
       nfcChipWrap.innerHTML = `
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:9px 12px;font-size:12px;color:#166534;display:flex;align-items:center;gap:8px;">
           <span style="font-size:16px;">🔵</span>
-          <div><strong>Fitur Tap NFC &amp; Scan QR Aktif:</strong> Kartu fisik Anda sudah sinkron dan siap ditempel (tap) maupun di-scan oleh pelanggan.</div>
+          <div><strong>Fitur Tap &amp; Scan QR NFCMap Aktif:</strong> Fisik NFCMap Anda sudah sinkron dan siap ditempel (tap) maupun di-scan oleh pelanggan.</div>
         </div>
       `;
     } else {
@@ -1059,10 +1059,10 @@
         <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;font-size:12px;color:#92400e;">
           <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
             <span style="font-size:16px;">💡</span>
-            <div style="line-height:1.45;"><strong>Aktifkan Fitur Tap NFC (Opsional):</strong> Stiker QR kartu ini sudah aktif. Jika Anda ingin mengaktifkan fitur tempel (tap) pada kartu fisik NFC, gunakan browser Chrome di HP Android lalu klik tombol berikut:</div>
+            <div style="line-height:1.45;"><strong>Aktifkan Fitur Tap NFCMap (Opsional):</strong> Stiker QR NFCMap ini sudah aktif. Jika Anda ingin mengaktifkan fitur tempel (tap) pada fisik NFCMap, gunakan browser Chrome di HP Android lalu klik tombol berikut:</div>
           </div>
           <button type="button" id="btn-sync-physical-nfc" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#b45309;color:#ffffff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">
-            📡 Aktifkan Tap NFC pada Kartu Fisik
+            📡 Aktifkan Tap pada Fisik NFCMap
           </button>
         </div>
       `;
@@ -1077,12 +1077,12 @@
 
   async function handleSyncPhysicalNfc(cardId) {
     if (!("NDEFReader" in window)) {
-      alert("Browser ini tidak mendukung Web NFC langsung. Untuk mengaktifkan fitur tap pada kartu fisik NFC, silakan buka halaman ini menggunakan browser Google Chrome di HP Android.");
+      alert("Browser ini tidak mendukung Web NFC langsung. Untuk mengaktifkan fitur tap pada fisik NFCMap, silakan buka halaman ini menggunakan browser Google Chrome di HP Android.");
       return;
     }
     const pin = getPinCode();
     if (cardHasPin && pin.length !== 4) {
-      alert("Masukkan 4 angka PIN kartu Anda di bawah terlebih dahulu untuk mengunci chip NFC.");
+      alert("Masukkan 4 angka PIN NFCMap Anda di bawah terlebih dahulu untuk mengunci chip NFCMap.");
       if (otpDigits[0]) otpDigits[0].focus();
       return;
     }
@@ -1093,9 +1093,9 @@
       activeSyncNfcController = null;
       if (btnSync) {
         btnSync.disabled = false;
-        btnSync.textContent = "📡 Aktifkan Tap NFC pada Kartu Fisik";
+        btnSync.textContent = "📡 Aktifkan Tap pada Fisik NFCMap";
       }
-      showStatus("#f8fafc", "#475569", "Pindaian NFC dibatalkan.");
+      showStatus("#f8fafc", "#475569", "Pindaian NFCMap dibatalkan.");
       return;
     }
 
@@ -1104,9 +1104,9 @@
       activeSyncNfcController = new AbortController();
       if (btnSync) {
         btnSync.disabled = false;
-        btnSync.textContent = "✖️ Batalkan Tulis NFC (Tempelkan Kartu...)";
+        btnSync.textContent = "✖️ Batalkan Tulis (Tempelkan NFCMap...)";
       }
-      showStatus("#e8f0fe", "#174ea6", "⏳ Tempelkan kartu fisik NFC Anda ke bagian belakang HP sekarang...");
+      showStatus("#e8f0fe", "#174ea6", "⏳ Tempelkan fisik NFCMap Anda ke bagian belakang HP sekarang...");
       const ndef = new NDEFReader();
       await ndef.write({
         records: [{ recordType: "url", data: dynamicUrl }]
@@ -1135,14 +1135,14 @@
 
       loadedCardNfcLinked = true;
       renderNfcChipStatus(cardId, true);
-      showStatus("#e8f5e9", "#1b5e20", "✅ Fitur tap chip kartu NFC berhasil diaktifkan & disinkronkan!");
+      showStatus("#e8f5e9", "#1b5e20", "✅ Fitur tap chip NFCMap berhasil diaktifkan & disinkronkan!");
     } catch (err) {
       if (btnSync) {
         btnSync.disabled = false;
-        btnSync.textContent = "📡 Aktifkan Tap NFC pada Kartu Fisik";
+        btnSync.textContent = "📡 Aktifkan Tap pada Fisik NFCMap";
       }
       if (err.name === "AbortError") return;
-      showStatus("#fdecea", "#b71c1c", "❌ Gagal menulis NFC: " + (err.message || "Pastikan NFC HP aktif dan kartu ditempelkan dengan benar"));
+      showStatus("#fdecea", "#b71c1c", "❌ Gagal menulis NFCMap: " + (err.message || "Pastikan fitur NFC HP aktif dan NFCMap ditempelkan dengan benar"));
     } finally {
       activeSyncNfcController = null;
     }
@@ -1164,7 +1164,7 @@
       currentCardStatus.style.background = "#fffbeb";
       currentCardStatus.style.borderColor = "#fde68a";
       currentCardStatus.style.color = "#92400e";
-      currentCardStatus.innerHTML = `👆 <strong>Mulai dari Sini:</strong> Klik tombol <strong>"📷 Scan QR / Barcode Kartu"</strong> atau <strong>"📡 Tempel (Tap) Kartu NFC"</strong> di atas untuk menghubungkan kartu fisik Anda.`;
+      currentCardStatus.innerHTML = `👆 <strong>Mulai dari Sini:</strong> Klik tombol <strong>"📷 Scan QR / Barcode NFCMap"</strong> atau <strong>"📡 Tempel (Tap) NFCMap"</strong> di atas untuk menghubungkan fisik NFCMap Anda.`;
       updatePinUiMode(false, false);
       return;
     }
@@ -1187,7 +1187,7 @@
         currentCardStatus.style.background = "#fef2f2";
         currentCardStatus.style.borderColor = "#fecaca";
         currentCardStatus.style.color = "#b91c1c";
-        currentCardStatus.innerHTML = `⚠️ <strong>Kartu Tidak Dikenali (ID: ${escapeHtml(id)}):</strong> Kode kartu ini belum terdaftar di sistem kami. Silakan klik tombol <strong>"🔄 Ganti Kartu"</strong> di atas lalu pindai ulang QR resmi pada kartu Anda.`;
+        currentCardStatus.innerHTML = `⚠️ <strong>NFCMap Tidak Dikenali (ID: ${escapeHtml(id)}):</strong> Kode NFCMap ini belum terdaftar di sistem kami. Silakan klik tombol <strong>"🔄 Ganti NFCMap"</strong> di atas lalu pindai ulang QR resmi pada NFCMap Anda.`;
         updatePinUiMode(false, false);
         return;
       }
@@ -1216,7 +1216,7 @@
         currentCardStatus.style.background = "#f0fdf4";
         currentCardStatus.style.borderColor = "#bbf7d0";
         currentCardStatus.style.color = "#166534";
-        currentCardStatus.innerHTML = `✅ <strong>Kartu Aktif — Terhubung ke: ${escapeHtml(data.card.storeName || "Toko")}</strong><br>Data bisnis Anda saat ini sudah dimuat di bawah. Anda dapat langsung memperbarui lokasi toko, mode tujuan, atau nomor WhatsApp kapan saja.`;
+        currentCardStatus.innerHTML = `✅ <strong>NFCMap Aktif — Terhubung ke: ${escapeHtml(data.card.storeName || "Toko")}</strong><br>Data bisnis Anda saat ini sudah dimuat di bawah. Anda dapat langsung memperbarui lokasi toko, mode tujuan, atau nomor WhatsApp kapan saja.`;
 
         if (data.card.wa) {
           waInput.value = data.card.wa;
@@ -1257,7 +1257,7 @@
         currentCardStatus.style.background = "#eff6ff";
         currentCardStatus.style.borderColor = "#bfdbfe";
         currentCardStatus.style.color = "#1e40af";
-        currentCardStatus.innerHTML = `✨ <strong>Kartu Baru Siap Diaktifkan (ID: ${escapeHtml(id)})</strong><br>Silakan lengkapi 3 langkah mudah di bawah: pilih lokasi bisnis di Google Maps, isi nomor WhatsApp, dan buat 4 angka PIN keamanan Anda.`;
+        currentCardStatus.innerHTML = `✨ <strong>NFCMap Baru Siap Diaktifkan (ID: ${escapeHtml(id)})</strong><br>Silakan lengkapi 3 langkah mudah di bawah: pilih lokasi bisnis di Google Maps, isi nomor WhatsApp, dan buat 4 angka PIN keamanan Anda.`;
       }
 
       // Tampilkan peringatan jika kartu sedang dalam masa lockout 15 menit
@@ -1270,8 +1270,8 @@
           currentCardStatus.style.background = "#fef2f2";
           currentCardStatus.style.borderColor = "#fecaca";
           currentCardStatus.style.color = "#b91c1c";
-          currentCardStatus.innerHTML = `⏳ <strong>Kartu Terkunci Sementara:</strong> Terlalu sering salah memasukkan PIN (5 kali). Silakan tunggu <strong>${remMin} menit lagi</strong>, atau hubungi Admin untuk bantuan reset PIN (ID: <strong>${escapeHtml(id)}</strong>).`;
-          pinHintText.innerHTML = `<span style="color:#b91c1c;font-weight:700;">⚠️ Kartu ini sedang terkunci sementara selama ${remMin} menit ke depan karena salah PIN 5 kali.</span>`;
+          currentCardStatus.innerHTML = `⏳ <strong>NFCMap Terkunci Sementara:</strong> Terlalu sering salah memasukkan PIN (5 kali). Silakan tunggu <strong>${remMin} menit lagi</strong>, atau hubungi Admin untuk bantuan reset PIN (ID: <strong>${escapeHtml(id)}</strong>).`;
+          pinHintText.innerHTML = `<span style="color:#b91c1c;font-weight:700;">⚠️ NFCMap ini sedang terkunci sementara selama ${remMin} menit ke depan karena salah PIN 5 kali.</span>`;
         }
       }
 
@@ -1301,7 +1301,7 @@
     if (activeNfcCustomerController) {
       activeNfcCustomerController.abort();
       activeNfcCustomerController = null;
-      readNfcBtn.textContent = "📡 Tempel (Tap) Kartu NFC";
+      readNfcBtn.textContent = "📡 Tempel (Tap) NFCMap";
     }
 
     if (qrReaderWrap.style.display === "block") {
@@ -1321,7 +1321,7 @@
           await stopQrScanner();
           if (token) {
             applyDetectedCardToken(token);
-            showStatus("#e8f5e9", "#1b5e20", `✅ QR Kartu (${token}) Berhasil Terdeteksi!`);
+            showStatus("#e8f5e9", "#1b5e20", `✅ QR NFCMap (${token}) Berhasil Terdeteksi!`);
           }
         },
         () => {}
@@ -1342,22 +1342,22 @@
     await stopQrScanner();
 
     if (!("NDEFReader" in window)) {
-      showStatus("#fff8e1", "#b45309", "Untuk pengguna iPhone/Laptop, silakan klik tombol '📷 Scan QR / Barcode Kartu' di sebelah kiri untuk mendeteksi kartu Anda.");
+      showStatus("#fff8e1", "#b45309", "Untuk pengguna iPhone/Laptop, silakan klik tombol '📷 Scan QR / Barcode NFCMap' di sebelah kiri untuk mendeteksi NFCMap Anda.");
       return;
     }
 
     if (activeNfcCustomerController) {
       activeNfcCustomerController.abort();
       activeNfcCustomerController = null;
-      readNfcBtn.textContent = "📡 Tempel (Tap) Kartu NFC";
-      showStatus("#f8fafc", "#475569", "Pindaian NFC dibatalkan.");
+      readNfcBtn.textContent = "📡 Tempel (Tap) NFCMap";
+      showStatus("#f8fafc", "#475569", "Pindaian NFCMap dibatalkan.");
       return;
     }
 
     try {
       activeNfcCustomerController = new AbortController();
-      readNfcBtn.textContent = "✖️ Batalkan Tap NFC";
-      showStatus("#e8f0fe", "#174ea6", "📡 Tempelkan Kartu NFC Anda ke bagian belakang HP sekarang untuk mendeteksi kartu...");
+      readNfcBtn.textContent = "✖️ Batalkan Tap NFCMap";
+      showStatus("#e8f0fe", "#174ea6", "📡 Tempelkan NFCMap Anda ke bagian belakang HP sekarang untuk mendeteksi NFCMap...");
       const ndef = new NDEFReader();
       await ndef.scan({ signal: activeNfcCustomerController.signal });
 
@@ -1380,22 +1380,22 @@
             activeNfcCustomerController.abort();
             activeNfcCustomerController = null;
           }
-          readNfcBtn.textContent = "📡 Tempel (Tap) Kartu NFC";
+          readNfcBtn.textContent = "📡 Tempel (Tap) NFCMap";
           applyDetectedCardToken(foundToken);
-          showStatus("#e8f5e9", "#1b5e20", `✅ Kartu NFC (${foundToken}) Berhasil Terdeteksi!`);
+          showStatus("#e8f5e9", "#1b5e20", `✅ NFCMap (${foundToken}) Berhasil Terdeteksi!`);
         } else {
-          showStatus("#fff8e1", "#b45309", "⚠️ Chip NFC pada kartu ini belum aktif. Silakan klik tombol '📷 Scan QR / Barcode Kartu' di sebelah kiri untuk memindai stiker QR kartu Anda.");
+          showStatus("#fff8e1", "#b45309", "⚠️ Chip pada NFCMap ini belum aktif. Silakan klik tombol '📷 Scan QR / Barcode NFCMap' di sebelah kiri untuk memindai stiker QR NFCMap Anda.");
         }
       };
 
       activeNfcCustomerController.signal.addEventListener("abort", () => {
-        readNfcBtn.textContent = "📡 Tempel (Tap) Kartu NFC";
+        readNfcBtn.textContent = "📡 Tempel (Tap) NFCMap";
       });
     } catch (err) {
       activeNfcCustomerController = null;
-      readNfcBtn.textContent = "📡 Tempel (Tap) Kartu NFC";
+      readNfcBtn.textContent = "📡 Tempel (Tap) NFCMap";
       if (err.name !== "AbortError") {
-        showStatus("#fdecea", "#b71c1c", "Gagal membaca NFC (" + err.message + "). Anda juga bisa klik '📷 Scan QR / Barcode Kartu'.");
+        showStatus("#fdecea", "#b71c1c", "Gagal membaca NFCMap (" + err.message + "). Anda juga bisa klik '📷 Scan QR / Barcode NFCMap'.");
       }
     }
   });
@@ -1450,7 +1450,7 @@
       targetUrl = selectedPlace.mapsUrl;
       previewBadge.textContent = "Siap Diaktifkan: Mode Profil Google Maps";
       calloutText.innerHTML =
-        "<strong>Profil Google Maps Instan:</strong> Saat kartu di-tap atau QR di-scan, aplikasi Google Maps langsung menampilkan profil bisnis dan rute navigasi toko Anda.";
+        "<strong>Profil Google Maps Instan:</strong> Saat NFCMap di-tap atau QR di-scan, aplikasi Google Maps langsung menampilkan profil bisnis dan rute navigasi toko Anda.";
     }
   }
 
@@ -1531,13 +1531,13 @@
           currentCardStatus.style.background = "#fffbeb";
           currentCardStatus.style.borderColor = "#fde68a";
           currentCardStatus.style.color = "#92400e";
-          currentCardStatus.innerHTML = `🔑 <strong>PIN Telah Di-Reset oleh Admin:</strong> Toko <strong>${escapeHtml(originalCardData.storeName || "Toko")}</strong> tetap aktif. Masukkan 4 angka PIN baru Anda di bawah lalu klik 'Simpan PIN Baru & Perbarui Kartu'.`;
+          currentCardStatus.innerHTML = `🔑 <strong>PIN Telah Di-Reset oleh Admin:</strong> Toko <strong>${escapeHtml(originalCardData.storeName || "Toko")}</strong> tetap aktif. Masukkan 4 angka PIN baru Anda di bawah lalu klik 'Simpan PIN Baru & Perbarui NFCMap'.`;
         } else {
           currentCardStatus.style.display = "block";
           currentCardStatus.style.background = "#f0fdf4";
           currentCardStatus.style.borderColor = "#bbf7d0";
           currentCardStatus.style.color = "#166534";
-          currentCardStatus.innerHTML = `✅ <strong>Kartu Aktif — Terhubung ke: ${escapeHtml(originalCardData.storeName || "Toko")}</strong><br>Seluruh data toko &amp; mode Anda saat ini sudah dimuat di bawah. Anda bisa langsung mengubah Mode, No. WA, atau memilih toko baru.`;
+          currentCardStatus.innerHTML = `✅ <strong>NFCMap Aktif — Terhubung ke: ${escapeHtml(originalCardData.storeName || "Toko")}</strong><br>Seluruh data toko &amp; mode Anda saat ini sudah dimuat di bawah. Anda bisa langsung mengubah Mode, No. WA, atau memilih toko baru.`;
         }
       }
     }
@@ -1549,7 +1549,7 @@
     if (!cardExistsInStock || !getCleanCardId()) {
       isReady = false;
       isPromptScan = true;
-      labelText = "📷 Scan QR / Tap Kartu Anda Terlebih Dahulu (Klik di Sini)";
+      labelText = "📷 Scan QR / Tap NFCMap Anda Terlebih Dahulu (Klik di Sini)";
     } else if (!selectedPlace || !String(selectedPlace.title || "").trim()) {
       isReady = false;
       labelText = "📍 Langkah 1: Pilih Lokasi Bisnis di Google Maps";
@@ -1565,10 +1565,10 @@
       isReady = true;
       if (cardIsUsed) {
         labelText = cardHasPin
-          ? "💾 Simpan Perubahan Pengaturan Kartu"
-          : "🔐 Simpan PIN Baru & Perbarui Kartu";
+          ? "💾 Simpan Perubahan Pengaturan NFCMap"
+          : "🔐 Simpan PIN Baru & Perbarui NFCMap";
       } else {
-        labelText = "🚀 Aktifkan Kartu NFCMap Sekarang";
+        labelText = "🚀 Aktifkan NFCMap Sekarang";
       }
     }
 
@@ -1941,14 +1941,14 @@
     // Jika belum scan kartu dan tombol diklik, gulir ke atas & buka scanner
     if (!cardExistsInStock || !getCleanCardId()) {
       document.getElementById("detect-box").scrollIntoView({ behavior: "smooth" });
-      showStatus("#fff8e1", "#b45309", "👆 Klik '📷 Scan QR / Barcode Kartu' atau '📡 Tempel (Tap) Kartu NFC' di atas untuk mendeteksi kartu Anda terlebih dahulu.");
+      showStatus("#fff8e1", "#b45309", "👆 Klik '📷 Scan QR / Barcode NFCMap' atau '📡 Tempel (Tap) NFCMap' di atas untuk mendeteksi NFCMap Anda terlebih dahulu.");
       scanQrBtn.click();
       return;
     }
 
     const pinCode = getPinCode();
     if (pinCode.length !== 4) {
-      showStatus("#fdecea", "#b71c1c", "Masukkan 4 angka PIN keamanan kartu Anda terlebih dahulu.");
+      showStatus("#fdecea", "#b71c1c", "Masukkan 4 angka PIN keamanan NFCMap Anda terlebih dahulu.");
       return;
     }
 
@@ -1961,7 +1961,7 @@
 
     activateBtn.disabled = true;
     cloudOnlyBtn.disabled = true;
-    showStatus("#e8f0fe", "#174ea6", "☁️ Memverifikasi PIN & menyimpan pengaturan bisnis ke Kartu & QR Anda...");
+    showStatus("#e8f0fe", "#174ea6", "☁️ Memverifikasi PIN & menyimpan pengaturan bisnis ke NFCMap & QR Anda...");
 
     try {
       const saved = await verifyAndSaveCloud(pinCode);
@@ -1971,19 +1971,19 @@
       const successHtml = `
         <div style="font-size:14px;font-weight:700;margin-bottom:6px;">
           ${saved.isFirstActivation
-            ? `🎉 Selamat! Kartu NFCMap Anda (${escapeHtml(saved.cardId)}) Resmi Aktif!`
-            : `✅ Pengaturan Kartu (${escapeHtml(saved.cardId)}) Berhasil Diperbarui!`
+            ? `🎉 Selamat! NFCMap Anda (${escapeHtml(saved.cardId)}) Resmi Aktif!`
+            : `✅ Pengaturan NFCMap (${escapeHtml(saved.cardId)}) Berhasil Diperbarui!`
           }
         </div>
         <div style="font-size:13px;line-height:1.45;color:#14532d;">
           ${saved.isFirstActivation
-            ? `Terhubung ke: <strong>${escapeHtml(selectedPlace.title)}</strong>. Kartu NFC &amp; QR Anda kini siap digunakan pelanggan, dan PIN 4 angka Anda telah dikunci untuk keamanan.`
+            ? `Terhubung ke: <strong>${escapeHtml(selectedPlace.title)}</strong>. NFCMap &amp; QR Anda kini siap digunakan pelanggan, dan PIN 4 angka Anda telah dikunci untuk keamanan.`
             : `Perubahan untuk <strong>${escapeHtml(selectedPlace.title)}</strong> telah tersimpan dan langsung aktif saat ini juga.`
           }
         </div>
         <div style="margin-top:12px;">
           <a href="/c/${encodeURIComponent(saved.cardId)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:9px 15px;background:#166534;color:#ffffff;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;box-shadow:0 3px 10px rgba(22,101,52,0.25);">
-            🔗 Lihat &amp; Tes Tampilan Kartu Sekarang ↗
+            🔗 Lihat &amp; Tes Tampilan NFCMap Sekarang ↗
           </a>
         </div>
       `;

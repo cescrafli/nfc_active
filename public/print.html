@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Panel Produksi, Scan Kunci NFC & Tabel Barcode — Khusus Admin</title>
+  <title>Panel Produksi, Scan Kunci NFCMap & Tabel Barcode — Khusus Admin</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -724,8 +724,8 @@
 
 <!-- Layar Kunci Khusus Admin -->
 <div class="login-wrap no-print" id="login-wrap">
-  <h1>🔐 Panel Cetak &amp; Kunci Kartu NFC (Admin)</h1>
-  <p class="sub">Masukkan password Admin untuk mencetak stiker Barcode, men-scan stiker yang sudah ditempel ke fisik kartu untuk mengunci <strong>Barcode ID ke chip NFC</strong>, dan memantau tabel data customer.</p>
+  <h1>🔐 Panel Cetak &amp; Kunci NFCMap (Admin)</h1>
+  <p class="sub">Masukkan password Admin untuk mencetak stiker Barcode, men-scan stiker yang sudah ditempel ke fisik NFCMap untuk mengunci <strong>Barcode ID ke chip NFCMap</strong>, dan memantau tabel data customer.</p>
   <div class="field" style="margin-bottom:14px;">
     <label for="admin-key">Password Admin</label>
     <input type="password" id="admin-key" placeholder="Masukkan password admin..." />
@@ -737,22 +737,22 @@
 <!-- Panel Produksi & Monitoring Barcode -->
 <div class="container" id="main-container">
   <div class="panel no-print">
-    <h1>📊 Panel Produksi, Scan Kunci Kartu NFC &amp; Tabel Barcode</h1>
-    <p class="sub">Alur Produksi Owner: <strong>1) Buat &amp; Print Semua Stiker Barcode</strong> &rarr; <strong>2) Tempelkan Stiker ke Fisik Kartu NFC</strong> &rarr; <strong>3) Klik "📷 Scan Stiker Kartu &amp; Kunci ke Chip NFC"</strong> di bawah untuk mengunci <code>Barcode ID</code> stiker tersebut ke dalam chip kartu NFC fisiknya!</p>
+    <h1>📊 Panel Produksi, Scan Kunci NFCMap &amp; Tabel Barcode</h1>
+    <p class="sub">Alur Produksi Owner: <strong>1) Buat &amp; Print Semua Stiker Barcode</strong> &rarr; <strong>2) Tempelkan Stiker ke Fisik NFCMap</strong> &rarr; <strong>3) Klik "📷 Scan Stiker NFCMap &amp; Kunci NFCMap"</strong> di bawah untuk mengunci <code>Barcode ID</code> stiker tersebut ke dalam chip NFCMap fisiknya!</p>
 
-    <!-- FITUR UTAMA OWNER: SCAN STIKER YANG SUDAH DITEMPEL KE KARTU -> KUNCI KE CHIP NFC -->
+    <!-- FITUR UTAMA OWNER: SCAN STIKER YANG SUDAH DITEMPEL KE NFCMAP -> KUNCI KE CHIP NFCMAP -->
     <div class="scan-lock-banner">
       <div class="scan-lock-top">
         <div class="scan-lock-info">
-          <h2>🔒 Kunci Stiker Barcode ke Fisik Kartu NFC (Scan &rarr; Tap NFC)</h2>
-          <p>Sudah menempelkan stiker QR ke fisik kartu? Scan stiker pada kartu tersebut menggunakan kamera, lalu tekan tombol konfirmasi sambil menempelkan kartu ke HP Anda untuk mengunci <strong>Barcode ID</strong>-nya.</p>
+          <h2>🔒 Kunci Stiker Barcode ke Fisik NFCMap (Scan &rarr; Tap NFCMap)</h2>
+          <p>Sudah menempelkan stiker QR ke fisik NFCMap? Scan stiker pada NFCMap tersebut menggunakan kamera, lalu tekan tombol konfirmasi sambil menempelkan NFCMap ke HP Anda untuk mengunci <strong>Barcode ID</strong>-nya.</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <button type="button" class="btn-scan-lock" id="toggle-scan-lock-btn">
-            📷 Scan Stiker Kartu &amp; Kunci NFC
+            📷 Scan Stiker NFCMap &amp; Kunci NFCMap
           </button>
           <button type="button" class="btn btn-outline" id="btn-verify-card" style="background:#ffffff;color:#0f172a;border-color:#cbd5e1;font-weight:700;">
-            🔍 Tes / Baca Isi Kartu NFC
+            🔍 Tes / Baca Isi NFCMap
           </button>
         </div>
       </div>
@@ -767,17 +767,17 @@
           </div>
           <div>
             <div class="lock-step-box" id="lock-step-status">
-              <strong>Langkah 1: Arahkan Kamera ke Stiker QR di Kartu Fisik</strong><br>
-              Begitu kamera membaca stiker QR pada kartu, sistem akan mendeteksi <code>Barcode ID</code>-nya dan menampilkan tombol kunci NFC yang sesuai.
+              <strong>Langkah 1: Arahkan Kamera ke Stiker QR di Fisik NFCMap</strong><br>
+              Begitu kamera membaca stiker QR pada NFCMap, sistem akan mendeteksi <code>Barcode ID</code>-nya dan menampilkan tombol kunci NFCMap yang sesuai.
             </div>
             <div id="lock-action-wrap">
               <button type="button" class="btn-execute-lock" id="btn-execute-lock" style="display:none;">
-                📡 KLIK DI SINI &amp; TEMPELKAN KARTU NFC SEKARANG
+                📡 KLIK DI SINI &amp; TEMPELKAN NFCMAP SEKARANG
               </button>
             </div>
             <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
               <button type="button" class="btn btn-dark" id="scan-next-card-btn" style="display:none;">
-                📷 Scan &amp; Kunci Kartu Berikutnya &rarr;
+                📷 Scan &amp; Kunci NFCMap Berikutnya &rarr;
               </button>
             </div>
           </div>
@@ -792,11 +792,11 @@
       </div>
       <div class="stat-box unlinked">
         <span class="stat-num" id="stat-unlinked">0</span>
-        <span class="stat-label">🟡 Belum Dikunci ke Kartu NFC</span>
+        <span class="stat-label">🟡 Belum Dikunci ke NFCMap</span>
       </div>
       <div class="stat-box linked">
         <span class="stat-num" id="stat-linked">0</span>
-        <span class="stat-label">🔵 Terkunci di Kartu (Siap Jual)</span>
+        <span class="stat-label">🔵 Terkunci di NFCMap (Siap Jual)</span>
       </div>
       <div class="stat-box used">
         <span class="stat-num" id="stat-used">0</span>
@@ -809,12 +809,12 @@
         <div class="field">
           <label for="qty-select">Tambah Stok Barcode</label>
           <select id="qty-select">
-            <option value="1">+ 1 Kartu Baru</option>
-            <option value="6" selected>+ 6 Kartu Baru</option>
-            <option value="12">+ 12 Kartu Baru (1 Lembar)</option>
-            <option value="24">+ 24 Kartu Baru</option>
-            <option value="36">+ 36 Kartu Baru</option>
-            <option value="48">+ 48 Kartu Baru (Kertas A3)</option>
+            <option value="1">+ 1 NFCMap Baru</option>
+            <option value="6" selected>+ 6 NFCMap Baru</option>
+            <option value="12">+ 12 NFCMap Baru (1 Lembar)</option>
+            <option value="24">+ 24 NFCMap Baru</option>
+            <option value="36">+ 36 NFCMap Baru</option>
+            <option value="48">+ 48 NFCMap Baru (Kertas A3)</option>
           </select>
         </div>
 
@@ -836,8 +836,8 @@
     <div class="filter-bar">
       <div class="filter-tabs">
         <button type="button" class="tab-btn active" data-filter="all">Semua Barcode</button>
-        <button type="button" class="tab-btn" data-filter="unlinked">🟡 1. Belum Dikunci ke NFC</button>
-        <button type="button" class="tab-btn" data-filter="linked">🔵 2. Terkunci di Kartu (Siap Jual)</button>
+        <button type="button" class="tab-btn" data-filter="unlinked">🟡 1. Belum Dikunci ke NFCMap</button>
+        <button type="button" class="tab-btn" data-filter="linked">🔵 2. Terkunci di NFCMap (Siap Jual)</button>
         <button type="button" class="tab-btn" data-filter="used">🟢 3. Sudah Diaktifkan Customer</button>
       </div>
 
@@ -937,7 +937,7 @@
 
     <div class="modal-footer">
       <div style="font-size:12px;color:#64748b;">
-        ✂️ Garis putus-putus abu-abu pada pratinjau adalah garis panduan untuk memotong stiker kartu.
+        ✂️ Garis putus-putus abu-abu pada pratinjau adalah garis panduan untuk memotong stiker NFCMap.
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
         <button type="button" class="btn btn-outline" id="modal-cancel-btn">
@@ -1041,11 +1041,11 @@
     const btnVerify = document.getElementById("btn-verify-card");
     if (btnVerify) {
       btnVerify.disabled = false;
-      btnVerify.textContent = "🔍 Tes / Baca Isi Kartu NFC";
+      btnVerify.textContent = "🔍 Tes / Baca Isi NFCMap";
     }
     if (scannedCardId && btnExecuteLock) {
       btnExecuteLock.disabled = false;
-      btnExecuteLock.textContent = `📡 KLIK DI SINI & TEMPEL KARTU (${scannedCardId})`;
+      btnExecuteLock.textContent = `📡 KLIK DI SINI & TEMPEL NFCMAP (${scannedCardId})`;
     }
   }
 
@@ -1155,8 +1155,8 @@
     lockStepStatus.style.background = "#f8fafc";
     lockStepStatus.style.borderColor = "#e2e8f0";
     lockStepStatus.innerHTML = `
-      <strong>📷 Langkah 1: Arahkan Kamera ke Stiker Barcode pada Kartu Fisik</strong><br>
-      Sistem akan otomatis membaca <code>Barcode ID</code> stiker tersebut dan menampilkan tombol konfirmasi kunci NFC.
+      <strong>📷 Langkah 1: Arahkan Kamera ke Stiker Barcode pada Fisik NFCMap</strong><br>
+      Sistem akan otomatis membaca <code>Barcode ID</code> stiker tersebut dan menampilkan tombol konfirmasi kunci NFCMap.
     `;
 
     try {
@@ -1208,32 +1208,32 @@
       lockStepStatus.style.background = "#fff7ed";
       lockStepStatus.style.borderColor = "#fdba74";
       lockStepStatus.innerHTML = `
-        <strong>⚠️ PERINGATAN KERAS: Kartu Ini Sudah Digunakan Customer!</strong><br>
+        <strong>⚠️ PERINGATAN KERAS: NFCMap Ini Sudah Digunakan Customer!</strong><br>
         Barcode ID: <code>${escapeHtml(cardId)}</code><br>
         Toko: <strong>${escapeHtml(cardData.storeName || "Toko Aktif")}</strong> (${escapeHtml(cardData.wa || "-")})<br>
-        <span style="color:#c2410c;">Menulis ulang ke kartu baru berisiko membuat 2 kartu fisik memiliki barcode yang sama. Lanjutkan hanya jika mengganti kartu rusak.</span>
+        <span style="color:#c2410c;">Menulis ulang ke NFCMap baru berisiko membuat 2 fisik NFCMap memiliki barcode yang sama. Lanjutkan hanya jika mengganti NFCMap rusak.</span>
       `;
     } else if (cardData.nfcLinked) {
       lockStepStatus.style.background = "#eff6ff";
       lockStepStatus.style.borderColor = "#93c5fd";
       lockStepStatus.innerHTML = `
         <strong>ℹ️ Stiker Terbaca: <code>${escapeHtml(cardId)}</code></strong><br>
-        Status: <strong>🔵 Sudah Pernah Terkunci di Kartu NFC</strong>.<br>
-        Klik tombol di bawah jika Anda ingin menulis ulang Barcode ID ini ke chip fisik kartu NFC.
+        Status: <strong>🔵 Sudah Pernah Terkunci di NFCMap</strong>.<br>
+        Klik tombol di bawah jika Anda ingin menulis ulang Barcode ID ini ke chip fisik NFCMap.
       `;
     } else {
       lockStepStatus.style.background = "#f0fdf4";
       lockStepStatus.style.borderColor = "#86efac";
       lockStepStatus.innerHTML = `
         <strong>🎯 Stiker Terbaca: <code>${escapeHtml(cardId)}</code></strong><br>
-        Status: <strong>🟡 Belum Dikunci ke NFC</strong>.<br>
-        Klik tombol hijau di bawah, lalu tempelkan kartu fisik ini ke punggung HP Anda untuk mengunci Barcode ID.
+        Status: <strong>🟡 Belum Dikunci ke NFCMap</strong>.<br>
+        Klik tombol hijau di bawah, lalu tempelkan fisik NFCMap ini ke punggung HP Anda untuk mengunci Barcode ID.
       `;
     }
 
     btnExecuteLock.disabled = false;
     btnExecuteLock.style.display = "inline-flex";
-    btnExecuteLock.textContent = `📡 KLIK DI SINI & TEMPEL KARTU (${cardId})`;
+    btnExecuteLock.textContent = `📡 KLIK DI SINI & TEMPEL NFCMAP (${cardId})`;
     scanNextCardBtn.style.display = "none";
   }
 
@@ -1246,7 +1246,7 @@
     abortActiveNfc();
 
     if (!("NDEFReader" in window)) {
-      if (confirm(`Perangkat ini tidak mendukung Web NFC langsung (gunakan Chrome Android untuk menulis ke chip fisik NFC).\n\nTandai Barcode ID ${cardId} sebagai '🔵 Terkunci di Kartu (Siap Jual)' di database?`)) {
+      if (confirm(`Perangkat ini tidak mendukung Web NFC langsung (gunakan Chrome Android untuk menulis ke chip fisik NFCMap).\n\nTandai Barcode ID ${cardId} sebagai '🔵 Terkunci di NFCMap (Siap Jual)' di database?`)) {
         try {
           const data = await adminApi({ adminAction: "mark_linked", cardId });
           allCards = data.cards || [];
@@ -1268,13 +1268,13 @@
     try {
       activeNfcController = new AbortController();
       btnExecuteLock.disabled = true;
-      btnExecuteLock.textContent = "⏳ Tempelkan Kartu ke Punggung HP Sekarang...";
+      btnExecuteLock.textContent = "⏳ Tempelkan NFCMap ke Punggung HP Sekarang...";
 
       lockStepStatus.style.background = "#fffbeb";
       lockStepStatus.style.borderColor = "#fde68a";
       lockStepStatus.innerHTML = `
-        <strong>📡 Menunggu Kartu NFC...</strong><br>
-        Tempelkan dan tahan kartu fisik <code>${escapeHtml(cardId)}</code> di belakang HP Anda selama 2 detik...
+        <strong>📡 Menunggu NFCMap...</strong><br>
+        Tempelkan dan tahan fisik NFCMap <code>${escapeHtml(cardId)}</code> di belakang HP Anda selama 2 detik...
       `;
 
       const ndef = new NDEFReader();
@@ -1291,7 +1291,7 @@
       lockStepStatus.style.borderColor = "#86efac";
       lockStepStatus.innerHTML = `
         <strong>🎉 BERHASIL TERKUNCI! (ID: <code>${escapeHtml(cardId)}</code>)</strong><br>
-        Chip NFC dan Stiker Barcode pada kartu ini sudah sinkron dan berstatus <strong>🔵 Siap Jual</strong>!
+        Chip NFCMap dan Stiker Barcode pada NFCMap ini sudah sinkron dan berstatus <strong>🔵 Siap Jual</strong>!
       `;
       btnExecuteLock.disabled = false;
       btnExecuteLock.style.display = "none";
@@ -1299,17 +1299,17 @@
     } catch (err) {
       if (err.name === "AbortError") {
         btnExecuteLock.disabled = false;
-        btnExecuteLock.textContent = `📡 KLIK DI SINI & TEMPEL KARTU (${cardId})`;
+        btnExecuteLock.textContent = `📡 KLIK DI SINI & TEMPEL NFCMAP (${cardId})`;
         return;
       }
       lockStepStatus.style.background = "#fef2f2";
       lockStepStatus.style.borderColor = "#fecaca";
       lockStepStatus.innerHTML = `
-        <strong>❌ Gagal Mengunci Chip NFC (${escapeHtml(err.message || "Terputus")})</strong><br>
-        Pastikan NFC HP aktif dan tempelkan kartu rata di belakang HP, lalu klik tombol di bawah lagi.
+        <strong>❌ Gagal Mengunci Chip NFCMap (${escapeHtml(err.message || "Terputus")})</strong><br>
+        Pastikan fitur NFC HP aktif dan tempelkan NFCMap rata di belakang HP, lalu klik tombol di bawah lagi.
       `;
       btnExecuteLock.disabled = false;
-      btnExecuteLock.textContent = `📡 COBA LAGI: KLIK & TEMPEL KARTU (${cardId})`;
+      btnExecuteLock.textContent = `📡 COBA LAGI: KLIK & TEMPEL NFCMAP (${cardId})`;
     } finally {
       activeNfcController = null;
     }
@@ -1320,25 +1320,25 @@
     if (activeNfcController) {
       abortActiveNfc();
       btnVerifyCard.disabled = false;
-      btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
+      btnVerifyCard.textContent = "🔍 Tes / Baca Isi NFCMap";
       return;
     }
 
     if (!("NDEFReader" in window)) {
-      alert("Fitur tes kartu NFC langsung memerlukan browser Google Chrome di HP Android.");
+      alert("Fitur tes NFCMap langsung memerlukan browser Google Chrome di HP Android.");
       return;
     }
     try {
       abortActiveNfc();
       activeNfcController = new AbortController();
       btnVerifyCard.disabled = false;
-      btnVerifyCard.textContent = "❌ Batalkan Tes NFC (Tempelkan Kartu...)";
+      btnVerifyCard.textContent = "❌ Batalkan Tes (Tempelkan NFCMap...)";
       const ndef = new NDEFReader();
       await ndef.scan({ signal: activeNfcController.signal });
       ndef.onreading = async (event) => {
         abortActiveNfc();
         btnVerifyCard.disabled = false;
-        btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
+        btnVerifyCard.textContent = "🔍 Tes / Baca Isi NFCMap";
         for (const record of event.message.records) {
           if (record.recordType === "url") {
             const decoder = new TextDecoder();
@@ -1356,22 +1356,22 @@
               const rowEl = document.querySelector("tr.highlight-row");
               if (rowEl) rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
-              alert(`✅ KARTU FISIK TERBACA!\n\nBarcode ID: ${token}\nStatus: ${found?.isUsed ? "🟢 Sudah Digunakan Customer" : found?.nfcLinked ? "🔵 Terkunci di Kartu (Siap Jual)" : "🟡 Belum Dikunci"}\nToko: ${found?.storeName || "(Masih Kosong / Siap Diisi)"}\nNo. WA: ${found?.wa || "-"}`);
+              alert(`✅ FISIK NFCMAP TERBACA!\n\nBarcode ID: ${token}\nStatus: ${found?.isUsed ? "🟢 Sudah Digunakan Customer" : found?.nfcLinked ? "🔵 Terkunci di NFCMap (Siap Jual)" : "🟡 Belum Dikunci"}\nToko: ${found?.storeName || "(Masih Kosong / Siap Diisi)"}\nNo. WA: ${found?.wa || "-"}`);
               return;
             }
           }
         }
-        alert("Kartu terdeteksi namun tidak berisi link Barcode ID yang valid.");
+        alert("NFCMap terdeteksi namun tidak berisi link Barcode ID yang valid.");
       };
     } catch (err) {
       if (err.name === "AbortError") {
-        btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
+        btnVerifyCard.textContent = "🔍 Tes / Baca Isi NFCMap";
         return;
       }
       activeNfcController = null;
       btnVerifyCard.disabled = false;
-      btnVerifyCard.textContent = "🔍 Tes / Baca Isi Kartu NFC";
-      alert("Gagal membaca NFC: " + err.message);
+      btnVerifyCard.textContent = "🔍 Tes / Baca Isi NFCMap";
+      alert("Gagal membaca NFCMap: " + err.message);
     }
   });
 
@@ -1482,7 +1482,7 @@
   printBtn.addEventListener("click", () => {
     const filtered = getFilteredCards();
     if (filtered.length === 0) {
-      alert("Tidak ada kartu yang cocok untuk dicetak.");
+      alert("Tidak ada NFCMap yang cocok untuk dicetak.");
       return;
     }
     selectedCardIds.clear();
@@ -1531,7 +1531,7 @@
       ctx.fillStyle = "#0f172a";
       ctx.font = "bold 26px sans-serif";
       ctx.textBaseline = "alphabetic";
-      ctx.fillText("Tap Kartu atau Scan QR", 300, 565, 520);
+      ctx.fillText("Tap NFCMap atau Scan QR", 300, 565, 520);
 
       ctx.fillStyle = "#64748b";
       ctx.font = "20px sans-serif";
@@ -1614,7 +1614,7 @@
   btnBulkDelete.addEventListener("click", async () => {
     const deletableCards = allCards.filter((c) => selectedCardIds.has(c.cardId) && !c.isUsed);
     if (deletableCards.length === 0) {
-      alert("Tidak ada kartu terpilih yang bisa dihapus. Kartu yang sudah aktif digunakan customer dilindungi dari penghapusan.");
+      alert("Tidak ada barcode terpilih yang bisa dihapus. NFCMap yang sudah aktif digunakan customer dilindungi dari penghapusan.");
       return;
     }
 
@@ -1910,7 +1910,7 @@
       const titleY = qrY + qrSize + (cardH * 0.055);
       ctx.fillStyle = "#0f172a";
       ctx.font = `bold ${cardH * 0.046}px sans-serif`;
-      ctx.fillText("Tap Kartu atau Scan QR", centerX, titleY, cardW * 0.9);
+      ctx.fillText("Tap NFCMap atau Scan QR", centerX, titleY, cardW * 0.9);
 
       const subY = titleY + (cardH * 0.048);
       ctx.fillStyle = "#64748b";
@@ -1962,7 +1962,7 @@
       const pdfH = pdf.internal.pageSize.getHeight();
 
       pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
-      pdf.save(`STIKER-NFC-${paperKey}-${orientation}-${selectedCardIds.size}-KARTU.pdf`);
+      pdf.save(`STIKER-NFCMAP-${paperKey}-${orientation}-${selectedCardIds.size}-LEMBAR.pdf`);
     } catch (err) {
       alert("Gagal mengunduh PDF: " + err.message);
     } finally {
@@ -2053,8 +2053,8 @@
         lockStepStatus.style.background = "#f8fafc";
         lockStepStatus.style.borderColor = "#e2e8f0";
         lockStepStatus.innerHTML = `
-          <strong>📷 Langkah 1: Arahkan Kamera ke Stiker Barcode pada Kartu Fisik</strong><br>
-          Sistem akan otomatis membaca <code>Barcode ID</code> stiker tersebut dan menampilkan tombol konfirmasi kunci NFC.
+          <strong>📷 Langkah 1: Arahkan Kamera ke Stiker Barcode pada Fisik NFCMap</strong><br>
+          Sistem akan otomatis membaca <code>Barcode ID</code> stiker tersebut dan menampilkan tombol konfirmasi kunci NFCMap.
         `;
       }
     } else if (scannedCardId && scannerDrawer.style.display === "block" && !activeNfcController && btnExecuteLock.style.display !== "none") {
@@ -2064,25 +2064,25 @@
           lockStepStatus.style.background = "#fff7ed";
           lockStepStatus.style.borderColor = "#fed7aa";
           lockStepStatus.innerHTML = `
-            <strong>⚠️ Kartu <code>${escapeHtml(scannedCardId)}</code> Sudah Digunakan Customer!</strong><br>
+            <strong>⚠️ NFCMap <code>${escapeHtml(scannedCardId)}</code> Sudah Digunakan Customer!</strong><br>
             Toko: <strong>${escapeHtml(cardData.storeName || "-")}</strong> | No WA: <strong>${escapeHtml(cardData.wa || "-")}</strong>.<br>
-            <span style="color:#c2410c;">Menulis ulang ke kartu baru berisiko membuat 2 kartu fisik memiliki barcode yang sama. Lanjutkan hanya jika mengganti kartu rusak.</span>
+            <span style="color:#c2410c;">Menulis ulang ke NFCMap baru berisiko membuat 2 fisik NFCMap memiliki barcode yang sama. Lanjutkan hanya jika mengganti NFCMap rusak.</span>
           `;
         } else if (cardData.nfcLinked) {
           lockStepStatus.style.background = "#eff6ff";
           lockStepStatus.style.borderColor = "#93c5fd";
           lockStepStatus.innerHTML = `
             <strong>ℹ️ Stiker Terbaca: <code>${escapeHtml(scannedCardId)}</code></strong><br>
-            Status: <strong>🔵 Sudah Pernah Terkunci di Kartu NFC</strong>.<br>
-            Klik tombol di bawah jika Anda ingin menulis ulang Barcode ID ini ke chip fisik kartu NFC.
+            Status: <strong>🔵 Sudah Pernah Terkunci di NFCMap</strong>.<br>
+            Klik tombol di bawah jika Anda ingin menulis ulang Barcode ID ini ke chip fisik NFCMap.
           `;
         } else {
           lockStepStatus.style.background = "#f0fdf4";
           lockStepStatus.style.borderColor = "#86efac";
           lockStepStatus.innerHTML = `
             <strong>🎯 Stiker Terbaca: <code>${escapeHtml(scannedCardId)}</code></strong><br>
-            Status: <strong>🟡 Belum Dikunci ke NFC</strong>.<br>
-            Klik tombol hijau di bawah, lalu tempelkan kartu fisik ini ke punggung HP Anda untuk mengunci Barcode ID.
+            Status: <strong>🟡 Belum Dikunci ke NFCMap</strong>.<br>
+            Klik tombol hijau di bawah, lalu tempelkan fisik NFCMap ini ke punggung HP Anda untuk mengunci Barcode ID.
           `;
         }
       }
@@ -2109,8 +2109,8 @@
       const empty = document.createElement("div");
       empty.className = "empty-state";
       empty.innerHTML = allCards.length === 0
-        ? "Belum ada stok barcode di database.<br>Klik tombol biru <strong>'➕ Buat &amp; Simpan Barcode Baru'</strong> di atas untuk membuat kartu pertama Anda."
-        : "Tidak ada kartu yang cocok dengan filter / pencarian ini.";
+        ? "Belum ada stok barcode di database.<br>Klik tombol biru <strong>'➕ Buat &amp; Simpan Barcode Baru'</strong> di atas untuk membuat NFCMap pertama Anda."
+        : "Tidak ada NFCMap yang cocok dengan filter / pencarian ini.";
       tableContainer.appendChild(empty);
       updateBulkBar();
       return;
@@ -2129,11 +2129,11 @@
           </th>
           <th style="width:40px;">No</th>
           <th>QR &amp; Barcode ID</th>
-          <th>Status Kartu</th>
+          <th>Status NFCMap</th>
           <th>Nama Toko &amp; Mode Tujuan</th>
           <th>No. WhatsApp</th>
           <th>PIN Customer</th>
-          <th>Aksi Kartu</th>
+          <th>Aksi NFCMap</th>
         </tr>
       </thead>
       <tbody id="qr-tbody"></tbody>
@@ -2151,9 +2151,9 @@
       if (item.isUsed) {
         statusHtml = `<span class="status-pill used">🟢 Sudah Digunakan</span>`;
       } else if (item.nfcLinked) {
-        statusHtml = `<span class="status-pill linked">🔵 Terkunci di Kartu (Siap Jual)</span>`;
+        statusHtml = `<span class="status-pill linked">🔵 Terkunci di NFCMap (Siap Jual)</span>`;
       } else {
-        statusHtml = `<span class="status-pill unlinked">🟡 Belum Dikunci ke NFC</span>`;
+        statusHtml = `<span class="status-pill unlinked">🟡 Belum Dikunci ke NFCMap</span>`;
       }
 
       // Store & Mode
@@ -2180,7 +2180,7 @@
       // PIN
       let pinHtml = `<span style="color:#94a3b8;">⚪ Belum Ada</span>`;
       if (item.lockUntil && new Date(item.lockUntil).getTime() > Date.now()) {
-        pinHtml = `<span class="status-pill unlinked" style="background:#fef2f2;border-color:#fecaca;color:#b91c1c;" title="Kartu dikunci sementara karena salah PIN 5 kali berturut-turut">⏳ Terkunci (Salah PIN 5x)</span>`;
+        pinHtml = `<span class="status-pill unlinked" style="background:#fef2f2;border-color:#fecaca;color:#b91c1c;" title="NFCMap dikunci sementara karena salah PIN 5 kali berturut-turut">⏳ Terkunci (Salah PIN 5x)</span>`;
       } else if (item.hasPin) {
         pinHtml = `<span style="color:#166534;font-weight:700;">🔐 Aktif (4 Angka)</span>`;
       }
@@ -2210,12 +2210,12 @@
         <td>${pinHtml}</td>
         <td>
           <div class="table-actions">
-            <button type="button" class="qr-mini-btn nfc-write ${item.nfcLinked ? "written" : ""}" title="Kunci Barcode ID ini ke chip kartu NFC">
-              ${item.nfcLinked ? "✅ Kunci Ulang NFC" : "📡 Kunci ke NFC"}
+            <button type="button" class="qr-mini-btn nfc-write ${item.nfcLinked ? "written" : ""}" title="Kunci Barcode ID ini ke chip NFCMap">
+              ${item.nfcLinked ? "✅ Kunci Ulang NFCMap" : "📡 Kunci ke NFCMap"}
             </button>
             <button type="button" class="qr-mini-btn print-one-btn" title="Print stiker QR baris ini saja">🖨️ Print</button>
             <button type="button" class="qr-mini-btn dl-btn" title="Download stiker PNG lengkap dengan ID">⬇️ PNG</button>
-            <a href="/?card=${encodeURIComponent(secretToken)}" target="_blank" rel="noopener" class="qr-mini-btn" title="Buka halaman aktivasi kartu ini">🔗 Buka</a>
+            <a href="/?card=${encodeURIComponent(secretToken)}" target="_blank" rel="noopener" class="qr-mini-btn" title="Buka halaman aktivasi NFCMap ini">🔗 Buka</a>
             ${item.isUsed ? `
               <button type="button" class="qr-mini-btn warn reset-pin-btn" title="Reset jika customer lupa PIN">🔑 Reset PIN</button>
               <button type="button" class="qr-mini-btn danger reset-card-btn" title="Kosongkan toko agar siap jual kembali">♻️ Kosongkan</button>
@@ -2259,12 +2259,12 @@
       const writeBtn = tr.querySelector(".nfc-write");
       writeBtn.addEventListener("click", async () => {
         if (item.isUsed) {
-          if (!confirm(`⚠️ PERINGATAN:\n\nKartu "${secretToken}" SUDAH DIAKTIFKAN oleh customer untuk toko "${item.storeName || "Toko Aktif"}".\n\nMenimpa chip NFC fisik kartu baru dengan Barcode ID ini berisiko membuat 2 kartu fisik memiliki barcode yang sama (duplikat).\n\nApakah Anda yakin ingin tetap mengunci ulang chip NFC kartu ini?`)) {
+          if (!confirm(`⚠️ PERINGATAN:\n\nNFCMap "${secretToken}" SUDAH DIAKTIFKAN oleh customer untuk toko "${item.storeName || "Toko Aktif"}".\n\nMenimpa chip fisik NFCMap baru dengan Barcode ID ini berisiko membuat 2 fisik NFCMap memiliki barcode yang sama (duplikat).\n\nApakah Anda yakin ingin tetap mengunci ulang chip NFCMap ini?`)) {
             return;
           }
         }
 
-        const origText = item.nfcLinked ? "✅ Kunci Ulang NFC" : "📡 Kunci ke NFC";
+        const origText = item.nfcLinked ? "✅ Kunci Ulang NFCMap" : "📡 Kunci ke NFCMap";
 
         // Jika tombol baris ini sedang menunggu tap NFC dan diklik kembali, batalkan
         if (activeRowNfcBtn === writeBtn && activeNfcController) {
@@ -2275,7 +2275,7 @@
         abortActiveNfc();
 
         if (!("NDEFReader" in window)) {
-          if (confirm(`Browser ini tidak mendukung NFC langsung (gunakan Chrome Android untuk menulis ke chip NFC).\n\nApakah Anda ingin menandai Barcode ID "${secretToken}" sebagai '🔵 Terkunci di Kartu (Siap Jual)' secara manual?`)) {
+          if (confirm(`Browser ini tidak mendukung NFC langsung (gunakan Chrome Android untuk menulis ke chip NFCMap).\n\nApakah Anda ingin menandai Barcode ID "${secretToken}" sebagai '🔵 Terkunci di NFCMap (Siap Jual)' secara manual?`)) {
             writeBtn.disabled = true;
             writeBtn.textContent = "⏳ Memproses...";
             try {
@@ -2295,7 +2295,7 @@
           activeRowNfcBtn = writeBtn;
           activeRowNfcOrigText = origText;
           activeNfcController = new AbortController();
-          writeBtn.textContent = "⏳ Tempel NFC... (Klik Batal)";
+          writeBtn.textContent = "⏳ Tempel NFCMap... (Klik Batal)";
           const ndef = new NDEFReader();
           await ndef.write({
             records: [{ recordType: "url", data: dynamicUrl }]
@@ -2343,7 +2343,7 @@
       const resetCardBtn = tr.querySelector(".reset-card-btn");
       if (resetCardBtn) {
         resetCardBtn.addEventListener("click", async () => {
-          if (!confirm(`Kosongkan alamat toko "${item.storeName}" agar kartu ${secretToken} kembali kosong (Siap Jual)?`)) return;
+          if (!confirm(`Kosongkan alamat toko "${item.storeName}" agar NFCMap ${secretToken} kembali kosong (Siap Jual)?`)) return;
           resetCardBtn.disabled = true;
           const origLabel = resetCardBtn.textContent;
           resetCardBtn.textContent = "⏳ Mengosongkan...";

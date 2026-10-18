@@ -143,7 +143,7 @@ export async function getCardFromRedis(cardId) {
 
 export async function saveCardToRedis(cardId, payload) {
   const id = normalizeCardId(cardId);
-  if (!id) throw new Error("ID Kartu tidak valid");
+  if (!id) throw new Error("ID NFCMap tidak valid");
 
   const key = `nfc:card:${id}`;
   const valueStr = JSON.stringify({
@@ -206,7 +206,7 @@ export default async (req) => {
   if (req.method === "GET") {
     const id = normalizeCardId(reqUrl.searchParams.get("id") || "");
     if (!id) {
-      return json({ error: "Parameter id kartu diperlukan" }, 400);
+      return json({ error: "Parameter id NFCMap diperlukan" }, 400);
     }
     let card = null;
     try {
@@ -332,7 +332,7 @@ export default async (req) => {
         const id = normalizeCardId(body.cardId || "");
         const existing = await getCardFromRedis(id);
         if (!existing) {
-          return json({ valid: false, error: "Kartu tidak ditemukan." }, 404);
+          return json({ valid: false, error: "NFCMap tidak ditemukan." }, 404);
         }
         delete existing.pinHash;
         delete existing.failedPinAttempts;
@@ -342,12 +342,12 @@ export default async (req) => {
         return json({ valid: true, cards });
       }
 
-      // 5. Kosongkan alamat toko pada kartu (tetap berstatus Sudah Di-Link ke Kartu NFC, siap dipakai toko baru)
+      // 5. Kosongkan alamat toko pada kartu (tetap berstatus Sudah Di-Link ke NFCMap, siap dipakai toko baru)
       if (body.adminAction === "reset_card") {
         const id = normalizeCardId(body.cardId || "");
         const existing = await getCardFromRedis(id);
         if (!existing) {
-          return json({ valid: false, error: "Kartu tidak ditemukan." }, 404);
+          return json({ valid: false, error: "NFCMap tidak ditemukan." }, 404);
         }
         await saveCardToRedis(id, {
           cardId: id,
@@ -374,7 +374,7 @@ export default async (req) => {
           return json(
             {
               valid: false,
-              error: `Kartu "${id}" sudah aktif digunakan oleh customer (${existing.storeName}) dan dilindungi dari penghapusan. Gunakan tombol 'Kosongkan' jika Anda ingin mereset kartu ini.`,
+              error: `NFCMap "${id}" sudah aktif digunakan oleh customer (${existing.storeName}) dan dilindungi dari penghapusan. Gunakan tombol 'Kosongkan' jika Anda ingin mereset NFCMap ini.`,
             },
             400
           );
@@ -428,10 +428,10 @@ export default async (req) => {
       return json({ valid: false, error: "Aksi admin tidak dikenal" }, 400);
     }
 
-    // --- AKSI CUSTOMER (Mengisi Alamat Bisnis, WA & PIN 4 Angka ke ID Kartu) ---
+    // --- AKSI CUSTOMER (Mengisi Alamat Bisnis, WA & PIN 4 Angka ke ID NFCMap) ---
     const cardId = normalizeCardId(body.cardId || "");
     if (!cardId) {
-      return json({ valid: false, error: "ID Kartu belum terdeteksi. Silakan tempelkan kartu NFC atau scan QR pada kartu Anda." }, 400);
+      return json({ valid: false, error: "ID NFCMap belum terdeteksi. Silakan tempelkan NFCMap atau scan QR pada NFCMap Anda." }, 400);
     }
 
     const existingCard = await getCardFromRedis(cardId);
@@ -439,13 +439,13 @@ export default async (req) => {
       return json(
         {
           valid: false,
-          error: `ID Kartu "${cardId}" tidak terdaftar di sistem. Pastikan Anda menempelkan kartu NFC atau scan QR resmi pada kartu fisik Anda.`,
+          error: `ID NFCMap "${cardId}" tidak terdaftar di sistem. Pastikan Anda menempelkan NFCMap atau scan QR resmi pada fisik NFCMap Anda.`,
         },
         404
       );
     }
 
-    // Proteksi Brute-Force PIN: Cek apakah kartu sedang dikunci sementara
+    // Proteksi Brute-Force PIN: Cek apakah NFCMap sedang dikunci sementara
     if (existingCard.lockUntil) {
       const lockTime = new Date(existingCard.lockUntil).getTime();
       const now = Date.now();
@@ -454,7 +454,7 @@ export default async (req) => {
         return json(
           {
             valid: false,
-            error: `Kartu terkunci sementara karena salah PIN 5 kali berturut-turut. Silakan tunggu ${remainingMinutes} menit lagi, atau hubungi Admin jika Anda lupa PIN.`,
+            error: `NFCMap terkunci sementara karena salah PIN 5 kali berturut-turut. Silakan tunggu ${remainingMinutes} menit lagi, atau hubungi Admin jika Anda lupa PIN.`,
           },
           429
         );
@@ -468,11 +468,11 @@ export default async (req) => {
 
     // Aksi Sinkronkan Chip Fisik NFC langsung dari portal pengguna
     if (body.action === "link_physical_nfc") {
-      // Jika kartu sudah memiliki PIN, verifikasi PIN pemiliknya
+      // Jika NFCMap sudah memiliki PIN, verifikasi PIN pemiliknya
       if (existingCard.pinHash) {
         const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
         if (!/^\d{4}$/.test(rawPin)) {
-          return json({ valid: false, error: "PIN 4 angka diperlukan untuk menautkan kartu NFC." }, 400);
+          return json({ valid: false, error: "PIN 4 angka diperlukan untuk menautkan NFCMap." }, 400);
         }
         const inputPinHash = hashPin(cardId, rawPin);
         if (!safeEqual(inputPinHash, existingCard.pinHash)) {
@@ -481,7 +481,7 @@ export default async (req) => {
           if (attempts >= 5) {
             existingCard.lockUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
             await saveCardToRedis(cardId, existingCard);
-            return json({ valid: false, error: "PIN salah 5 kali! Kartu dikunci selama 15 menit demi keamanan." }, 429);
+            return json({ valid: false, error: "PIN salah 5 kali! NFCMap dikunci selama 15 menit demi keamanan." }, 429);
           }
           await saveCardToRedis(cardId, existingCard);
           return json({ valid: false, error: `PIN 4 angka salah! (Percobaan ${attempts} dari 5).` }, 401);
@@ -492,7 +492,7 @@ export default async (req) => {
       existingCard.nfcLinked = true;
       existingCard.linkedAt = new Date().toISOString();
       await saveCardToRedis(cardId, existingCard);
-      return json({ valid: true, nfcLinked: true, message: "Kartu fisik NFC berhasil disinkronkan ke sistem!" });
+      return json({ valid: true, nfcLinked: true, message: "Fisik NFCMap berhasil disinkronkan ke sistem!" });
     }
 
     const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
@@ -502,7 +502,7 @@ export default async (req) => {
 
     const inputPinHash = hashPin(cardId, rawPin);
 
-    // Jika kartu sudah pernah diaktifkan dan memiliki PIN, wajib cocokkan PIN-nya!
+    // Jika NFCMap sudah pernah diaktifkan dan memiliki PIN, wajib cocokkan PIN-nya!
     if (existingCard.pinHash) {
       if (!safeEqual(inputPinHash, existingCard.pinHash)) {
         const attempts = (existingCard.failedPinAttempts || 0) + 1;
@@ -513,7 +513,7 @@ export default async (req) => {
           return json(
             {
               valid: false,
-              error: "PIN salah 5 kali! Kartu dikunci selama 15 menit demi keamanan. Hubungi Admin jika Anda lupa PIN.",
+              error: "PIN salah 5 kali! NFCMap dikunci selama 15 menit demi keamanan. Hubungi Admin jika Anda lupa PIN.",
             },
             429
           );
@@ -522,7 +522,7 @@ export default async (req) => {
         return json(
           {
             valid: false,
-            error: `PIN 4 angka salah! (Percobaan ${attempts} dari 5). Masukkan PIN yang dibuat saat pertama kali aktivasi kartu.`,
+            error: `PIN 4 angka salah! (Percobaan ${attempts} dari 5). Masukkan PIN yang dibuat saat pertama kali aktivasi NFCMap.`,
           },
           401
         );

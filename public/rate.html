@@ -268,7 +268,9 @@
   const storeName = (params.get("n") || "Kami").trim();
   const placeId = (params.get("p") || "").trim();
   const cid = (params.get("c") || "").trim();
-  const rawWa = (params.get("w") || "").replace(/\D/g, "");
+  let rawWa = (params.get("w") || "").replace(/\D/g, "");
+  if (rawWa.startsWith("0")) rawWa = "62" + rawWa.slice(1);
+  else if (rawWa.startsWith("8")) rawWa = "62" + rawWa;
   const cardToken = (params.get("card") || "").trim();
 
   document.getElementById("store-title").textContent = storeName;

@@ -4,8 +4,8 @@
 //
 // 3 Status Barcode di /print:
 // 1. Belum Di-Link ke Kartu (nfcLinked: false, isUsed: false)
-// 2. Sudah Di-Link ke Kartu NFC / Siap Jual (nfcLinked: true, isUsed: false) -> hanya berisi Barcode ID di kartu, belum ada alamat toko
-// 3. Sudah Digunakan Customer (isUsed: true) -> sudah diisi alamat toko & PIN 4 angka oleh customer
+// 2. Sudah Di-Link / Dikunci ke Kartu NFC — Siap Jual (nfcLinked: true, isUsed: false) -> hanya berisi Barcode ID di kartu, belum ada alamat toko
+// 3. Sudah Digunakan Customer (isUsed: true) -> sudah diisi alamat toko, WA & PIN 4 angka oleh customer
 // =============================================================
 import { createHash, timingSafeEqual, randomBytes } from "node:crypto";
 
@@ -88,6 +88,16 @@ export function normalizeCardId(raw) {
     .slice(0, 32);
 }
 
+export function normalizeWaNumber(raw) {
+  let digits = String(raw || "").replace(/\D/g, "");
+  if (digits.startsWith("0")) {
+    digits = "62" + digits.slice(1);
+  } else if (digits.startsWith("8")) {
+    digits = "62" + digits;
+  }
+  return digits.slice(0, 16);
+}
+
 export function generateSecretCardToken() {
   const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
   const bytes = randomBytes(10);
@@ -149,6 +159,7 @@ export async function listAllCardsFromRedis() {
       const isUsed = Boolean(parsed.targetUrl && parsed.storeName);
       cards.push({
         ...publicCard,
+        wa: normalizeWaNumber(parsed.wa || ""),
         cardId: parsed.cardId || ids[i],
         hasPin: Boolean(pinHash),
         nfcLinked: Boolean(parsed.nfcLinked || isUsed),
@@ -178,22 +189,39 @@ export default async (req) => {
       return json({ error: "Parameter id kartu diperlukan" }, 400);
     }
     const card = await getCardFromRedis(id);
-    // Jika belum ada alamat toko (masih kosong / baru di-link Barcode ID saja ke kartu)
-    if (!card || !card.targetUrl) {
+
+    // Jika Barcode ID sama sekali tidak terdaftar di stok Admin
+    if (!card) {
       return json({
         found: false,
-        existsInStock: Boolean(card),
-        nfcLinked: Boolean(card?.nfcLinked),
-        hasPin: Boolean(card?.pinHash),
+        existsInStock: false,
+        nfcLinked: false,
+        hasPin: false,
         cardId: id,
-      }, 404);
+      }, 200);
     }
+
+    // Jika terdaftar di stok Admin tapi belum diisi alamat toko oleh customer (Siap Jual / Kosong)
+    if (!card.targetUrl || !card.storeName) {
+      return json({
+        found: false,
+        existsInStock: true,
+        nfcLinked: Boolean(card.nfcLinked),
+        hasPin: Boolean(card.pinHash),
+        cardId: id,
+      }, 200);
+    }
+
     const { pinHash, ...publicCard } = card;
     return json({
       found: true,
-      nfcLinked: true,
+      existsInStock: true,
+      nfcLinked: Boolean(card.nfcLinked || true),
       hasPin: Boolean(pinHash),
-      card: publicCard,
+      card: {
+        ...publicCard,
+        wa: normalizeWaNumber(publicCard.wa || ""),
+      },
     });
   }
 
@@ -247,21 +275,24 @@ export default async (req) => {
         return json({ valid: true, createdIds, cards });
       }
 
-      // 3. Tandai Barcode ID sudah ditanam/di-link ke fisik Kartu NFC (tanpa mengisi alamat toko!)
+      // 3. Kunci / Tandai Barcode ID sudah ditanam ke fisik Kartu NFC (tanpa mengisi alamat toko!)
       if (body.adminAction === "mark_linked") {
         const id = normalizeCardId(body.cardId || "");
-        const existing = (await getCardFromRedis(id)) || {
-          cardId: id,
-          targetUrl: "",
-          storeName: "",
-          mode: "review",
-          createdAt: new Date().toISOString(),
-        };
+        if (!id) {
+          return json({ valid: false, error: "Barcode ID kosong." }, 400);
+        }
+        const existing = await getCardFromRedis(id);
+        if (!existing) {
+          return json({
+            valid: false,
+            error: `Barcode ID "${id}" tidak ditemukan di database stok. Pastikan Anda men-scan stiker yang dibuat dari halaman ini.`,
+          }, 404);
+        }
         existing.nfcLinked = true;
         existing.linkedAt = new Date().toISOString();
         await saveCardToRedis(id, existing);
         const cards = await listAllCardsFromRedis();
-        return json({ valid: true, cards });
+        return json({ valid: true, lockedCardId: id, cards });
       }
 
       // 4. Reset PIN Customer (Jika customer lupa PIN 4 angkanya)
@@ -287,8 +318,10 @@ export default async (req) => {
         await saveCardToRedis(id, {
           cardId: id,
           nfcLinked: Boolean(existing.nfcLinked),
+          linkedAt: existing.linkedAt || null,
           targetUrl: "",
           storeName: "",
+          wa: "",
           mode: "review",
           createdAt: existing.createdAt || new Date().toISOString(),
         });
@@ -312,10 +345,21 @@ export default async (req) => {
       return json({ valid: false, error: "Aksi admin tidak dikenal" }, 400);
     }
 
-    // --- AKSI CUSTOMER (Mengisi Alamat Toko & PIN 4 Angka ke Barcode ID yang sudah ada di Kartu) ---
+    // --- AKSI CUSTOMER (Mengisi Alamat Toko, WA & PIN 4 Angka ke Barcode ID yang sudah dikunci di Kartu) ---
     const cardId = normalizeCardId(body.cardId || "");
     if (!cardId) {
-      return json({ valid: false, error: "Barcode ID kartu tidak ditemukan." }, 400);
+      return json({ valid: false, error: "Barcode ID kartu belum terdeteksi. Silakan Tap Kartu NFC atau Scan Barcode pada kartu Anda terlebih dahulu." }, 400);
+    }
+
+    const existingCard = await getCardFromRedis(cardId);
+    if (!existingCard) {
+      return json(
+        {
+          valid: false,
+          error: `Barcode ID "${cardId}" tidak terdaftar di sistem. Pastikan Anda men-tap kartu atau men-scan stiker QR resmi yang ada pada kartu fisik Anda.`,
+        },
+        404
+      );
     }
 
     const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
@@ -323,11 +367,10 @@ export default async (req) => {
       return json({ valid: false, error: "Password / PIN harus berupa 4 angka." }, 400);
     }
 
-    const existingCard = await getCardFromRedis(cardId);
     const inputPinHash = hashPin(cardId, rawPin);
 
     // Jika kartu sudah pernah diaktifkan dan memiliki PIN, wajib cocokkan PIN-nya!
-    if (existingCard && existingCard.pinHash) {
+    if (existingCard.pinHash) {
       if (!safeEqual(inputPinHash, existingCard.pinHash)) {
         return json(
           {
@@ -344,31 +387,38 @@ export default async (req) => {
     const mode = String(body.mode || "review").trim();
     const placeId = String(body.placeId || "").trim();
     const cid = String(body.cid || "").trim();
-    const wa = String(body.wa || "").trim();
+    const wa = normalizeWaNumber(body.wa || "");
     const address = String(body.address || "").trim();
 
-    if (targetUrl) {
-      try {
-        await saveCardToRedis(cardId, {
-          targetUrl,
-          storeName,
-          mode,
-          placeId,
-          cid,
-          wa,
-          address,
-          nfcLinked: true,
-          pinHash: existingCard?.pinHash || inputPinHash,
-          createdAt: existingCard?.createdAt || new Date().toISOString(),
-        });
-      } catch (err) {
-        return json({ valid: false, saved: false, error: err.message }, 500);
-      }
+    if (!targetUrl || !storeName) {
+      return json({ valid: false, error: "Silakan pilih lokasi bisnis Anda di Google Maps terlebih dahulu." }, 400);
+    }
+
+    if (!wa || wa.length < 9) {
+      return json({ valid: false, error: "Nomor WhatsApp wajib diisi dengan benar (minimal 9 digit angka)." }, 400);
+    }
+
+    try {
+      await saveCardToRedis(cardId, {
+        ...existingCard,
+        targetUrl,
+        storeName,
+        mode,
+        placeId,
+        cid,
+        wa,
+        address,
+        nfcLinked: true,
+        pinHash: existingCard.pinHash || inputPinHash,
+        createdAt: existingCard.createdAt || new Date().toISOString(),
+      });
+    } catch (err) {
+      return json({ valid: false, saved: false, error: err.message }, 500);
     }
 
     return json({
       valid: true,
-      isFirstActivation: !existingCard?.pinHash,
+      isFirstActivation: !existingCard.pinHash,
       saved: true,
       cardId,
     });

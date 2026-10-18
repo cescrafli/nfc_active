@@ -2,7 +2,7 @@
 // Vercel Serverless Function: GET /api/go?id=... (atau /c/:id)
 // Redirect otomatis saat pelanggan Scan Barcode/QR Code atau Tap Kartu
 // =============================================================
-import { getCardFromRedis, normalizeCardId } from "../netlify/functions/card.mjs";
+import { getCardFromRedis, normalizeCardId, normalizeWaNumber } from "../netlify/functions/card.mjs";
 
 export default {
   async fetch(req) {
@@ -17,14 +17,19 @@ export default {
     const card = await getCardFromRedis(cardId);
 
     // Jika kartu sudah diaktifkan di Cloud Database, arahkan ke tujuan terbarunya
-    // (Jika menuju /rate, sertakan parameter &card=TOKEN agar pemilik toko bisa klik "Ganti Lokasi Toko")
-    if (card && card.targetUrl) {
+    if (card && card.targetUrl && card.storeName) {
       let dest = card.targetUrl;
       try {
         const parsedDest = new URL(dest, url.origin);
-        if (parsedDest.pathname === "/rate" || parsedDest.pathname === "/rate.html") {
-          parsedDest.searchParams.set("card", cardId);
-          dest = parsedDest.toString();
+        if (card.mode === "review" || parsedDest.pathname === "/rate" || parsedDest.pathname === "/rate.html") {
+          const rateUrl = new URL("/rate", url.origin);
+          rateUrl.searchParams.set("n", card.storeName);
+          if (card.placeId) rateUrl.searchParams.set("p", card.placeId);
+          else if (card.cid) rateUrl.searchParams.set("c", card.cid);
+          const cleanWa = normalizeWaNumber(card.wa || "");
+          if (cleanWa) rateUrl.searchParams.set("w", cleanWa);
+          rateUrl.searchParams.set("card", cardId);
+          dest = rateUrl.toString();
         }
       } catch {
         // biarkan dest apa adanya jika URL eksternal
@@ -39,7 +44,7 @@ export default {
       });
     }
 
-    // Jika kartu belum pernah diaktifkan, arahkan ke halaman aktivasi dengan ID Kartu langsung terisi
+    // Jika kartu belum pernah diaktifkan, arahkan ke halaman aktivasi dengan Barcode ID langsung terisi
     const setupUrl = new URL("/", url.origin);
     setupUrl.searchParams.set("card", cardId);
     return new Response(null, {

@@ -428,10 +428,10 @@ export default async (req) => {
       return json({ valid: false, error: "Aksi admin tidak dikenal" }, 400);
     }
 
-    // --- AKSI CUSTOMER (Mengisi Alamat Toko, WA & PIN 4 Angka ke Barcode ID yang sudah dikunci di Kartu) ---
+    // --- AKSI CUSTOMER (Mengisi Alamat Bisnis, WA & PIN 4 Angka ke ID Kartu) ---
     const cardId = normalizeCardId(body.cardId || "");
     if (!cardId) {
-      return json({ valid: false, error: "Barcode ID kartu belum terdeteksi. Silakan Tap Kartu NFC atau Scan Barcode pada kartu Anda terlebih dahulu." }, 400);
+      return json({ valid: false, error: "ID Kartu belum terdeteksi. Silakan tempelkan kartu NFC atau scan QR pada kartu Anda." }, 400);
     }
 
     const existingCard = await getCardFromRedis(cardId);
@@ -439,7 +439,7 @@ export default async (req) => {
       return json(
         {
           valid: false,
-          error: `Barcode ID "${cardId}" tidak terdaftar di sistem. Pastikan Anda men-tap kartu atau men-scan stiker QR resmi yang ada pada kartu fisik Anda.`,
+          error: `ID Kartu "${cardId}" tidak terdaftar di sistem. Pastikan Anda menempelkan kartu NFC atau scan QR resmi pada kartu fisik Anda.`,
         },
         404
       );
@@ -454,7 +454,7 @@ export default async (req) => {
         return json(
           {
             valid: false,
-            error: `Kartu terkunci sementara karena salah password 5 kali berturut-turut. Silakan tunggu ${remainingMinutes} menit lagi, atau hubungi Admin untuk reset password.`,
+            error: `Kartu terkunci sementara karena salah PIN 5 kali berturut-turut. Silakan tunggu ${remainingMinutes} menit lagi, atau hubungi Admin jika Anda lupa PIN.`,
           },
           429
         );
@@ -472,7 +472,7 @@ export default async (req) => {
       if (existingCard.pinHash) {
         const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
         if (!/^\d{4}$/.test(rawPin)) {
-          return json({ valid: false, error: "Password 4 angka diperlukan untuk menautkan chip NFC." }, 400);
+          return json({ valid: false, error: "PIN 4 angka diperlukan untuk menautkan kartu NFC." }, 400);
         }
         const inputPinHash = hashPin(cardId, rawPin);
         if (!safeEqual(inputPinHash, existingCard.pinHash)) {
@@ -481,10 +481,10 @@ export default async (req) => {
           if (attempts >= 5) {
             existingCard.lockUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
             await saveCardToRedis(cardId, existingCard);
-            return json({ valid: false, error: "Password salah 5 kali! Kartu dikunci selama 15 menit." }, 429);
+            return json({ valid: false, error: "PIN salah 5 kali! Kartu dikunci selama 15 menit demi keamanan." }, 429);
           }
           await saveCardToRedis(cardId, existingCard);
-          return json({ valid: false, error: `Password 4 angka salah! (Percobaan ${attempts} dari 5).` }, 401);
+          return json({ valid: false, error: `PIN 4 angka salah! (Percobaan ${attempts} dari 5).` }, 401);
         }
         delete existingCard.failedPinAttempts;
         delete existingCard.lockUntil;
@@ -492,12 +492,12 @@ export default async (req) => {
       existingCard.nfcLinked = true;
       existingCard.linkedAt = new Date().toISOString();
       await saveCardToRedis(cardId, existingCard);
-      return json({ valid: true, nfcLinked: true, message: "Chip fisik NFC berhasil dihubungkan ke sistem!" });
+      return json({ valid: true, nfcLinked: true, message: "Kartu fisik NFC berhasil disinkronkan ke sistem!" });
     }
 
     const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
     if (!/^\d{4}$/.test(rawPin)) {
-      return json({ valid: false, error: "Password / PIN harus berupa 4 angka." }, 400);
+      return json({ valid: false, error: "PIN keamanan harus berupa 4 angka." }, 400);
     }
 
     const inputPinHash = hashPin(cardId, rawPin);
@@ -513,7 +513,7 @@ export default async (req) => {
           return json(
             {
               valid: false,
-              error: "Password salah 5 kali! Kartu dikunci selama 15 menit demi keamanan. Hubungi Admin jika Anda lupa password.",
+              error: "PIN salah 5 kali! Kartu dikunci selama 15 menit demi keamanan. Hubungi Admin jika Anda lupa PIN.",
             },
             429
           );
@@ -522,7 +522,7 @@ export default async (req) => {
         return json(
           {
             valid: false,
-            error: `Password 4 angka salah! (Percobaan ${attempts} dari 5). Masukkan password yang dibuat saat pertama kali aktivasi.`,
+            error: `PIN 4 angka salah! (Percobaan ${attempts} dari 5). Masukkan PIN yang dibuat saat pertama kali aktivasi kartu.`,
           },
           401
         );

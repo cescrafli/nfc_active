@@ -209,7 +209,7 @@
 <div class="card">
   <span class="store-badge" id="store-badge">⭐ PENILAIAN PELANGGAN</span>
   <h1 id="store-title">Bagaimana Pengalaman Anda?</h1>
-  <p class="sub">Ketuk bintang di bawah untuk memberikan penilaian terhadap layanan kami.</p>
+  <p class="sub">Ketuk bintang di bawah untuk menilai pengalaman Anda bersama kami.</p>
 
   <div class="stars-wrap" id="stars-wrap">
     <button type="button" class="star-btn" data-star="1" aria-label="Bintang 1">
@@ -229,36 +229,36 @@
     </button>
   </div>
 
-  <div class="rating-caption" id="rating-caption">Pilih 1 sampai 5 bintang</div>
+  <div class="rating-caption" id="rating-caption">Ketuk bintang 1 sampai 5</div>
 
   <!-- Tampil saat klik Bintang 4 atau 5 (Langsung Redirect ke Google Maps) -->
   <div class="redirect-box" id="redirect-box">
     🎉 Terima kasih atas penilaian positif Anda!<br>
-    Mengarahkan langsung ke halaman ulasan <strong>Google Maps</strong>...<br>
-    <a id="manual-google-link" href="#" rel="noopener" target="_blank">Buka Google Maps Sekarang →</a>
+    Mohon kesediaannya membagikan pengalaman Anda di <strong>Google Maps</strong>...<br>
+    <a id="manual-google-link" href="#" rel="noopener" target="_blank">Tulis Ulasan di Google Maps →</a>
   </div>
 
   <!-- Tampil saat klik Bintang 1 sampai 3 (Form Masukan ke WhatsApp) -->
   <div class="form-area" id="form-area">
     <div class="mode-banner">
-      🙏 Mohon maaf jika ada hal yang kurang berkenan. Sampaikan masukan Anda langsung kepada manajemen kami via WhatsApp agar segera kami perbaiki.
+      🙏 Mohon maaf atas ketidaknyamanan Anda. Sampaikan masukan Anda secara langsung kepada manajemen kami agar dapat segera kami tindak lanjuti.
     </div>
 
     <div>
       <label for="cust-name">Nama Anda (Opsional)</label>
-      <input type="text" id="cust-name" placeholder="Masukkan nama Anda..." />
+      <input type="text" id="cust-name" placeholder="Tulis nama Anda..." />
     </div>
 
-    <label for="feedback-text">Apa yang perlu kami tingkatkan?</label>
-    <textarea id="feedback-text" placeholder="Ceritakan keluhan atau saran Anda..."></textarea>
+    <label for="feedback-text">Masukan atau Keluhan Anda</label>
+    <textarea id="feedback-text" placeholder="Ceritakan pengalaman atau saran perbaikan untuk kami..."></textarea>
 
-    <button type="button" class="submit-btn" id="submit-btn">💬 Kirim Masukan ke WhatsApp Manajemen</button>
-    <div class="helper-foot">Pesan Anda akan langsung terformat dan dikirim ke WhatsApp resmi kami.</div>
+    <button type="button" class="submit-btn" id="submit-btn">💬 Kirim Masukan ke Manajemen via WhatsApp</button>
+    <div class="helper-foot">Pesan Anda akan dikirim secara pribadi langsung ke WhatsApp resmi manajemen kami.</div>
   </div>
 
   <div id="owner-edit-wrap" style="margin-top:22px;padding-top:14px;border-top:1px solid #f1f5f9;display:none;">
     <a id="owner-edit-link" href="/" style="font-size:11.5px;color:#94a3b8;text-decoration:none;font-weight:600;">
-      ⚙️ Pemilik Kartu? Ganti Lokasi Toko Kartu Ini →
+      ⚙️ Pemilik Bisnis? Kelola Pengaturan Kartu Ini →
     </a>
   </div>
 </div>
@@ -402,7 +402,7 @@
     }
     currentStar = 0;
     starBtns.forEach((b) => b.classList.remove("active"));
-    ratingCaption.textContent = "Pilih 1 sampai 5 bintang";
+    ratingCaption.textContent = "Ketuk bintang 1 sampai 5";
     redirectBox.style.display = "none";
     formArea.style.display = "none";
     const successBox = document.getElementById("feedback-success-box");
@@ -504,11 +504,11 @@
     const sender = custName.value.trim();
     const starsStr = "⭐".repeat(currentStar) + ` (${currentStar}/5)`;
     const waLines = [
-      `Halo Admin *${currentStoreName}*, saya ingin memberikan masukan layanan:`,
+      `Halo Manajemen *${currentStoreName}*, saya ingin menyampaikan masukan layanan:`,
       ``,
-      `*Rating:* ${starsStr}`,
-      sender ? `*Nama:* ${sender}` : null,
-      `*Masukan:* ${msg}`,
+      `• *Penilaian:* ${starsStr}`,
+      sender ? `• *Nama:* ${sender}` : null,
+      `• *Masukan:* ${msg}`,
     ].filter(Boolean);
 
     const waText = encodeURIComponent(waLines.join("\n"));

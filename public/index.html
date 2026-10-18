@@ -722,8 +722,30 @@
   </div>
   <p class="subtitle">Hubungkan Kartu NFC &amp; Barcode Dinamis dengan Google Maps bisnis Anda. Ganti lokasi toko kapan saja tanpa perlu cetak ulang barcode!</p>
 
-  <!-- Status Kartu (Hanya muncul otomatis jika Customer masuk dari Scan Barcode / Tap Kartu) -->
-  <div class="current-card-status" id="current-card-status" style="margin-bottom:16px;"></div>
+  <!-- Kotak Deteksi Kartu & Scan Barcode (Agar saat ganti toko tidak mental ke link lama) -->
+  <div style="margin-bottom:18px;padding:12px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:12px;font-weight:700;color:#334155;">🔄 Mau Ganti Lokasi Toko pada Kartu/Barcode Anda?</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" id="scan-qr-btn" style="padding:7px 11px;border-radius:8px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;font-size:11.5px;font-weight:700;cursor:pointer;">
+          📷 Scan Barcode Kartu
+        </button>
+        <button type="button" id="read-nfc-btn" style="padding:7px 11px;border-radius:8px;border:1px solid #cbd5e1;background:#ffffff;color:#0f172a;font-size:11.5px;font-weight:700;cursor:pointer;">
+          📡 Tap Baca NFC
+        </button>
+      </div>
+    </div>
+
+    <!-- Kamera Scanner Barcode di dalam Web (Tanpa Keluar Halaman!) -->
+    <div id="qr-reader-wrap" style="display:none;margin-top:10px;">
+      <div id="qr-reader" style="width:100%;border-radius:10px;overflow:hidden;"></div>
+      <button type="button" id="close-qr-btn" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;background:#ffffff;font-size:12px;font-weight:700;cursor:pointer;">
+        ✖️ Tutup Kamera
+      </button>
+    </div>
+
+    <div class="current-card-status" id="current-card-status" style="margin-top:8px;"></div>
+  </div>
   <input id="card-id-input" type="hidden" />
 
   <label class="section-label" for="store-input">1. TEMUKAN BISNIS ANDA DI GOOGLE MAPS</label>
@@ -876,15 +898,21 @@
   <div id="status"></div>
 </div>
 
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   let selectedPlace = null;
   let targetUrl = "";
   let debounceTimer = null;
   let searchController = null;
   let cardHasPin = false;
+  let html5QrScanner = null;
 
   const cardIdInput = document.getElementById("card-id-input");
   const currentCardStatus = document.getElementById("current-card-status");
+  const scanQrBtn = document.getElementById("scan-qr-btn");
+  const readNfcBtn = document.getElementById("read-nfc-btn");
+  const qrReaderWrap = document.getElementById("qr-reader-wrap");
+  const closeQrBtn = document.getElementById("close-qr-btn");
   const pinTitle = document.getElementById("pin-title");
   const pinHintText = document.getElementById("pin-hint-text");
 
@@ -926,7 +954,29 @@
     return token.slice(0, 5) + "-" + token.slice(5, 10);
   }
 
-  // Ambil token rahasia kartu saat customer scan QR dari kartu fisiknya (?card=...), atau dari memori HP-nya
+  // Ekstrak Token Kartu dari URL hasil scan QR atau baca NFC (misal https://nfcactive.vercel.app/c/ABCDE-12345)
+  function extractTokenFromScannedText(rawText) {
+    const text = String(rawText || "").trim();
+    try {
+      const u = new URL(text);
+      if (u.searchParams.get("card")) return u.searchParams.get("card").toUpperCase();
+      if (u.searchParams.get("id")) return u.searchParams.get("id").toUpperCase();
+      const match = u.pathname.match(/\/c\/([A-Za-z0-9_-]+)/i);
+      if (match && match[1]) return match[1].toUpperCase();
+    } catch {}
+    const simpleMatch = text.match(/\/c\/([A-Za-z0-9_-]+)/i);
+    if (simpleMatch && simpleMatch[1]) return simpleMatch[1].toUpperCase();
+    return text.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
+  }
+
+  function applyDetectedCardToken(token) {
+    if (!token) return;
+    cardIdInput.value = token;
+    try { localStorage.setItem("nfc_secret_card_token", token); } catch {}
+    checkExistingCard(true);
+  }
+
+  // Ambil token rahasia kartu saat customer masuk dari ?card=..., atau dari memori HP-nya
   const initParams = new URLSearchParams(window.location.search);
   const urlCardToken = (initParams.get("card") || "").trim().toUpperCase();
   if (urlCardToken) {
@@ -962,7 +1012,7 @@
     }
   }
 
-  async function checkExistingCard() {
+  async function checkExistingCard(forceShowNew = false) {
     const id = getCleanCardId();
     if (!id) {
       currentCardStatus.style.display = "none";
@@ -973,7 +1023,7 @@
       const res = await fetch(`/api/card?id=${encodeURIComponent(id)}`);
       if (!res.ok) {
         updatePinUiMode(false);
-        if (urlCardToken) {
+        if (urlCardToken || forceShowNew) {
           currentCardStatus.style.display = "block";
           currentCardStatus.innerHTML = `✨ <strong>Kartu Baru Terdeteksi:</strong> Pilih lokasi bisnis Anda di bawah dan buat 4 angka password baru untuk mengaktifkan kartu ini.`;
         } else {
@@ -985,7 +1035,7 @@
       updatePinUiMode(data.hasPin);
       if (data.found && data.card) {
         currentCardStatus.style.display = "block";
-        currentCardStatus.innerHTML = `✅ Kartu &amp; Barcode Anda saat ini terhubung ke: <strong>${data.card.storeName || "Toko"}</strong>. Pilih lokasi baru &amp; masukkan 4 angka password Anda jika ingin mengganti toko.`;
+        currentCardStatus.innerHTML = `✅ Kartu/Barcode Terdeteksi! Saat ini aktif ke: <strong>${data.card.storeName || "Toko"}</strong>.<br>Silakan cari lokasi toko baru di bawah &amp; masukkan 4 angka password Anda untuk mengganti lokasinya.`;
       }
     } catch {
       currentCardStatus.style.display = "none";
@@ -993,6 +1043,74 @@
   }
 
   checkExistingCard();
+
+  // --- Fitur 1: Scan Barcode Kartu Langsung di Dalam Halaman (Tanpa Mental ke Link Lama!) ---
+  async function stopQrScanner() {
+    if (html5QrScanner) {
+      try { await html5QrScanner.stop(); } catch {}
+      try { html5QrScanner.clear(); } catch {}
+      html5QrScanner = null;
+    }
+    qrReaderWrap.style.display = "none";
+  }
+
+  scanQrBtn.addEventListener("click", async () => {
+    if (qrReaderWrap.style.display === "block") {
+      await stopQrScanner();
+      return;
+    }
+    qrReaderWrap.style.display = "block";
+    try {
+      html5QrScanner = new Html5Qrcode("qr-reader");
+      await html5QrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        async (decodedText) => {
+          const token = extractTokenFromScannedText(decodedText);
+          await stopQrScanner();
+          if (token) {
+            applyDetectedCardToken(token);
+            showStatus("#e8f5e9", "#1b5e20", "✅ Barcode Kartu Berhasil Terdeteksi! Sekarang pilih toko baru di bawah dan masukkan 4 angka password Anda.");
+          }
+        },
+        () => {}
+      );
+    } catch (err) {
+      qrReaderWrap.style.display = "none";
+      showStatus("#fdecea", "#b71c1c", "Tidak dapat mengakses kamera. Pastikan izin kamera diizinkan di browser Anda.");
+    }
+  });
+
+  closeQrBtn.addEventListener("click", stopQrScanner);
+
+  // --- Fitur 2: Baca / Intercept Kartu NFC Langsung di Halaman Ini (Tanpa Mental ke Toko Lama!) ---
+  readNfcBtn.addEventListener("click", async () => {
+    if (!("NDEFReader" in window)) {
+      showStatus("#fff8e1", "#b45309", "Untuk pengguna iPhone, silakan klik tombol '📷 Scan Barcode Kartu' di sebelah kiri untuk mendeteksi kartu Anda.");
+      return;
+    }
+    try {
+      const ndef = new NDEFReader();
+      await ndef.scan();
+      showStatus("#e8f0fe", "#174ea6", "📡 Tempelkan Kartu NFC Anda ke belakang HP sekarang untuk mendeteksi kartu...");
+      ndef.onreading = (event) => {
+        for (const record of event.message.records) {
+          if (record.recordType === "url") {
+            const decoder = new TextDecoder();
+            const urlStr = decoder.decode(record.data);
+            const token = extractTokenFromScannedText(urlStr);
+            if (token) {
+              applyDetectedCardToken(token);
+              showStatus("#e8f5e9", "#1b5e20", "✅ Kartu NFC Berhasil Terdeteksi! Sekarang pilih toko baru di bawah & masukkan 4 angka password Anda.");
+              return;
+            }
+          }
+        }
+      };
+    } catch (err) {
+      showStatus("#fdecea", "#b71c1c", "Gagal membaca NFC (" + err.message + "). Anda juga bisa klik '📷 Scan Barcode Kartu'.");
+    }
+  });
 
   function getSelectedMode() {
     const checked = document.querySelector('input[name="target-mode"]:checked');

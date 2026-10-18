@@ -255,6 +255,12 @@
     <button type="button" class="submit-btn" id="submit-btn">💬 Kirim Masukan ke WhatsApp Manajemen</button>
     <div class="helper-foot">Pesan Anda akan langsung terformat dan dikirim ke WhatsApp resmi kami.</div>
   </div>
+
+  <div id="owner-edit-wrap" style="margin-top:22px;padding-top:14px;border-top:1px solid #f1f5f9;display:none;">
+    <a id="owner-edit-link" href="/" style="font-size:11.5px;color:#94a3b8;text-decoration:none;font-weight:600;">
+      ⚙️ Pemilik Kartu? Ganti Lokasi Toko Kartu Ini →
+    </a>
+  </div>
 </div>
 
 <script>
@@ -263,8 +269,16 @@
   const placeId = (params.get("p") || "").trim();
   const cid = (params.get("c") || "").trim();
   const rawWa = (params.get("w") || "").replace(/\D/g, "");
+  const cardToken = (params.get("card") || "").trim();
 
   document.getElementById("store-title").textContent = storeName;
+
+  if (cardToken) {
+    const editWrap = document.getElementById("owner-edit-wrap");
+    const editLink = document.getElementById("owner-edit-link");
+    editWrap.style.display = "block";
+    editLink.href = `/?card=${encodeURIComponent(cardToken)}`;
+  }
 
   const googleReviewUrl = placeId
     ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`

@@ -1,5 +1,5 @@
 // =============================================================
-// Vercel Serverless Function: GET /api/go?id=001 (atau /c/001)
+// Vercel Serverless Function: GET /api/go?id=... (atau /c/:id)
 // Redirect otomatis saat pelanggan Scan Barcode/QR Code atau Tap Kartu
 // =============================================================
 import { getCardFromRedis, normalizeCardId } from "../netlify/functions/card.mjs";
@@ -16,12 +16,24 @@ export default {
 
     const card = await getCardFromRedis(cardId);
 
-    // Jika kartu sudah diaktifkan di Cloud Database, langsung redirect ke tujuan terbarunya!
+    // Jika kartu sudah diaktifkan di Cloud Database, arahkan ke tujuan terbarunya
+    // (Jika menuju /rate, sertakan parameter &card=TOKEN agar pemilik toko bisa klik "Ganti Lokasi Toko")
     if (card && card.targetUrl) {
+      let dest = card.targetUrl;
+      try {
+        const parsedDest = new URL(dest, url.origin);
+        if (parsedDest.pathname === "/rate" || parsedDest.pathname === "/rate.html") {
+          parsedDest.searchParams.set("card", cardId);
+          dest = parsedDest.toString();
+        }
+      } catch {
+        // biarkan dest apa adanya jika URL eksternal
+      }
+
       return new Response(null, {
         status: 302,
         headers: {
-          Location: card.targetUrl,
+          Location: dest,
           "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
         },
       });

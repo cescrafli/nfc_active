@@ -303,6 +303,8 @@ export default async (req) => {
           return json({ valid: false, error: "Kartu tidak ditemukan." }, 404);
         }
         delete existing.pinHash;
+        delete existing.failedPinAttempts;
+        delete existing.lockUntil;
         await saveCardToRedis(id, existing);
         const cards = await listAllCardsFromRedis();
         return json({ valid: true, cards });
@@ -362,6 +364,22 @@ export default async (req) => {
       );
     }
 
+    // Proteksi Brute-Force PIN: Cek apakah kartu sedang dikunci sementara
+    if (existingCard.lockUntil) {
+      const lockTime = new Date(existingCard.lockUntil).getTime();
+      const now = Date.now();
+      if (lockTime > now) {
+        const remainingMinutes = Math.ceil((lockTime - now) / 60000);
+        return json(
+          {
+            valid: false,
+            error: `Kartu terkunci sementara karena salah password 5 kali berturut-turut. Silakan tunggu ${remainingMinutes} menit lagi, atau hubungi Admin untuk reset password.`,
+          },
+          429
+        );
+      }
+    }
+
     const rawPin = String(body.pin || body.code || "").replace(/\s+/g, "");
     if (!/^\d{4}$/.test(rawPin)) {
       return json({ valid: false, error: "Password / PIN harus berupa 4 angka." }, 400);
@@ -372,14 +390,32 @@ export default async (req) => {
     // Jika kartu sudah pernah diaktifkan dan memiliki PIN, wajib cocokkan PIN-nya!
     if (existingCard.pinHash) {
       if (!safeEqual(inputPinHash, existingCard.pinHash)) {
+        const attempts = (existingCard.failedPinAttempts || 0) + 1;
+        existingCard.failedPinAttempts = attempts;
+        if (attempts >= 5) {
+          existingCard.lockUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+          await saveCardToRedis(cardId, existingCard);
+          return json(
+            {
+              valid: false,
+              error: "Password salah 5 kali! Kartu dikunci selama 15 menit demi keamanan. Hubungi Admin jika Anda lupa password.",
+            },
+            429
+          );
+        }
+        await saveCardToRedis(cardId, existingCard);
         return json(
           {
             valid: false,
-            error: "Password 4 angka salah! Masukkan 4 angka password yang Anda buat saat pertama kali mengaktifkan kartu ini.",
+            error: `Password 4 angka salah! (Percobaan ${attempts} dari 5). Masukkan password yang dibuat saat pertama kali aktivasi.`,
           },
           401
         );
       }
+
+      // Jika PIN benar, bersihkan counter kesalahan
+      delete existingCard.failedPinAttempts;
+      delete existingCard.lockUntil;
     }
 
     const targetUrl = String(body.targetUrl || "").trim();

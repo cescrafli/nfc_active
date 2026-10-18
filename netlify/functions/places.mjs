@@ -5,6 +5,9 @@
 // sehingga link yang ditulis ke kartu NFC bisa langsung membuka:
 //   1. Halaman Rating / Tulis Ulasan (search.google.com/local/writereview?placeid=...)
 //   2. Aplikasi Google Maps langsung ke profil toko (maps?cid=...)
+//
+// Mendukung pencarian teks kata kunci (Kopi Senja Bekasi) maupun
+// langsung paste Link Google Maps (maps.app.goo.gl, goo.gl/maps, google.com/maps).
 // =============================================================
 
 function parseSpotlit(html) {
@@ -69,6 +72,64 @@ export default async (req) => {
   }
 
   try {
+    // Dukungan Khusus: Jika customer mem-paste Link Google Maps langsung
+    if (/^https?:\/\//i.test(q)) {
+      try {
+        const resp = await fetch(q, {
+          method: "GET",
+          redirect: "follow",
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+            "Accept-Language": "id-ID,id;q=0.9",
+          },
+        });
+        const finalUrl = resp.url || q;
+        const html = await resp.text();
+
+        // Cari CID dari URL tujuan atau dari body HTML
+        const cidMatch = finalUrl.match(/cid[=:](\d+)/i) || html.match(/\["\d{10,22}","(\d{10,22})"\]/);
+        const cid = cidMatch ? (cidMatch[1] || cidMatch[0]) : "";
+
+        if (cid) {
+          const cidHtml = await fetchEmbed(`cid=${encodeURIComponent(cid)}`);
+          const item = parseSpotlit(cidHtml);
+          if (item) return json({ items: [item] });
+        }
+
+        // Cari Place ID (ChIJ...)
+        const placeIdMatch = finalUrl.match(/(ChIJ[A-Za-z0-9_-]{10,60})/) || html.match(/"(ChIJ[A-Za-z0-9_-]{10,60})"/);
+        const placeId = placeIdMatch ? placeIdMatch[1] : "";
+
+        let title = "";
+        const titleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || html.match(/<title>([^<]+)<\/title>/i);
+        if (titleMatch) {
+          title = titleMatch[1].replace(/\s*·\s*Google Maps.*$/i, "").replace(/\s*-\s*Google Maps.*$/i, "").trim();
+        }
+
+        if (placeId && title) {
+          return json({
+            items: [
+              {
+                title,
+                address: "Google Maps",
+                placeId,
+                cid: cid || "",
+                rating: null,
+                reviews: null,
+                category: null,
+                reviewUrl: `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`,
+                mapsUrl: cid ? `https://www.google.com/maps?cid=${encodeURIComponent(cid)}` : finalUrl,
+              },
+            ],
+          });
+        }
+      } catch {
+        // Lanjut ke pencarian teks biasa jika fetch URL eksternal gagal
+      }
+    }
+
+    // Pencarian Teks Standar
     const html = await fetchEmbed(`q=${encodeURIComponent(q)}`);
 
     // Kasus 1: Langsung ketemu 1 toko spesifik ("spotlit")

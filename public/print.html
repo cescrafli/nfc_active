@@ -171,6 +171,26 @@
       line-height: 1.55;
     }
 
+    .btn-execute-lock {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: none;
+      background: #16a34a;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 6px 18px rgba(22, 163, 74, 0.28);
+      margin-top: 10px;
+      transition: background 0.15s;
+    }
+    .btn-execute-lock:hover { background: #15803d; }
+
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -289,7 +309,7 @@
       border-color: #2563eb;
     }
 
-    /* Table View (Tampilan Utama di Layar) */
+    /* Table View */
     .table-wrap {
       background: #ffffff;
       border-radius: 18px;
@@ -575,7 +595,7 @@
       <div class="scan-lock-top">
         <div class="scan-lock-info">
           <h2>🔒 Kunci Stiker Barcode ke Fisik Kartu NFC (Scan &rarr; Tap NFC)</h2>
-          <p>Sudah menempelkan stiker QR ke fisik kartu? Scan stiker pada kartu tersebut menggunakan kamera, lalu tempelkan kartu ke HP Anda untuk mengunci <strong>Barcode ID</strong>-nya secara otomatis.</p>
+          <p>Sudah menempelkan stiker QR ke fisik kartu? Scan stiker pada kartu tersebut menggunakan kamera, lalu tekan tombol konfirmasi sambil menempelkan kartu ke HP Anda untuk mengunci <strong>Barcode ID</strong>-nya.</p>
         </div>
         <button type="button" class="btn-scan-lock" id="toggle-scan-lock-btn">
           📷 Scan Stiker Kartu &amp; Kunci NFC
@@ -593,12 +613,14 @@
           <div>
             <div class="lock-step-box" id="lock-step-status">
               <strong>Langkah 1: Arahkan Kamera ke Stiker QR di Kartu Fisik</strong><br>
-              Begitu kamera membaca stiker QR pada kartu, sistem akan otomatis mendeteksi <code>Barcode ID</code>-nya dan siap menguncinya ke dalam chip NFC kartu tersebut.
+              Begitu kamera membaca stiker QR pada kartu, sistem akan mendeteksi <code>Barcode ID</code>-nya dan menampilkan tombol kunci NFC yang sesuai.
+            </div>
+            <div id="lock-action-wrap">
+              <button type="button" class="btn-execute-lock" id="btn-execute-lock" style="display:none;">
+                📡 KLIK DI SINI &amp; TEMPELKAN KARTU NFC SEKARANG
+              </button>
             </div>
             <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-              <button type="button" class="btn btn-primary" id="retry-nfc-lock-btn" style="display:none;">
-                📡 Tap Ulang Kartu NFC
-              </button>
               <button type="button" class="btn btn-dark" id="scan-next-card-btn" style="display:none;">
                 📷 Scan &amp; Kunci Kartu Berikutnya &rarr;
               </button>
@@ -696,7 +718,7 @@
   const scannerDrawer = document.getElementById("scanner-drawer");
   const closeScanLockBtn = document.getElementById("close-scan-lock-btn");
   const lockStepStatus = document.getElementById("lock-step-status");
-  const retryNfcLockBtn = document.getElementById("retry-nfc-lock-btn");
+  const btnExecuteLock = document.getElementById("btn-execute-lock");
   const scanNextCardBtn = document.getElementById("scan-next-card-btn");
 
   const statTotal = document.getElementById("stat-total");
@@ -707,9 +729,8 @@
   let allCards = [];
   let currentFilter = "all";
   let searchQuery = "";
-  let singlePrintCardId = null;
   let adminQrScanner = null;
-  let pendingLockCardId = null;
+  let scannedCardId = null;
   let lastLockedCardId = null;
 
   const savedKey = sessionStorage.getItem("nfc_admin_key");
@@ -801,13 +822,15 @@
   async function startAdminQrScanner() {
     await stopAdminQrScanner();
     scannerDrawer.style.display = "block";
-    retryNfcLockBtn.style.display = "none";
+    btnExecuteLock.style.display = "none";
     scanNextCardBtn.style.display = "none";
+    scannedCardId = null;
+
     lockStepStatus.style.background = "#f8fafc";
     lockStepStatus.style.borderColor = "#e2e8f0";
     lockStepStatus.innerHTML = `
       <strong>📷 Langkah 1: Arahkan Kamera ke Stiker Barcode pada Kartu Fisik</strong><br>
-      Sistem akan otomatis membaca <code>Barcode ID</code> stiker tersebut dan langsung menguncinya ke dalam chip kartu NFC.
+      Sistem akan otomatis membaca <code>Barcode ID</code> stiker tersebut dan menampilkan tombol konfirmasi kunci NFC.
     `;
 
     try {
@@ -819,45 +842,75 @@
           const detectedId = extractCardIdFromQr(decodedText);
           if (!detectedId) return;
           await stopAdminQrScanner();
-          pendingLockCardId = detectedId;
-          await lockDetectedCardToNfc(detectedId);
+          handleScannedSticker(detectedId);
         },
         () => {}
       );
     } catch (err) {
       lockStepStatus.style.background = "#fef2f2";
       lockStepStatus.style.borderColor = "#fecaca";
-      lockStepStatus.innerHTML = `❌ Tidak dapat membuka kamera (${escapeHtml(err.message || "Izin kamera ditolak")}). Pastikan izin kamera aktif.`;
+      lockStepStatus.innerHTML = `❌ Tidak dapat membuka kamera (${escapeHtml(err.message || "Izin kamera ditolak")}). Pastikan izin kamera aktif di browser.`;
     }
   }
 
-  async function lockDetectedCardToNfc(cardId) {
-    const dynamicUrl = `${window.location.origin}/c/${cardId}`;
-    retryNfcLockBtn.style.display = "none";
-    scanNextCardBtn.style.display = "none";
+  // Langkah 2: Setelah stiker di-scan, periksa status dan siapkan tombol User-Gesture
+  function handleScannedSticker(cardId) {
+    scannedCardId = cardId;
+    const cardData = allCards.find((c) => c.cardId === cardId);
 
-    // Cek apakah Barcode ID ada di daftar stok kita
-    const foundInStock = allCards.find((c) => c.cardId === cardId);
-    if (!foundInStock) {
+    if (!cardData) {
       lockStepStatus.style.background = "#fef2f2";
       lockStepStatus.style.borderColor = "#fecaca";
       lockStepStatus.innerHTML = `
         <strong>⚠️ Barcode ID <code>${escapeHtml(cardId)}</code> Tidak Ditemukan di Stok!</strong><br>
-        Pastikan Anda men-scan stiker QR yang dibuat dari halaman ini.
+        Pastikan Anda men-scan stiker QR resmi yang dibuat dari panel ini.
       `;
+      btnExecuteLock.style.display = "none";
       scanNextCardBtn.style.display = "inline-flex";
       return;
     }
 
-    if (!("NDEFReader" in window)) {
-      lockStepStatus.style.background = "#fffbeb";
-      lockStepStatus.style.borderColor = "#fde68a";
+    // Peringatan jika kartu sudah digunakan customer
+    if (cardData.isUsed) {
+      lockStepStatus.style.background = "#fff7ed";
+      lockStepStatus.style.borderColor = "#fdba74";
+      lockStepStatus.innerHTML = `
+        <strong>⚠️ PERINGATAN KERAS: Kartu Ini Sudah Digunakan Customer!</strong><br>
+        Barcode ID: <code>${escapeHtml(cardId)}</code><br>
+        Toko: <strong>${escapeHtml(cardData.storeName || "Toko Aktif")}</strong> (${escapeHtml(cardData.wa || "-")})<br>
+        <span style="color:#c2410c;">Menulis ulang ke kartu baru berisiko membuat 2 kartu fisik memiliki barcode yang sama. Lanjutkan hanya jika mengganti kartu rusak.</span>
+      `;
+    } else if (cardData.nfcLinked) {
+      lockStepStatus.style.background = "#eff6ff";
+      lockStepStatus.style.borderColor = "#93c5fd";
+      lockStepStatus.innerHTML = `
+        <strong>ℹ️ Stiker Terbaca: <code>${escapeHtml(cardId)}</code></strong><br>
+        Status: <strong>🔵 Sudah Pernah Terkunci di Kartu NFC</strong>.<br>
+        Klik tombol di bawah jika Anda ingin menulis ulang Barcode ID ini ke chip fisik kartu NFC.
+      `;
+    } else {
+      lockStepStatus.style.background = "#f0fdf4";
+      lockStepStatus.style.borderColor = "#86efac";
       lockStepStatus.innerHTML = `
         <strong>🎯 Stiker Terbaca: <code>${escapeHtml(cardId)}</code></strong><br>
-        Perangkat ini tidak memiliki fitur Web NFC (gunakan <strong>Chrome di HP Android</strong> untuk mengunci langsung ke chip fisik NFC).<br>
-        Apakah Anda ingin menandai kartu <code>${escapeHtml(cardId)}</code> ini sebagai <strong>🔵 Terkunci di Kartu (Siap Jual)</strong> di database?
+        Status: <strong>🟡 Belum Dikunci ke NFC</strong>.<br>
+        Klik tombol hijau di bawah, lalu tempelkan kartu fisik ini ke punggung HP Anda untuk mengunci Barcode ID.
       `;
-      if (confirm(`Tandai Barcode ID ${cardId} sebagai Sudah Terkunci di Kartu NFC?`)) {
+    }
+
+    btnExecuteLock.style.display = "inline-flex";
+    btnExecuteLock.textContent = `📡 KLIK DI SINI & TEMPEL KARTU (${cardId})`;
+    scanNextCardBtn.style.display = "none";
+  }
+
+  // Langkah 3: Eksekusi Tulis NFC dengan User Gesture langsung saat tombol ditekan
+  btnExecuteLock.addEventListener("click", async () => {
+    if (!scannedCardId) return;
+    const cardId = scannedCardId;
+    const dynamicUrl = `${window.location.origin}/c/${cardId}`;
+
+    if (!("NDEFReader" in window)) {
+      if (confirm(`Perangkat ini tidak mendukung Web NFC langsung (gunakan Chrome Android untuk menulis ke chip fisik NFC).\n\nTandai Barcode ID ${cardId} sebagai '🔵 Terkunci di Kartu (Siap Jual)' di database?`)) {
         try {
           const data = await adminApi({ adminAction: "mark_linked", cardId });
           allCards = data.cards || [];
@@ -865,25 +918,25 @@
           renderCards();
           lockStepStatus.style.background = "#f0fdf4";
           lockStepStatus.style.borderColor = "#86efac";
-          lockStepStatus.innerHTML = `
-            <strong>✅ Status Barcode <code>${escapeHtml(cardId)}</code> Berhasil Dikunci!</strong><br>
-            Kartu kini berstatus <strong>🔵 Terkunci di Kartu (Siap Jual)</strong>.
-          `;
+          lockStepStatus.innerHTML = `✅ Barcode ID <code>${escapeHtml(cardId)}</code> berhasil ditandai sebagai Terkunci di Database.`;
+          btnExecuteLock.style.display = "none";
+          scanNextCardBtn.style.display = "inline-flex";
         } catch (err) {
           alert(err.message);
         }
       }
-      scanNextCardBtn.style.display = "inline-flex";
       return;
     }
 
     try {
-      lockStepStatus.style.background = "#eff6ff";
-      lockStepStatus.style.borderColor = "#93c5fd";
+      btnExecuteLock.disabled = true;
+      btnExecuteLock.textContent = "⏳ Tempelkan Kartu ke Punggung HP Sekarang...";
+
+      lockStepStatus.style.background = "#fffbeb";
+      lockStepStatus.style.borderColor = "#fde68a";
       lockStepStatus.innerHTML = `
-        <strong>🎯 Stiker Terbaca: <code>${escapeHtml(cardId)}</code></strong><br>
-        📡 <strong>Langkah 2: Sekarang tempelkan &amp; tahan fisik Kartu NFC tersebut di punggung HP Anda...</strong><br>
-        <small>Mengunci link <code>${escapeHtml(dynamicUrl)}</code> ke dalam chip NFC...</small>
+        <strong>📡 Menunggu Kartu NFC...</strong><br>
+        Tempelkan dan tahan kartu fisik <code>${escapeHtml(cardId)}</code> di belakang HP Anda selama 2 detik...
       `;
 
       const ndef = new NDEFReader();
@@ -899,21 +952,22 @@
       lockStepStatus.style.background = "#f0fdf4";
       lockStepStatus.style.borderColor = "#86efac";
       lockStepStatus.innerHTML = `
-        <strong>✅ BERHASIL TERKUNCI! (ID: <code>${escapeHtml(cardId)}</code>)</strong><br>
-        Stiker Barcode dan Chip Kartu NFC sekarang sudah terkunci dengan ID yang sama dan berstatus <strong>🔵 Siap Jual</strong>!
+        <strong>🎉 BERHASIL TERKUNCI! (ID: <code>${escapeHtml(cardId)}</code>)</strong><br>
+        Chip NFC dan Stiker Barcode pada kartu ini sudah sinkron dan berstatus <strong>🔵 Siap Jual</strong>!
       `;
+      btnExecuteLock.style.display = "none";
       scanNextCardBtn.style.display = "inline-flex";
     } catch (err) {
       lockStepStatus.style.background = "#fef2f2";
       lockStepStatus.style.borderColor = "#fecaca";
       lockStepStatus.innerHTML = `
-        <strong>❌ Penulisan Chip NFC Terputus untuk ID <code>${escapeHtml(cardId)}</code></strong><br>
-        Klik tombol <strong>"📡 Tap Ulang Kartu NFC"</strong> di bawah lalu tempelkan kartu NFC dengan rata di belakang HP.
+        <strong>❌ Gagal Mengunci Chip NFC (${escapeHtml(err.message || "Terputus")})</strong><br>
+        Pastikan NFC HP aktif dan tempelkan kartu rata di belakang HP, lalu klik tombol di bawah lagi.
       `;
-      retryNfcLockBtn.style.display = "inline-flex";
-      scanNextCardBtn.style.display = "inline-flex";
+      btnExecuteLock.disabled = false;
+      btnExecuteLock.textContent = `📡 COBA LAGI: KLIK & TEMPEL KARTU (${cardId})`;
     }
-  }
+  });
 
   toggleScanLockBtn.addEventListener("click", async () => {
     if (scannerDrawer.style.display === "block") {
@@ -927,12 +981,6 @@
   closeScanLockBtn.addEventListener("click", async () => {
     await stopAdminQrScanner();
     scannerDrawer.style.display = "none";
-  });
-
-  retryNfcLockBtn.addEventListener("click", async () => {
-    if (pendingLockCardId) {
-      await lockDetectedCardToNfc(pendingLockCardId);
-    }
   });
 
   scanNextCardBtn.addEventListener("click", async () => {
@@ -985,12 +1033,6 @@
     }
   });
 
-  printBtn.addEventListener("click", () => {
-    singlePrintCardId = null;
-    renderPrintSheet(getFilteredCards());
-    window.print();
-  });
-
   function getFilteredCards() {
     return allCards.filter((c) => {
       if (currentFilter === "used" && !c.isUsed) return false;
@@ -1024,6 +1066,29 @@
       printSheet.appendChild(printCard);
     });
   }
+
+  // Print dengan menunggu semua gambar QR selesai termuat untuk mencegah hasil cetak kosong
+  async function safePrintCards(cardsToPrint) {
+    renderPrintSheet(cardsToPrint);
+    const imgs = Array.from(printSheet.querySelectorAll("img"));
+    await Promise.all(
+      imgs.map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = img.onerror = resolve;
+        });
+      })
+    );
+    window.print();
+  }
+
+  window.addEventListener("afterprint", () => {
+    renderPrintSheet(getFilteredCards());
+  });
+
+  printBtn.addEventListener("click", () => {
+    safePrintCards(getFilteredCards());
+  });
 
   // Download Stiker QR Lengkap dengan Kode ID menggunakan Canvas
   async function downloadStickerPng(secretToken, qrImgUrl) {
@@ -1216,11 +1281,9 @@
         window.open(qrImgUrl, "_blank");
       });
 
-      // Print 1 QR ini saja
+      // Print 1 QR ini saja dengan aman
       tr.querySelector(".print-one-btn").addEventListener("click", () => {
-        renderPrintSheet([item]);
-        window.print();
-        setTimeout(() => renderPrintSheet(getFilteredCards()), 800);
+        safePrintCards([item]);
       });
 
       // Download Stiker PNG Lengkap dengan Kode ID

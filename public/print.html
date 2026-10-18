@@ -737,8 +737,15 @@
 <!-- Panel Produksi & Monitoring Barcode -->
 <div class="container" id="main-container">
   <div class="panel no-print">
-    <h1>📊 Panel Produksi, Scan Kunci NFCMap &amp; Tabel Barcode</h1>
-    <p class="sub">Alur Produksi Owner: <strong>1) Buat &amp; Print Semua Stiker Barcode</strong> &rarr; <strong>2) Tempelkan Stiker ke Fisik NFCMap</strong> &rarr; <strong>3) Klik "📷 Scan Stiker NFCMap &amp; Kunci NFCMap"</strong> di bawah untuk mengunci <code>Barcode ID</code> stiker tersebut ke dalam chip NFCMap fisiknya!</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:8px;">
+      <div style="flex:1;min-width:280px;">
+        <h1 style="margin-bottom:4px;">📊 Panel Produksi, Scan Kunci NFCMap &amp; Tabel Barcode</h1>
+        <p class="sub" style="margin-bottom:0;">Alur Produksi Owner: <strong>1) Buat &amp; Print Semua Stiker Barcode</strong> &rarr; <strong>2) Tempelkan Stiker ke Fisik NFCMap</strong> &rarr; <strong>3) Klik "📷 Scan Stiker NFCMap &amp; Kunci NFCMap"</strong> di bawah untuk mengunci <code>Barcode ID</code> stiker tersebut ke dalam chip NFCMap fisiknya!</p>
+      </div>
+      <button type="button" class="btn btn-outline" id="btn-logout-admin" style="font-size:12.5px;padding:7px 14px;background:#ffffff;border-color:#cbd5e1;color:#475569;white-space:nowrap;" title="Kunci panel dan keluar dari sesi Admin">
+        🔒 Kunci / Keluar Admin
+      </button>
+    </div>
 
     <!-- FITUR UTAMA OWNER: SCAN STIKER YANG SUDAH DITEMPEL KE NFCMAP -> KUNCI KE CHIP NFCMAP -->
     <div class="scan-lock-banner">
@@ -1005,14 +1012,17 @@
 
   const selectedCardIds = new Set();
 
-  // Bersihkan seluruh sisa cache sessionStorage & localStorage lama agar tidak ada data nyangkut
+  // Bersihkan cache customer jika ada agar tidak bocor ke sesi Admin
   try {
-    sessionStorage.removeItem("nfc_admin_key");
-    sessionStorage.clear();
     localStorage.removeItem("nfc_secret_card_token");
+    sessionStorage.removeItem("nfc_secret_card_token");
   } catch {}
 
   let adminSessionKey = "";
+  try {
+    adminSessionKey = sessionStorage.getItem("nfc_admin_key") || localStorage.getItem("nfc_admin_key") || "";
+  } catch {}
+
   let allCards = [];
   let currentFilter = "all";
   let searchQuery = "";
@@ -1023,6 +1033,26 @@
   let activeRowNfcBtn = null;
   let activeRowNfcOrigText = "";
   let renderSessionId = 0;
+
+  const btnLogoutAdmin = document.getElementById("btn-logout-admin");
+  if (btnLogoutAdmin) {
+    btnLogoutAdmin.addEventListener("click", () => {
+      if (confirm("Kunci panel dan keluar dari sesi Admin?")) {
+        try {
+          sessionStorage.removeItem("nfc_admin_key");
+          localStorage.removeItem("nfc_admin_key");
+        } catch {}
+        adminSessionKey = "";
+        adminKeyInput.value = "";
+        allCards = [];
+        tableContainer.replaceChildren();
+        mainContainer.style.display = "none";
+        loginWrap.style.display = "block";
+        loginErr.style.display = "none";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    });
+  }
 
   function cancelActiveRowNfc() {
     if (activeRowNfcBtn) {
@@ -1078,18 +1108,32 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...payload, adminKey }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 || (data && data.valid === false && String(data.error || "").toLowerCase().includes("password admin"))) {
+      try {
+        sessionStorage.removeItem("nfc_admin_key");
+        localStorage.removeItem("nfc_admin_key");
+      } catch {}
+      adminSessionKey = "";
+      mainContainer.style.display = "none";
+      loginWrap.style.display = "block";
+      loginErr.style.display = "block";
+      loginErr.textContent = "⚠️ Sesi Admin telah kedaluwarsa atau password salah. Silakan masukkan password kembali.";
+      unlockBtn.disabled = false;
+      unlockBtn.textContent = "🔓 Buka Panel Admin Barcode";
+      throw new Error("Sesi Admin telah kedaluwarsa. Silakan masukkan password kembali.");
+    }
     if (!res.ok || !data.valid) {
       throw new Error(data.error || "Gagal memproses permintaan admin");
     }
     return data;
   }
 
-  async function verifyAndLoad(key) {
+  async function verifyAndLoad(key, isAuto = false) {
     if (!key) return;
     loginErr.style.display = "none";
     unlockBtn.disabled = true;
-    unlockBtn.textContent = "Memverifikasi & Memuat Database...";
+    unlockBtn.textContent = isAuto ? "Memulihkan Sesi Admin..." : "Memverifikasi & Memuat Database...";
 
     try {
       const res = await fetch("/api/card", {
@@ -1100,24 +1144,42 @@
       });
       const data = await res.json();
       if (!res.ok || !data.valid) {
+        try {
+          sessionStorage.removeItem("nfc_admin_key");
+          localStorage.removeItem("nfc_admin_key");
+        } catch {}
+        adminSessionKey = "";
+        loginWrap.style.display = "block";
+        mainContainer.style.display = "none";
         loginErr.style.display = "block";
-        loginErr.textContent = "❌ Password Admin salah.";
+        loginErr.textContent = isAuto ? "⚠️ Sesi login Admin sebelumnya telah kedaluwarsa. Silakan masukkan password kembali." : "❌ Password Admin salah.";
         unlockBtn.disabled = false;
         unlockBtn.textContent = "🔓 Buka Panel Admin Barcode";
         return;
       }
 
       adminSessionKey = key;
+      try {
+        sessionStorage.setItem("nfc_admin_key", key);
+        localStorage.setItem("nfc_admin_key", key);
+      } catch {}
+
       loginWrap.style.display = "none";
       mainContainer.style.display = "block";
       allCards = data.cards || [];
-      renderCards();
+      renderCards(false);
     } catch {
       loginErr.style.display = "block";
-      loginErr.textContent = "❌ Gagal menghubungi server.";
+      loginErr.textContent = "❌ Gagal menghubungi server database.";
       unlockBtn.disabled = false;
       unlockBtn.textContent = "🔓 Buka Panel Admin Barcode";
     }
+  }
+
+  // Auto-Login jika sesi Admin sudah tersimpan sebelumnya
+  if (adminSessionKey) {
+    adminKeyInput.value = adminSessionKey;
+    verifyAndLoad(adminSessionKey, true);
   }
 
   // --- Ekstrak Barcode ID dari URL QR yang di-scan ---
@@ -1282,10 +1344,19 @@
         records: [{ recordType: "url", data: dynamicUrl }],
       }, { signal: activeNfcController.signal });
 
+      // Pasang perisai Web NFC foreground sesaat (3 detik) agar OS Android tidak mencegat URL kartu saat masih menempel di HP
+      try {
+        const shieldCtrl = new AbortController();
+        const shieldNdef = new NDEFReader();
+        shieldNdef.scan({ signal: shieldCtrl.signal }).catch(() => {});
+        shieldNdef.onreading = () => {};
+        setTimeout(() => { try { shieldCtrl.abort(); } catch {} }, 3000);
+      } catch {}
+
       const data = await adminApi({ adminAction: "mark_linked", cardId });
       allCards = data.cards || [];
       lastLockedCardId = cardId;
-      renderCards();
+      renderCards(false);
 
       lockStepStatus.style.background = "#f0fdf4";
       lockStepStatus.style.borderColor = "#86efac";
@@ -1558,7 +1629,7 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 15000);
       }, "image/png");
     } catch {
       window.open(qrImgUrl, "_blank");
@@ -2089,7 +2160,8 @@
     }
   }
 
-  function renderCards() {
+  function renderCards(preserveScroll = true) {
+    const savedScrollY = preserveScroll ? window.scrollY : null;
     if (activeRowNfcBtn) abortActiveNfc();
     syncScannerDrawerWithStock();
     const usedCount = allCards.filter((c) => c.isUsed).length;
@@ -2282,7 +2354,7 @@
               const data = await adminApi({ adminAction: "mark_linked", cardId: secretToken });
               allCards = data.cards || [];
               lastLockedCardId = secretToken;
-              renderCards();
+              renderCards(true);
             } catch (err) {
               alert(err.message);
               writeBtn.disabled = false;
@@ -2300,11 +2372,22 @@
           await ndef.write({
             records: [{ recordType: "url", data: dynamicUrl }]
           }, { signal: activeNfcController.signal });
+
+          // Pasang perisai Web NFC foreground sesaat (3 detik) agar OS Android tidak mencegat URL kartu saat masih menempel di HP
+          try {
+            const shieldCtrl = new AbortController();
+            const shieldNdef = new NDEFReader();
+            shieldNdef.scan({ signal: shieldCtrl.signal }).catch(() => {});
+            shieldNdef.onreading = () => {};
+            setTimeout(() => { try { shieldCtrl.abort(); } catch {} }, 3000);
+          } catch {}
+
+          writeBtn.textContent = "✅ Terkunci!";
           const data = await adminApi({ adminAction: "mark_linked", cardId: secretToken });
           allCards = data.cards || [];
           lastLockedCardId = secretToken;
           activeRowNfcBtn = null;
-          renderCards();
+          renderCards(true);
         } catch (err) {
           if (err.name === "AbortError") {
             writeBtn.textContent = origText;
@@ -2330,7 +2413,8 @@
           try {
             const data = await adminApi({ adminAction: "reset_pin", cardId: secretToken });
             allCards = data.cards || [];
-            renderCards();
+            lastLockedCardId = null;
+            renderCards(true);
           } catch (err) {
             alert(err.message);
             resetPinBtn.disabled = false;
@@ -2350,7 +2434,8 @@
           try {
             const data = await adminApi({ adminAction: "reset_card", cardId: secretToken });
             allCards = data.cards || [];
-            renderCards();
+            lastLockedCardId = null;
+            renderCards(true);
           } catch (err) {
             alert(err.message);
             resetCardBtn.disabled = false;
@@ -2370,7 +2455,8 @@
           try {
             const data = await adminApi({ adminAction: "delete", cardId: secretToken });
             allCards = data.cards || [];
-            renderCards();
+            lastLockedCardId = null;
+            renderCards(true);
           } catch (err) {
             alert(err.message);
             delBtn.disabled = false;
@@ -2400,6 +2486,13 @@
     tableWrap.appendChild(table);
     tableContainer.appendChild(tableWrap);
     updateBulkBar();
+
+    if (lastLockedCardId) {
+      const rowEl = document.querySelector("tr.highlight-row");
+      if (rowEl) rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else if (savedScrollY !== null) {
+      window.scrollTo({ top: savedScrollY, behavior: "instant" });
+    }
   }
 
   function escapeHtml(str) {

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Panel Produksi & Print Barcode QR — Khusus Admin</title>
+  <title>Panel Produksi & Status Barcode QR — Khusus Admin</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -30,7 +30,7 @@
     }
 
     .container {
-      max-width: 960px;
+      max-width: 1040px;
       margin: 0 auto;
       display: none;
     }
@@ -41,7 +41,7 @@
       border-radius: 20px;
       border: 1px solid #eef2f6;
       box-shadow: 0 12px 36px rgba(15, 23, 42, 0.06);
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     h1 {
@@ -51,16 +51,56 @@
       color: #0f172a;
     }
     p.sub {
-      margin: 0 0 20px;
+      margin: 0 0 18px;
       font-size: 13.5px;
       color: #64748b;
       line-height: 1.5;
+    }
+
+    /* Summary Stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .stat-box {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .stat-box.unused {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .stat-box.used {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .stat-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      display: block;
+    }
+    .stat-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #475569;
     }
 
     .controls {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+    .controls-left, .controls-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
       align-items: flex-end;
     }
     .field {
@@ -69,26 +109,26 @@
       gap: 6px;
     }
     .field label {
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 700;
       color: #475569;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
     .field input, .field select {
-      padding: 11px 14px;
+      padding: 10px 13px;
       border: 1.5px solid #cbd5e1;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 700;
       color: #0f172a;
       outline: none;
     }
 
     .btn {
-      padding: 12px 18px;
+      padding: 11px 16px;
       border-radius: 10px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
       border: none;
@@ -98,49 +138,103 @@
       gap: 7px;
       transition: all 0.15s;
     }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     .btn-primary {
       background: #1d58e8;
       color: #ffffff;
       box-shadow: 0 6px 16px rgba(29, 88, 232, 0.22);
     }
-    .btn-primary:hover { background: #1748c2; }
+    .btn-primary:hover:not(:disabled) { background: #1748c2; }
     .btn-dark {
       background: #0f172a;
       color: #ffffff;
     }
-    .btn-dark:hover { background: #1e293b; }
+    .btn-dark:hover:not(:disabled) { background: #1e293b; }
+    .btn-outline {
+      background: #ffffff;
+      color: #334155;
+      border: 1.5px solid #cbd5e1;
+    }
+    .btn-outline:hover:not(:disabled) { background: #f8fafc; }
 
-    .info-banner {
+    /* Filter Tabs */
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
       margin-top: 16px;
-      padding: 12px 14px;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 12px;
-      font-size: 12.5px;
-      color: #1e40af;
-      line-height: 1.55;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1.5px solid #e2e8f0;
+      background: #ffffff;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
     }
 
     /* Grid Kartu QR Siap Cetak */
     .qr-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
       gap: 16px;
     }
 
     .qr-card {
       background: #ffffff;
-      border: 1.5px dashed #cbd5e1;
+      border: 1.5px solid #e2e8f0;
       border-radius: 16px;
-      padding: 16px 12px;
+      padding: 16px 14px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       page-break-inside: avoid;
+      position: relative;
+    }
+    .qr-card.is-used {
+      border-color: #86efac;
+      background: #fafffe;
+    }
+    .qr-card.is-unused {
+      border-color: #93c5fd;
     }
 
-    .qr-badge {
+    .status-pill {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .status-pill.used {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    .status-pill.unused {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .print-only-header {
+      display: none;
       font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.06em;
@@ -157,6 +251,8 @@
       height: 152px;
       display: block;
       margin-bottom: 8px;
+      border-radius: 10px;
+      border: 1px solid #f1f5f9;
     }
 
     .qr-title {
@@ -169,7 +265,26 @@
     .qr-sub {
       font-size: 10.5px;
       color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .store-info-box {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 8px 10px;
       margin-bottom: 10px;
+      text-align: left;
+      font-size: 11px;
+      color: #334155;
+      line-height: 1.45;
+    }
+    .store-info-box strong {
+      color: #0f172a;
+      display: block;
+      font-size: 12px;
+      margin-bottom: 2px;
     }
 
     .qr-actions {
@@ -177,11 +292,17 @@
       flex-direction: column;
       gap: 6px;
       width: 100%;
+      margin-top: auto;
+    }
+    .qr-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
     }
     .qr-mini-btn {
       width: 100%;
-      padding: 8px 10px;
-      font-size: 11.5px;
+      padding: 8px 8px;
+      font-size: 11px;
       font-weight: 700;
       border-radius: 8px;
       border: 1px solid #dbeafe;
@@ -200,6 +321,27 @@
       background: #16a34a;
       border-color: #16a34a;
     }
+    .qr-mini-btn.warn {
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+    .qr-mini-btn.danger {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      background: #ffffff;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 16px;
+      padding: 36px 20px;
+      text-align: center;
+      color: #64748b;
+      font-size: 14px;
+    }
 
     .err-msg {
       margin-top: 10px;
@@ -209,7 +351,7 @@
       display: none;
     }
 
-    /* Mode Print Kertas / Stiker: Sembunyikan tombol dan panel atas */
+    /* Mode Print Kertas / Stiker: Sembunyikan status admin dan cetak bersih */
     @media print {
       body {
         background: #ffffff;
@@ -218,14 +360,22 @@
       .no-print {
         display: none !important;
       }
+      .print-only-header {
+        display: inline-block !important;
+      }
       .qr-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 12px;
       }
       .qr-card {
-        border: 1px solid #cbd5e1;
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
         box-shadow: none;
       }
+    }
+
+    @media (max-width: 600px) {
+      .stats-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -233,47 +383,68 @@
 
 <!-- Layar Kunci Khusus Admin -->
 <div class="login-wrap no-print" id="login-wrap">
-  <h1>🔐 Panel Cetak Barcode (Khusus Admin)</h1>
-  <p class="sub">Halaman ini khusus untuk Anda (Admin) mencetak Barcode QR rahasia dan menanamkannya ke kartu NFC sebelum dijual ke customer.</p>
+  <h1>🔐 Panel Cetak &amp; Status Barcode (Admin)</h1>
+  <p class="sub">Masukkan password Admin untuk melihat daftar barcode yang <strong>Sudah Digunakan</strong> maupun <strong>Belum Digunakan</strong>, serta mencetak stok kartu baru.</p>
   <div class="field" style="margin-bottom:14px;">
-    <label for="admin-key">Kunci Rahasia Admin</label>
-    <input type="password" id="admin-key" placeholder="Masukkan kunci rahasia admin..." />
+    <label for="admin-key">Password Admin</label>
+    <input type="password" id="admin-key" placeholder="Masukkan password admin..." />
   </div>
-  <button type="button" class="btn btn-primary" id="unlock-btn" style="width:100%;">🔓 Buka Panel Produksi Barcode</button>
+  <button type="button" class="btn btn-primary" id="unlock-btn" style="width:100%;">🔓 Buka Panel Admin Barcode</button>
   <div class="err-msg" id="login-err"></div>
 </div>
 
-<!-- Panel Produksi Barcode (Tampil Setelah Login Admin) -->
+<!-- Panel Produksi & Monitoring Barcode -->
 <div class="container" id="main-container">
   <div class="panel no-print">
-    <h1>🖨️ Generator &amp; Print Barcode QR Dinamis (Khusus Admin)</h1>
-    <p class="sub">Customer <strong>tidak bisa</strong> melihat halaman ini. Setiap kartu yang Anda cetak memiliki <strong>Token Rahasia Acak</strong> yang permanen — ketika customer ganti lokasi toko di web, barcode fisik yang sudah Anda cetak ini otomatis pindah ke toko baru mereka!</p>
+    <h1>🖨️ Manajemen Stok &amp; Print Barcode QR Dinamis</h1>
+    <p class="sub">Semua barcode tersimpan permanen di Cloud Database. Anda dapat memantau kartu mana yang <strong>Belum Digunakan (Kosong)</strong> dan mana yang <strong>Sudah Digunakan Customer</strong>, serta me-reset PIN jika ada customer yang lupa PIN.</p>
 
-    <div class="controls">
-      <div class="field">
-        <label for="qty-select">Jumlah Cetak Kartu</label>
-        <select id="qty-select">
-          <option value="1">1 Kartu (Satuan)</option>
-          <option value="6">6 Kartu (1 Lembar Kecil)</option>
-          <option value="12" selected>12 Kartu (1 Lembar A4)</option>
-          <option value="24">24 Kartu (Stok Produksi)</option>
-        </select>
+    <div class="stats-row">
+      <div class="stat-box">
+        <span class="stat-num" id="stat-total">0</span>
+        <span class="stat-label">📦 Total Barcode Dibuat</span>
       </div>
-
-      <button type="button" class="btn btn-primary" id="gen-btn">
-        🎲 Buat Batch Barcode Rahasia Baru
-      </button>
-
-      <button type="button" class="btn btn-dark" id="print-btn">
-        🖨️ Print Semua / Simpan PDF
-      </button>
+      <div class="stat-box unused">
+        <span class="stat-num" id="stat-unused">0</span>
+        <span class="stat-label">⚪ Belum Digunakan (Stok Kosong)</span>
+      </div>
+      <div class="stat-box used">
+        <span class="stat-num" id="stat-used">0</span>
+        <span class="stat-label">🟢 Sudah Digunakan (Aktif di Toko)</span>
+      </div>
     </div>
 
-    <div class="info-banner">
-      💡 <strong>Alur Produksi Kartu untuk Anda (Admin):</strong><br>
-      1. <strong>Print / Download PNG</strong> QR Code di bawah lalu tempel/cetak ke kartu fisik.<br>
-      2. <em>(Opsional tapi Direkomendasikan)</em> Klik tombol <strong>"📡 Tanam ke Chip NFC"</strong> pada kartu yang bersangkutan agar chip NFC dan QR Code di kartu fisik tersebut memiliki kode rahasia yang sama.<br>
-      3. Saat kartu diterima Customer, Customer cukup <strong>Scan QR / Tap NFC</strong> kartu tersebut -> otomatis masuk ke halaman Aktivasi -> pilih toko &amp; masukkan OTP -> <strong>baik NFC maupun Barcode cetakan Anda langsung aktif ke toko mereka (dan bisa diganti-ganti selamanya tanpa print ulang)!</strong>
+    <div class="controls">
+      <div class="controls-left">
+        <div class="field">
+          <label for="qty-select">Tambah Stok Baru</label>
+          <select id="qty-select">
+            <option value="1">+ 1 Kartu Baru</option>
+            <option value="6" selected>+ 6 Kartu Baru</option>
+            <option value="12">+ 12 Kartu Baru (1 Lembar)</option>
+            <option value="24">+ 24 Kartu Baru</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="gen-btn">
+          ➕ Buat &amp; Simpan Barcode Baru
+        </button>
+      </div>
+
+      <div class="controls-right">
+        <button type="button" class="btn btn-outline" id="refresh-btn">
+          🔄 Refresh Status
+        </button>
+        <button type="button" class="btn btn-dark" id="print-btn">
+          🖨️ Print yang Tampil di Layar
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-tabs">
+      <button type="button" class="tab-btn active" data-filter="all">Semua Barcode</button>
+      <button type="button" class="tab-btn" data-filter="unused">⚪ Belum Digunakan (Siap Print/Jual)</button>
+      <button type="button" class="tab-btn" data-filter="used">🟢 Sudah Digunakan (Aktif)</button>
     </div>
   </div>
 
@@ -290,99 +461,202 @@
   const qrGrid = document.getElementById("qr-grid");
   const qtySelect = document.getElementById("qty-select");
   const genBtn = document.getElementById("gen-btn");
+  const refreshBtn = document.getElementById("refresh-btn");
   const printBtn = document.getElementById("print-btn");
+  const tabBtns = Array.from(document.querySelectorAll(".tab-btn"));
+
+  const statTotal = document.getElementById("stat-total");
+  const statUnused = document.getElementById("stat-unused");
+  const statUsed = document.getElementById("stat-used");
+
+  let allCards = [];
+  let currentFilter = "all";
 
   const savedKey = sessionStorage.getItem("nfc_admin_key");
   if (savedKey) {
     adminKeyInput.value = savedKey;
-    verifyAdmin(savedKey);
+    verifyAndLoad(savedKey);
   }
 
   unlockBtn.addEventListener("click", () => {
-    verifyAdmin(adminKeyInput.value.trim());
+    verifyAndLoad(adminKeyInput.value.trim());
   });
 
   adminKeyInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") verifyAdmin(adminKeyInput.value.trim());
+    if (e.key === "Enter") verifyAndLoad(adminKeyInput.value.trim());
   });
 
-  async function verifyAdmin(key) {
+  async function adminApi(payload) {
+    const adminKey = sessionStorage.getItem("nfc_admin_key") || adminKeyInput.value.trim();
+    const res = await fetch("/api/card", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, adminKey }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.valid) {
+      throw new Error(data.error || "Gagal memproses permintaan admin");
+    }
+    return data;
+  }
+
+  async function verifyAndLoad(key) {
     if (!key) return;
     loginErr.style.display = "none";
     unlockBtn.disabled = true;
-    unlockBtn.textContent = "Memverifikasi...";
+    unlockBtn.textContent = "Memverifikasi & Memuat Database...";
 
     try {
-      const res = await fetch("/api/print-auth", {
+      const res = await fetch("/api/card", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key })
+        body: JSON.stringify({ adminAction: "list", adminKey: key }),
       });
       const data = await res.json();
       if (!res.ok || !data.valid) {
         loginErr.style.display = "block";
         loginErr.textContent = "❌ Password Admin salah.";
         unlockBtn.disabled = false;
-        unlockBtn.textContent = "🔓 Buka Panel Produksi Barcode";
+        unlockBtn.textContent = "🔓 Buka Panel Admin Barcode";
         return;
       }
 
       sessionStorage.setItem("nfc_admin_key", key);
       loginWrap.style.display = "none";
       mainContainer.style.display = "block";
-      renderBatch();
+      allCards = data.cards || [];
+      renderCards();
     } catch {
       loginErr.style.display = "block";
       loginErr.textContent = "❌ Gagal menghubungi server.";
       unlockBtn.disabled = false;
-      unlockBtn.textContent = "🔓 Buka Panel Produksi Barcode";
+      unlockBtn.textContent = "🔓 Buka Panel Admin Barcode";
     }
   }
 
-  // Menghasilkan Token Rahasia 10 Karakter Kriptografis
-  function generateSecretCardToken() {
-    const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-    const arr = new Uint8Array(10);
-    window.crypto.getRandomValues(arr);
-    let token = "";
-    for (let i = 0; i < arr.length; i++) {
-      token += alphabet[arr[i] % alphabet.length];
-    }
-    return token.slice(0, 5) + "-" + token.slice(5, 10);
-  }
+  tabBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentFilter = btn.dataset.filter;
+      renderCards();
+    });
+  });
 
-  function renderBatch() {
-    const count = Number(qtySelect.value) || 12;
+  refreshBtn.addEventListener("click", async () => {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "⏳ Memuat...";
+    try {
+      const data = await adminApi({ adminAction: "list" });
+      allCards = data.cards || [];
+      renderCards();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = "🔄 Refresh Status";
+    }
+  });
+
+  genBtn.addEventListener("click", async () => {
+    const qty = Number(qtySelect.value) || 6;
+    genBtn.disabled = true;
+    genBtn.textContent = "⏳ Membuat Barcode...";
+    try {
+      const data = await adminApi({ adminAction: "generate", qty });
+      allCards = data.cards || [];
+      renderCards();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      genBtn.disabled = false;
+      genBtn.textContent = "➕ Buat & Simpan Barcode Baru";
+    }
+  });
+
+  printBtn.addEventListener("click", () => window.print());
+
+  function renderCards() {
+    const usedCount = allCards.filter((c) => c.isUsed).length;
+    const unusedCount = allCards.length - usedCount;
+
+    statTotal.textContent = allCards.length;
+    statUnused.textContent = unusedCount;
+    statUsed.textContent = usedCount;
+
+    const filtered = allCards.filter((c) => {
+      if (currentFilter === "used") return c.isUsed;
+      if (currentFilter === "unused") return !c.isUsed;
+      return true;
+    });
+
     qrGrid.replaceChildren();
 
-    for (let i = 0; i < count; i++) {
-      const secretToken = generateSecretCardToken();
+    if (filtered.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state no-print";
+      empty.innerHTML = allCards.length === 0
+        ? "Belum ada stok barcode di database.<br>Klik tombol biru <strong>'➕ Buat &amp; Simpan Barcode Baru'</strong> di atas untuk membuat kartu pertama Anda."
+        : "Tidak ada kartu pada filter ini.";
+      qrGrid.appendChild(empty);
+      return;
+    }
+
+    filtered.forEach((item) => {
+      const secretToken = item.cardId;
       const dynamicUrl = `${window.location.origin}/c/${secretToken}`;
       const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
 
       const card = document.createElement("div");
-      card.className = "qr-card";
+      card.className = `qr-card ${item.isUsed ? "is-used" : "is-unused"}`;
+
+      const statusBadgeHtml = item.isUsed
+        ? `<span class="status-pill used no-print">🟢 SUDAH DIGUNAKAN</span>`
+        : `<span class="status-pill unused no-print">⚪ BELUM DIGUNAKAN</span>`;
+
+      const storeInfoHtml = item.isUsed
+        ? `<div class="store-info-box no-print">
+            <strong>🏪 ${escapeHtml(item.storeName || "Toko Aktif")}</strong>
+            <div>📱 WA: ${escapeHtml(item.wa || "-")}</div>
+            <div>🔐 Status PIN: ${item.hasPin ? "Aktif (4 Angka)" : "Belum Ada PIN (Siap Buat Baru)"}</div>
+          </div>`
+        : `<div class="store-info-box no-print" style="background:#f8fafc;color:#64748b;">
+            <strong>📦 Stok Kartu Kosong</strong>
+            <div>Siap dicetak &amp; dikirim ke customer baru.</div>
+          </div>`;
 
       card.innerHTML = `
-        <span class="qr-badge">SCAN UNTUK ULASAN</span>
+        ${statusBadgeHtml}
+        <span class="print-only-header">SCAN UNTUK ULASAN</span>
         <img src="${qrImgUrl}" alt="QR Code" loading="lazy" />
         <div class="qr-title">Tap NFC atau Scan QR</div>
         <div class="qr-sub">Beri Penilaian &amp; Review Kami</div>
+        ${storeInfoHtml}
         <div class="qr-actions no-print">
-          <button type="button" class="qr-mini-btn dl-btn">⬇️ Download PNG</button>
-          <button type="button" class="qr-mini-btn nfc-write">📡 Tanam ke Chip NFC</button>
+          <div class="qr-row-2">
+            <button type="button" class="qr-mini-btn dl-btn">⬇️ PNG</button>
+            <button type="button" class="qr-mini-btn nfc-write">📡 Tulis NFC</button>
+          </div>
+          ${item.isUsed ? `
+            <div class="qr-row-2">
+              <button type="button" class="qr-mini-btn warn reset-pin-btn" title="Gunakan jika customer lupa PIN 4 angkanya">🔑 Reset PIN</button>
+              <button type="button" class="qr-mini-btn danger reset-card-btn" title="Kosongkan toko agar kembali jadi kartu baru">♻️ Kosongkan</button>
+            </div>
+          ` : `
+            <button type="button" class="qr-mini-btn danger del-btn">🗑️ Hapus dari Stok</button>
+          `}
         </div>
       `;
 
-      const dlBtn = card.querySelector(".dl-btn");
-      dlBtn.addEventListener("click", async () => {
+      // Download PNG
+      card.querySelector(".dl-btn").addEventListener("click", async () => {
         try {
           const res = await fetch(qrImgUrl);
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = `QR-NFC-CARD-${i + 1}.png`;
+          a.download = `QR-NFC-${secretToken}.png`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
@@ -392,6 +666,7 @@
         }
       });
 
+      // Tanam ke Chip NFC
       const writeBtn = card.querySelector(".nfc-write");
       writeBtn.addEventListener("click", async () => {
         if (!("NDEFReader" in window)) {
@@ -399,25 +674,62 @@
           return;
         }
         try {
-          writeBtn.textContent = "⏳ Tempelkan Kartu...";
+          writeBtn.textContent = "⏳ Tempel...";
           const ndef = new NDEFReader();
           await ndef.write({
             records: [{ recordType: "url", data: dynamicUrl }]
           });
           writeBtn.classList.add("written");
-          writeBtn.textContent = "✅ Chip NFC Terisi!";
-        } catch (err) {
-          writeBtn.textContent = "❌ Gagal, Coba Lagi";
+          writeBtn.textContent = "✅ Terisi!";
+        } catch {
+          writeBtn.textContent = "❌ Ulangi";
         }
       });
 
+      // Reset PIN Customer (Jika Lupa PIN)
+      const resetPinBtn = card.querySelector(".reset-pin-btn");
+      if (resetPinBtn) {
+        resetPinBtn.addEventListener("click", async () => {
+          if (!confirm(`Reset PIN 4 angka untuk toko "${item.storeName}"?\nSetelah di-reset, customer bisa membuat 4 angka PIN baru.`)) return;
+          const data = await adminApi({ adminAction: "reset_pin", cardId: secretToken });
+          allCards = data.cards || [];
+          renderCards();
+        });
+      }
+
+      // Kosongkan Kartu (Kembali jadi Belum Digunakan)
+      const resetCardBtn = card.querySelector(".reset-card-btn");
+      if (resetCardBtn) {
+        resetCardBtn.addEventListener("click", async () => {
+          if (!confirm(`Kosongkan kartu milik "${item.storeName}" kembali menjadi stok Belum Digunakan?`)) return;
+          const data = await adminApi({ adminAction: "reset_card", cardId: secretToken });
+          allCards = data.cards || [];
+          renderCards();
+        });
+      }
+
+      // Hapus Kartu
+      const delBtn = card.querySelector(".del-btn");
+      if (delBtn) {
+        delBtn.addEventListener("click", async () => {
+          if (!confirm("Hapus barcode stok ini dari database?")) return;
+          const data = await adminApi({ adminAction: "delete", cardId: secretToken });
+          allCards = data.cards || [];
+          renderCards();
+        });
+      }
+
       qrGrid.appendChild(card);
-    }
+    });
   }
 
-  genBtn.addEventListener("click", renderBatch);
-  qtySelect.addEventListener("change", renderBatch);
-  printBtn.addEventListener("click", () => window.print());
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
 </script>
 
 </body>

@@ -1,12 +1,14 @@
 // =============================================================
 // Sistem Kartu Dinamis, Barcode/QR Permanen & PIN 4 Angka Customer
-// (Upstash Redis REST)
-//
-// - Pertama kali aktivasi: Customer membuat PIN 4 angka baru (disimpan hash-nya).
-// - Aktivasi/ganti lokasi berikutnya: Customer memasukkan PIN 4 angka miliknya
-//   sendiri (tanpa perlu minta OTP ke Admin lagi!).
+// + Manajemen Daftar Barcode Admin (/print) di Upstash Redis
 // =============================================================
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual, randomBytes } from "node:crypto";
+
+const DEFAULT_PRINT_PASSWORD = "print-password-admin";
+
+function getPrintPassword() {
+  return (process.env.PRINT_ADMIN_PASSWORD || DEFAULT_PRINT_PASSWORD).trim();
+}
 
 function getRedisConfig() {
   const url = (
@@ -24,6 +26,41 @@ function getRedisConfig() {
   ).trim();
 
   return { url, token };
+}
+
+async function redisCommand(cmdArray) {
+  const { url, token } = getRedisConfig();
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(cmdArray),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Redis error (${res.status})`);
+  }
+  const data = await res.json();
+  return data.result;
+}
+
+async function redisPipeline(commands) {
+  const { url, token } = getRedisConfig();
+  const res = await fetch(`${url}/pipeline`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(commands),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Redis pipeline error (${res.status})`);
+  }
+  return await res.json();
 }
 
 function hashPin(cardId, pin) {
@@ -46,22 +83,25 @@ export function normalizeCardId(raw) {
     .slice(0, 32);
 }
 
+export function generateSecretCardToken() {
+  const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const bytes = randomBytes(10);
+  let token = "";
+  for (let i = 0; i < 10; i++) {
+    token += alphabet[bytes[i] % alphabet.length];
+  }
+  return token.slice(0, 5) + "-" + token.slice(5, 10);
+}
+
 export async function getCardFromRedis(cardId) {
   const id = normalizeCardId(cardId);
   if (!id) return null;
 
-  const { url, token } = getRedisConfig();
-  const res = await fetch(`${url}/get/${encodeURIComponent(`nfc:card:${id}`)}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data || !data.result) return null;
+  const raw = await redisCommand(["GET", `nfc:card:${id}`]);
+  if (!raw) return null;
 
   try {
-    return typeof data.result === "string" ? JSON.parse(data.result) : data.result;
+    return typeof raw === "string" ? JSON.parse(raw) : raw;
   } catch {
     return null;
   }
@@ -71,7 +111,6 @@ export async function saveCardToRedis(cardId, payload) {
   const id = normalizeCardId(cardId);
   if (!id) throw new Error("ID Kartu tidak valid");
 
-  const { url, token } = getRedisConfig();
   const key = `nfc:card:${id}`;
   const valueStr = JSON.stringify({
     ...payload,
@@ -79,35 +118,69 @@ export async function saveCardToRedis(cardId, payload) {
     updatedAt: new Date().toISOString(),
   });
 
-  const res = await fetch(`${url}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(["SET", key, valueStr]),
+  await redisPipeline([
+    ["SET", key, valueStr],
+    ["SADD", "nfc:cards:index", id],
+  ]);
+  return true;
+}
+
+export async function listAllCardsFromRedis() {
+  const ids = (await redisCommand(["SMEMBERS", "nfc:cards:index"])) || [];
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return [];
+  }
+
+  const keys = ids.map((id) => `nfc:card:${id}`);
+  const rawValues = (await redisCommand(["MGET", ...keys])) || [];
+
+  const cards = [];
+  for (let i = 0; i < ids.length; i++) {
+    const raw = rawValues[i];
+    if (!raw) continue;
+    try {
+      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+      const { pinHash, ...publicCard } = parsed;
+      cards.push({
+        ...publicCard,
+        cardId: parsed.cardId || ids[i],
+        hasPin: Boolean(pinHash),
+        isUsed: Boolean(parsed.targetUrl && parsed.storeName),
+      });
+    } catch {
+      // skip invalid json
+    }
+  }
+
+  // Urutkan yang terbaru dibuat di paling atas
+  cards.sort((a, b) => {
+    const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+    const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+    return tB - tA;
   });
 
-  if (!res.ok) {
-    throw new Error("Gagal menyimpan ke Cloud Database");
-  }
-  return true;
+  return cards;
 }
 
 export default async (req) => {
   const reqUrl = new URL(req.url);
 
-  // GET /api/card?id=... -> Cek apakah kartu sudah pernah diaktifkan & punya PIN
+  // GET /api/card?id=... -> Cek status 1 kartu untuk Customer
   if (req.method === "GET") {
     const id = normalizeCardId(reqUrl.searchParams.get("id") || "");
     if (!id) {
       return json({ error: "Parameter id kartu diperlukan" }, 400);
     }
     const card = await getCardFromRedis(id);
-    if (!card) {
-      return json({ found: false, hasPin: false, cardId: id }, 404);
+    // Hanya dianggap ditemukan/aktif jika sudah memiliki targetUrl (sudah diaktifkan customer)
+    if (!card || !card.targetUrl) {
+      return json({
+        found: false,
+        existsInStock: Boolean(card),
+        hasPin: Boolean(card?.pinHash),
+        cardId: id,
+      }, 404);
     }
-    // Jangan kirim pinHash ke client demi keamanan
     const { pinHash, ...publicCard } = card;
     return json({
       found: true,
@@ -116,7 +189,7 @@ export default async (req) => {
     });
   }
 
-  // POST /api/card -> Buat PIN 4 angka (jika kartu baru) atau Verifikasi PIN 4 angka (jika kartu sudah aktif)
+  // POST /api/card
   if (req.method === "POST") {
     let body = {};
     try {
@@ -125,6 +198,94 @@ export default async (req) => {
       body = {};
     }
 
+    // --- AKSI KHUSUS ADMIN (/print) ---
+    if (body.adminAction) {
+      const adminKey = String(body.adminKey || "").trim();
+      if (!adminKey || !safeEqual(adminKey, getPrintPassword())) {
+        return json({ valid: false, error: "Password Admin salah." }, 401);
+      }
+
+      // 1. Ambil semua daftar barcode (mana yang sudah digunakan & belum digunakan)
+      if (body.adminAction === "list") {
+        const cards = await listAllCardsFromRedis();
+        return json({ valid: true, cards });
+      }
+
+      // 2. Generate stok barcode baru & simpan ke database sebagai "Belum Digunakan"
+      if (body.adminAction === "generate") {
+        const qty = Math.max(1, Math.min(50, Number(body.qty) || 6));
+        const nowIso = new Date().toISOString();
+        const cmds = [];
+        const createdIds = [];
+
+        for (let i = 0; i < qty; i++) {
+          const id = generateSecretCardToken();
+          createdIds.push(id);
+          const payload = JSON.stringify({
+            cardId: id,
+            targetUrl: "",
+            storeName: "",
+            mode: "review",
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          });
+          cmds.push(["SET", `nfc:card:${id}`, payload]);
+          cmds.push(["SADD", "nfc:cards:index", id]);
+        }
+
+        await redisPipeline(cmds);
+        const cards = await listAllCardsFromRedis();
+        return json({ valid: true, createdIds, cards });
+      }
+
+      // 3. Reset PIN Customer (Jika customer lupa PIN 4 angkanya)
+      if (body.adminAction === "reset_pin") {
+        const id = normalizeCardId(body.cardId || "");
+        const existing = await getCardFromRedis(id);
+        if (!existing) {
+          return json({ valid: false, error: "Kartu tidak ditemukan." }, 404);
+        }
+        delete existing.pinHash;
+        await saveCardToRedis(id, existing);
+        const cards = await listAllCardsFromRedis();
+        return json({ valid: true, cards });
+      }
+
+      // 4. Kosongkan / Reset Kartu kembali menjadi Belum Digunakan
+      if (body.adminAction === "reset_card") {
+        const id = normalizeCardId(body.cardId || "");
+        const existing = await getCardFromRedis(id);
+        if (!existing) {
+          return json({ valid: false, error: "Kartu tidak ditemukan." }, 404);
+        }
+        await saveCardToRedis(id, {
+          cardId: id,
+          targetUrl: "",
+          storeName: "",
+          mode: "review",
+          createdAt: existing.createdAt || new Date().toISOString(),
+        });
+        const cards = await listAllCardsFromRedis();
+        return json({ valid: true, cards });
+      }
+
+      // 5. Hapus barcode dari database
+      if (body.adminAction === "delete") {
+        const id = normalizeCardId(body.cardId || "");
+        if (id) {
+          await redisPipeline([
+            ["DEL", `nfc:card:${id}`],
+            ["SREM", "nfc:cards:index", id],
+          ]);
+        }
+        const cards = await listAllCardsFromRedis();
+        return json({ valid: true, cards });
+      }
+
+      return json({ valid: false, error: "Aksi admin tidak dikenal" }, 400);
+    }
+
+    // --- AKSI CUSTOMER (Aktivasi Pertama / Update Lokasi dengan PIN 4 Angka) ---
     const cardId = normalizeCardId(body.cardId || "");
     if (!cardId) {
       return json({ valid: false, error: "Token kartu tidak ditemukan." }, 400);

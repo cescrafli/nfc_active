@@ -1629,14 +1629,14 @@
       // 1. Gambar template kartu utuh (depan kiri | belakang kanan)
       ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
 
-      // 2. Kotak QR: relX = 224/676, relY = 184/338, relW = 70/676, relH = 70/338
-      const qX = canvas.width * (224 / 676);
-      const qY = canvas.height * (184 / 338);
-      const qW = canvas.width * (70 / 676);
-      const qH = canvas.height * (70 / 338);
+      // 2. Kotak QR Presisi Tengah: qX = 604/2048, qY = 567/1024, qW = 216/2048, qH = 216/1024
+      const qX = canvas.width * (604 / 2048);
+      const qY = canvas.height * (567 / 1024);
+      const qW = canvas.width * (216 / 2048);
+      const qH = canvas.height * (216 / 1024);
 
-      // Latar hijau muda asli kotak SCAN QR: #e2f0e4
-      ctx.fillStyle = "#e2f0e4";
+      // Latar hijau muda asli kotak SCAN QR: #e1efe2
+      ctx.fillStyle = "#e1efe2";
       ctx.fillRect(qX, qY, qW, qH);
 
       // 3. Gambar QR Code unik
@@ -1702,7 +1702,7 @@
       const img = new Image();
       img.onload = () => { cardTemplateImg = img; resolve(img); };
       img.onerror = () => resolve(null);
-      img.src = "/assets/nfcmap-card-template.png";
+      img.src = "/assets/nfcmap-card-template.png?v=2";
     });
   }
 
@@ -1836,7 +1836,7 @@
   });
 
   async function loadQrImageWithRetry(cardId, dynamicUrl, maxAttempts = 3) {
-    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=0&bgcolor=e2f0e4&data=${encodeURIComponent(dynamicUrl)}`;
+    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=0&bgcolor=e1efe2&data=${encodeURIComponent(dynamicUrl)}`;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -1867,14 +1867,14 @@
     // 1. Gambar background template kartu utuh
     ctx.drawImage(templateImg, pxX, pxY, pxW, pxH);
 
-    // 2. Kotak QR Presisi Tengah: qX = 205/676, qY = 188/338, qW = 68/676, qH = 68/338
-    const qX = pxX + (pxW * (205 / 676));
-    const qY = pxY + (pxH * (188 / 338));
-    const qW = pxW * (68 / 676);
-    const qH = pxH * (68 / 338);
+    // 2. Kotak QR Presisi Tengah: qX = 604/2048, qY = 567/1024, qW = 216/2048, qH = 216/1024
+    const qX = pxX + (pxW * (604 / 2048));
+    const qY = pxY + (pxH * (567 / 1024));
+    const qW = pxW * (216 / 2048);
+    const qH = pxH * (216 / 1024);
 
-    // Latar hijau muda asli kotak SCAN QR: #e2f0e4
-    ctx.fillStyle = "#e2f0e4";
+    // Latar hijau muda asli kotak SCAN QR: #e1efe2
+    ctx.fillStyle = "#e1efe2";
     ctx.fillRect(qX, qY, qW, qH);
 
     // 3. Gambar QR Code unik yang digenerate sistem

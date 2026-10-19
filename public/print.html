@@ -1867,11 +1867,11 @@
     // 1. Gambar background template kartu utuh
     ctx.drawImage(templateImg, pxX, pxY, pxW, pxH);
 
-    // 2. Kotak QR: relX = 224/676, relY = 184/338, relW = 70/676, relH = 70/338
-    const qX = pxX + (pxW * (224 / 676));
-    const qY = pxY + (pxH * (184 / 338));
-    const qW = pxW * (70 / 676);
-    const qH = pxH * (70 / 338);
+    // 2. Kotak QR Presisi Tengah: qX = 205/676, qY = 188/338, qW = 68/676, qH = 68/338
+    const qX = pxX + (pxW * (205 / 676));
+    const qY = pxY + (pxH * (188 / 338));
+    const qW = pxW * (68 / 676);
+    const qH = pxH * (68 / 338);
 
     // Latar hijau muda asli kotak SCAN QR: #e2f0e4
     ctx.fillStyle = "#e2f0e4";

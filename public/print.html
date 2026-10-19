@@ -499,6 +499,57 @@
       display: none;
     }
 
+    /* Table Pagination Bar */
+    .table-pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 12px 18px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+    .pagination-info {
+      font-size: 13px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .page-btn {
+      padding: 6px 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .page-btn:hover:not(:disabled) {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #94a3b8;
+    }
+    .page-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+    }
+    .page-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
     /* Bulk Selection Bar */
     .bulk-bar {
       display: flex;
@@ -1020,6 +1071,8 @@
   let activeRowNfcBtn = null;
   let activeRowNfcOrigText = "";
   let renderSessionId = 0;
+  let tablePage = 1;
+  const TABLE_PAGE_SIZE = 25;
 
   const btnLogoutAdmin = document.getElementById("btn-logout-admin");
   if (btnLogoutAdmin) {
@@ -1076,6 +1129,11 @@
       tabBtns.forEach((b) => {
         b.classList.toggle("active", b.dataset.filter === "all");
       });
+    }
+    const filtered = getFilteredCards();
+    const idx = filtered.findIndex((c) => c.cardId === cardId);
+    if (idx !== -1) {
+      tablePage = Math.floor(idx / TABLE_PAGE_SIZE) + 1;
     }
   }
 
@@ -1461,12 +1519,14 @@
       tabBtns.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       currentFilter = btn.dataset.filter;
+      tablePage = 1;
       renderCards();
     });
   });
 
   searchAdminInput.addEventListener("input", () => {
     searchQuery = searchAdminInput.value.trim().toLowerCase();
+    tablePage = 1;
     renderCards();
   });
 
@@ -1500,6 +1560,7 @@
       // Pastikan kartu baru langsung terlihat di tabel dengan mereset filter & pencarian jika sedang aktif
       currentFilter = "all";
       searchQuery = "";
+      tablePage = 1;
       if (searchAdminInput) searchAdminInput.value = "";
       tabBtns.forEach((b) => {
         b.classList.toggle("active", b.dataset.filter === "all");
@@ -1665,15 +1726,19 @@
     const headerCb = document.getElementById("header-select-all");
     if (headerCb) {
       const filtered = getFilteredCards();
-      if (filtered.length === 0) {
+      const startIdx = (tablePage - 1) * TABLE_PAGE_SIZE;
+      const endIdx = Math.min(startIdx + TABLE_PAGE_SIZE, filtered.length);
+      const pageCards = filtered.slice(startIdx, endIdx);
+
+      if (pageCards.length === 0) {
         headerCb.checked = false;
         headerCb.indeterminate = false;
       } else {
-        const selectedFiltered = filtered.filter((c) => selectedCardIds.has(c.cardId)).length;
-        if (selectedFiltered === filtered.length) {
+        const selectedOnPage = pageCards.filter((c) => selectedCardIds.has(c.cardId)).length;
+        if (selectedOnPage === pageCards.length) {
           headerCb.checked = true;
           headerCb.indeterminate = false;
-        } else if (selectedFiltered > 0) {
+        } else if (selectedOnPage > 0) {
           headerCb.checked = false;
           headerCb.indeterminate = true;
         } else {
@@ -2159,6 +2224,9 @@
     const savedScrollY = preserveScroll ? window.scrollY : null;
     if (activeRowNfcBtn) abortActiveNfc();
     syncScannerDrawerWithStock();
+    if (lastLockedCardId) {
+      ensureCardVisibleInTable(lastLockedCardId);
+    }
     const usedCount = allCards.filter((c) => c.isUsed).length;
     const linkedEmptyCount = allCards.filter((c) => !c.isUsed && c.nfcLinked).length;
     const unlinkedCount = allCards.filter((c) => !c.isUsed && !c.nfcLinked).length;
@@ -2182,6 +2250,15 @@
       updateBulkBar();
       return;
     }
+
+    const totalCount = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / TABLE_PAGE_SIZE));
+    if (tablePage > totalPages) tablePage = totalPages;
+    if (tablePage < 1) tablePage = 1;
+
+    const startIdx = (tablePage - 1) * TABLE_PAGE_SIZE;
+    const endIdx = Math.min(startIdx + TABLE_PAGE_SIZE, totalCount);
+    const pageCards = filtered.slice(startIdx, endIdx);
 
     const tableWrap = document.createElement("div");
     tableWrap.className = "table-wrap";
@@ -2208,7 +2285,7 @@
 
     const tbody = table.querySelector("#qr-tbody");
 
-    filtered.forEach((item, idx) => {
+    pageCards.forEach((item, idx) => {
       const secretToken = item.cardId;
       const dynamicUrl = `${window.location.origin}/c/${secretToken}`;
       const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
@@ -2261,7 +2338,7 @@
         <td style="text-align:center;">
           <input type="checkbox" class="card-row-cb" data-id="${escapeHtml(secretToken)}" ${selectedCardIds.has(secretToken) ? "checked" : ""} style="width:16px;height:16px;cursor:pointer;" />
         </td>
-        <td style="font-weight:800;color:#64748b;">${idx + 1}</td>
+        <td style="font-weight:800;color:#64748b;">${startIdx + idx + 1}</td>
         <td>
           <div class="qr-thumb-cell">
             <img src="${qrImgUrl}" alt="QR" class="qr-thumb" title="Klik untuk perbesar QR" loading="lazy" />
@@ -2467,7 +2544,7 @@
     if (headerCb) {
       headerCb.addEventListener("change", (e) => {
         const isChecked = e.target.checked;
-        filtered.forEach((c) => {
+        pageCards.forEach((c) => {
           if (isChecked) selectedCardIds.add(c.cardId);
           else selectedCardIds.delete(c.cardId);
         });
@@ -2480,6 +2557,149 @@
 
     tableWrap.appendChild(table);
     tableContainer.appendChild(tableWrap);
+
+    // Render bar pagination
+    const paginationBar = document.createElement("div");
+    paginationBar.className = "table-pagination-bar";
+
+    const paginationInfo = document.createElement("div");
+    paginationInfo.className = "pagination-info";
+    paginationInfo.innerHTML = `Menampilkan <strong>${startIdx + 1}–${endIdx}</strong> dari <strong>${totalCount}</strong> Barcode <span style="font-weight:normal;color:#94a3b8;">(Maks. 25 per halaman)</span>`;
+    paginationBar.appendChild(paginationInfo);
+
+    if (totalPages > 1) {
+      const controls = document.createElement("div");
+      controls.className = "pagination-controls";
+
+      // Tombol Awal (<<)
+      const firstBtn = document.createElement("button");
+      firstBtn.type = "button";
+      firstBtn.className = "page-btn";
+      firstBtn.innerHTML = "&laquo; Awal";
+      firstBtn.title = "Halaman Pertama";
+      firstBtn.disabled = tablePage === 1;
+      firstBtn.addEventListener("click", () => {
+        tablePage = 1;
+        renderCards(false);
+        tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      controls.appendChild(firstBtn);
+
+      // Tombol Prev (<)
+      const prevBtn = document.createElement("button");
+      prevBtn.type = "button";
+      prevBtn.className = "page-btn";
+      prevBtn.innerHTML = "&lsaquo; Prev";
+      prevBtn.title = "Halaman Sebelumnya";
+      prevBtn.disabled = tablePage === 1;
+      prevBtn.addEventListener("click", () => {
+        if (tablePage > 1) {
+          tablePage--;
+          renderCards(false);
+          tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+      controls.appendChild(prevBtn);
+
+      // Angka halaman
+      let startPage = Math.max(1, tablePage - 2);
+      let endPage = Math.min(totalPages, startPage + 4);
+      if (endPage - startPage < 4) {
+        startPage = Math.max(1, endPage - 4);
+      }
+
+      if (startPage > 1) {
+        const p1Btn = document.createElement("button");
+        p1Btn.type = "button";
+        p1Btn.className = "page-btn";
+        p1Btn.textContent = "1";
+        p1Btn.addEventListener("click", () => {
+          tablePage = 1;
+          renderCards(false);
+          tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        controls.appendChild(p1Btn);
+
+        if (startPage > 2) {
+          const ellipsis = document.createElement("span");
+          ellipsis.style.padding = "0 4px";
+          ellipsis.style.color = "#94a3b8";
+          ellipsis.textContent = "...";
+          controls.appendChild(ellipsis);
+        }
+      }
+
+      for (let p = startPage; p <= endPage; p++) {
+        const pageNumBtn = document.createElement("button");
+        pageNumBtn.type = "button";
+        pageNumBtn.className = `page-btn ${p === tablePage ? "active" : ""}`;
+        pageNumBtn.textContent = p;
+        if (p === tablePage) {
+          pageNumBtn.disabled = true;
+        } else {
+          pageNumBtn.addEventListener("click", () => {
+            tablePage = p;
+            renderCards(false);
+            tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        }
+        controls.appendChild(pageNumBtn);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement("span");
+          ellipsis.style.padding = "0 4px";
+          ellipsis.style.color = "#94a3b8";
+          ellipsis.textContent = "...";
+          controls.appendChild(ellipsis);
+        }
+        const lastPBtn = document.createElement("button");
+        lastPBtn.type = "button";
+        lastPBtn.className = "page-btn";
+        lastPBtn.textContent = totalPages;
+        lastPBtn.addEventListener("click", () => {
+          tablePage = totalPages;
+          renderCards(false);
+          tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        controls.appendChild(lastPBtn);
+      }
+
+      // Tombol Next (>)
+      const nextBtn = document.createElement("button");
+      nextBtn.type = "button";
+      nextBtn.className = "page-btn";
+      nextBtn.innerHTML = "Next &rsaquo;";
+      nextBtn.title = "Halaman Berikutnya";
+      nextBtn.disabled = tablePage === totalPages;
+      nextBtn.addEventListener("click", () => {
+        if (tablePage < totalPages) {
+          tablePage++;
+          renderCards(false);
+          tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+      controls.appendChild(nextBtn);
+
+      // Tombol Akhir (>>)
+      const lastBtn = document.createElement("button");
+      lastBtn.type = "button";
+      lastBtn.className = "page-btn";
+      lastBtn.innerHTML = "Akhir &raquo;";
+      lastBtn.title = "Halaman Terakhir";
+      lastBtn.disabled = tablePage === totalPages;
+      lastBtn.addEventListener("click", () => {
+        tablePage = totalPages;
+        renderCards(false);
+        tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      controls.appendChild(lastBtn);
+
+      paginationBar.appendChild(controls);
+    }
+
+    tableContainer.appendChild(paginationBar);
     updateBulkBar();
 
     if (lastLockedCardId) {

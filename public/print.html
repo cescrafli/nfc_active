@@ -816,12 +816,12 @@
         <div class="field">
           <label for="qty-select">Tambah Stok Barcode</label>
           <select id="qty-select">
-            <option value="1">+ 1 NFCMap Baru</option>
-            <option value="6" selected>+ 6 NFCMap Baru</option>
-            <option value="12">+ 12 NFCMap Baru (1 Lembar)</option>
-            <option value="24">+ 24 NFCMap Baru</option>
-            <option value="36">+ 36 NFCMap Baru</option>
-            <option value="48">+ 48 NFCMap Baru (Kertas A3)</option>
+            <option value="2" selected>+ 2 NFCMap Baru (1 Lembar A4 / A3)</option>
+            <option value="4">+ 4 NFCMap Baru (2 Lembar A4 / A3)</option>
+            <option value="6">+ 6 NFCMap Baru (3 Lembar A4 / A3)</option>
+            <option value="10">+ 10 NFCMap Baru (5 Lembar A4 / A3)</option>
+            <option value="20">+ 20 NFCMap Baru (10 Lembar A4 / A3)</option>
+            <option value="50">+ 50 NFCMap Baru (25 Lembar A4 / A3)</option>
           </select>
         </div>
 
@@ -885,13 +885,13 @@
   <div class="print-sheet" id="print-sheet"></div>
 </div>
 
-<!-- Modal Bulk Print Preview PDF (1 Lembar Pas A3 / A4 / A5) -->
+<!-- Modal Bulk Print Preview PDF (Kartu Lipat Presisi A4 & A3) -->
 <div class="modal-backdrop no-print" id="pdf-preview-modal">
   <div class="modal-content">
     <div class="modal-header">
       <div>
-        <h2>📄 Pratinjau Cetak 1 Lembar PDF (A3 / A4 / A5)</h2>
-        <p>Semua stiker barcode terpilih otomatis disusun dan diskalakan agar <strong>pas dalam 1 lembar</strong> tanpa terpotong ke halaman berikutnya.</p>
+        <h2>📄 Pratinjau Cetak Kartu Lipat NFCMap (A4 &amp; A3)</h2>
+        <p>1 Lembar memuat <strong>2 Kartu Lipat</strong> (Depan Kiri + Belakang Kanan), lengkap dengan garis lipat tengah &amp; garis potong antar kartu. Kotak QR otomatis diganti dengan QR unik masing-masing kartu.</p>
       </div>
       <button type="button" class="modal-close-btn" id="modal-close-btn" title="Tutup">✖</button>
     </div>
@@ -902,37 +902,21 @@
           <div class="field">
             <label for="modal-paper-size">Ukuran Kertas</label>
             <select id="modal-paper-size">
-              <option value="A4" selected>A4 (210 × 297 mm)</option>
-              <option value="A3">A3 (297 × 420 mm)</option>
-              <option value="A5">A5 (148 × 210 mm)</option>
+              <option value="A4" selected>A4 (Kartu 19 × 9,5 cm | Gambar 9,5 × 9,5 cm)</option>
+              <option value="A3">A3 (Kartu 27,7 × 13,85 cm | Gambar 13,85 × 13,85 cm)</option>
             </select>
           </div>
 
-          <div class="field">
-            <label for="modal-orientation">Orientasi</label>
-            <select id="modal-orientation">
-              <option value="portrait" selected>Portrait (Tegak)</option>
-              <option value="landscape">Landscape (Mendatar)</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="modal-columns">Susunan Kolom</label>
-            <select id="modal-columns">
-              <option value="auto" selected>⚡ Otomatis Pas Maksimal (1 Lembar)</option>
-              <option value="2">2 Kolom</option>
-              <option value="3">3 Kolom</option>
-              <option value="4">4 Kolom</option>
-              <option value="5">5 Kolom</option>
-              <option value="6">6 Kolom</option>
-              <option value="8">8 Kolom</option>
-            </select>
+          <div id="page-nav-wrap" style="display:none;align-items:center;gap:6px;margin-top:16px;">
+            <button type="button" class="btn btn-outline" id="btn-prev-page" style="padding:6px 12px;font-size:12px;background:#f8fafc;">⬅️ Prev</button>
+            <span id="page-indicator" style="font-size:12.5px;font-weight:700;color:#0f172a;min-width:90px;text-align:center;">Hal 1 / 1</span>
+            <button type="button" class="btn btn-outline" id="btn-next-page" style="padding:6px 12px;font-size:12px;background:#f8fafc;">Next ➡️</button>
           </div>
         </div>
 
         <div>
           <span class="status-pill linked" id="modal-grid-info" style="font-size:12px;padding:6px 12px;">
-            0 Barcode • Pas 1 Halaman
+            0 Kartu • 0 Lembar
           </span>
         </div>
       </div>
@@ -944,17 +928,17 @@
 
     <div class="modal-footer">
       <div style="font-size:12px;color:#64748b;">
-        ✂️ Garis putus-putus abu-abu pada pratinjau adalah garis panduan untuk memotong stiker NFCMap.
+        ✂️ Garis putus-putus vertikal = garis lipat tengah. Garis putus-putus horizontal = garis potong antar kartu (celah 1 cm).
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
         <button type="button" class="btn btn-outline" id="modal-cancel-btn">
           Tutup
         </button>
         <button type="button" class="btn btn-dark" id="modal-direct-print-btn">
-          🖨️ Cetak Langsung (1 Halaman)
+          🖨️ Cetak Langsung
         </button>
         <button type="button" class="btn btn-primary" id="modal-download-pdf-btn">
-          ⬇️ Download PDF (1 Halaman)
+          ⬇️ Download PDF
         </button>
       </div>
     </div>
@@ -1003,12 +987,15 @@
   const modalCloseBtn = document.getElementById("modal-close-btn");
   const modalCancelBtn = document.getElementById("modal-cancel-btn");
   const modalPaperSize = document.getElementById("modal-paper-size");
-  const modalOrientation = document.getElementById("modal-orientation");
-  const modalColumns = document.getElementById("modal-columns");
+  const pageNavWrap = document.getElementById("page-nav-wrap");
+  const btnPrevPage = document.getElementById("btn-prev-page");
+  const pageIndicator = document.getElementById("page-indicator");
+  const btnNextPage = document.getElementById("btn-next-page");
   const modalGridInfo = document.getElementById("modal-grid-info");
   const sheetCanvas = document.getElementById("sheet-canvas");
   const modalDirectPrintBtn = document.getElementById("modal-direct-print-btn");
   const modalDownloadPdfBtn = document.getElementById("modal-download-pdf-btn");
+  let currentPreviewPage = 0;
 
   const selectedCardIds = new Set();
 
@@ -1562,70 +1549,57 @@
     openBulkModal();
   });
 
-  // Download Stiker QR Lengkap dengan Kode ID menggunakan Canvas
+  // Download 1 Kartu Lipat NFCMap (Depan Kiri + Belakang Kanan) Lengkap dengan QR Code Dinamis
   async function downloadStickerPng(secretToken, qrImgUrl) {
     try {
       const dynamicUrl = `${window.location.origin}/c/${secretToken}`;
-      const img = await loadQrImageWithRetry(secretToken, dynamicUrl, 3);
-      if (!img) throw new Error("Gagal memuat gambar QR");
+      const [templateImg, qrImg] = await Promise.all([
+        getCardTemplateImg(),
+        loadQrImageWithRetry(secretToken, dynamicUrl, 3)
+      ]);
+      if (!templateImg) throw new Error("Gagal memuat template kartu (/assets/nfcmap-card-template.png)");
 
+      // Canvas kartu lipat 190 x 95 mm (1900 x 950 px tajam, rasio 2:1)
       const canvas = document.createElement("canvas");
-      canvas.width = 600;
-      canvas.height = 720;
+      canvas.width = 1900;
+      canvas.height = 950;
       const ctx = canvas.getContext("2d");
 
-      // Background Putih
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // 1. Gambar template kartu utuh (depan kiri | belakang kanan)
+      ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
 
-      // Garis Tepi Potong Stiker (Cut-line Border)
-      ctx.strokeStyle = "#e2e8f0";
-      ctx.lineWidth = 4;
-      ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+      // 2. Kotak QR: relX = 224/676, relY = 184/338, relW = 70/676, relH = 70/338
+      const qX = canvas.width * (224 / 676);
+      const qY = canvas.height * (184 / 338);
+      const qW = canvas.width * (70 / 676);
+      const qH = canvas.height * (70 / 338);
 
-      // Badge Atas
-      ctx.fillStyle = "#eff6ff";
-      ctx.fillRect(140, 28, 320, 38);
-      ctx.strokeStyle = "#bfdbfe";
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(140, 28, 320, 38);
-      ctx.fillStyle = "#1d4ed8";
-      ctx.font = "bold 18px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("SCAN UNTUK ULASAN", 300, 47, 300);
+      // Latar hijau muda asli kotak SCAN QR: #e2f0e4
+      ctx.fillStyle = "#e2f0e4";
+      ctx.fillRect(qX, qY, qW, qH);
 
-      // Gambar QR
-      ctx.drawImage(img, 75, 80, 450, 450);
+      // 3. Gambar QR Code unik
+      if (qrImg) {
+        ctx.drawImage(qrImg, qX, qY, qW, qH);
+      }
 
-      // Judul & Subjudul
-      ctx.fillStyle = "#0f172a";
-      ctx.font = "bold 26px sans-serif";
-      ctx.textBaseline = "alphabetic";
-      ctx.fillText("Tap NFCMap atau Scan QR", 300, 565, 520);
-
-      ctx.fillStyle = "#64748b";
-      ctx.font = "20px sans-serif";
-      ctx.fillText("Bagikan Pengalaman & Ulasan Anda", 300, 598, 520);
-
-      // Kotak Kode Barcode ID di Bawah Stiker
-      ctx.fillStyle = "#f1f5f9";
-      ctx.fillRect(150, 625, 300, 48);
+      // 4. Garis lipat vertikal putus-putus di tengah
+      ctx.save();
       ctx.strokeStyle = "#cbd5e1";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(150, 625, 300, 48);
-
-      ctx.fillStyle = "#0f172a";
-      ctx.font = "bold 21px monospace";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`ID: ${secretToken}`, 300, 649, 280);
+      ctx.lineWidth = 3;
+      ctx.setLineDash([12, 12]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.stroke();
+      ctx.restore();
 
       canvas.toBlob((outBlob) => {
         if (!outBlob) return;
         const url = URL.createObjectURL(outBlob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `STIKER-QR-${secretToken}.png`;
+        a.download = `KARTU-NFCMAP-${secretToken}.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1636,12 +1610,40 @@
     }
   }
 
-  // --- Fitur Bulk Selection & Modal Pratinjau PDF 1 Halaman (A3 / A4 / A5) ---
-  const PAPER_SPECS = {
-    A3: { widthMm: 297, heightMm: 420 },
-    A4: { widthMm: 210, heightMm: 297 },
-    A5: { widthMm: 148, heightMm: 210 },
+  // --- Tata Letak Presisi Kartu Lipat A4 & A3 (2 Kartu Per Lembar) ---
+  const PAPER_LAYOUTS = {
+    A4: {
+      paperW: 210.0,
+      paperH: 297.0,
+      cardW: 190.0,
+      cardH: 95.0,
+      marginX: 10.0,
+      cardGap: 10.0,
+      specFooter: "A4 - kartu 190.0 x 95.0 mm (depan kiri | belakang kanan), jarak potong 10 mm, garis lipat di tengah"
+    },
+    A3: {
+      paperW: 297.0,
+      paperH: 420.0,
+      cardW: 277.0,
+      cardH: 138.5,
+      marginX: 10.0,
+      cardGap: 10.0,
+      specFooter: "A3 - kartu 277.0 x 138.5 mm (depan kiri | belakang kanan), jarak potong 10 mm, garis lipat di tengah"
+    }
   };
+
+  let cardTemplateImg = null;
+  function getCardTemplateImg() {
+    if (cardTemplateImg && cardTemplateImg.complete && cardTemplateImg.naturalWidth > 0) {
+      return Promise.resolve(cardTemplateImg);
+    }
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => { cardTemplateImg = img; resolve(img); };
+      img.onerror = () => resolve(null);
+      img.src = "/assets/nfcmap-card-template.png";
+    });
+  }
 
   function updateBulkBar() {
     const validIds = new Set(allCards.map((c) => c.cardId));
@@ -1652,7 +1654,7 @@
     const count = selectedCardIds.size;
     bulkCountPill.textContent = `${count} Barcode Terpilih`;
     btnOpenBulkModal.disabled = count === 0;
-    btnOpenBulkModal.textContent = `📄 Bulk Print / Preview PDF (${count} Barcode)`;
+    btnOpenBulkModal.textContent = `📄 Cetak Kartu A4 / A3 (${count} Kartu)`;
     btnClearSelection.style.display = count > 0 ? "inline-flex" : "none";
 
     // Hapus massal hanya untuk barcode yang belum digunakan customer
@@ -1725,9 +1727,10 @@
 
   function openBulkModal() {
     if (selectedCardIds.size === 0) {
-      alert("Pilih minimal 1 barcode di tabel untuk melihat pratinjau cetak PDF 1 halaman.");
+      alert("Pilih minimal 1 barcode di tabel untuk melihat pratinjau cetak PDF kartu lipat A4 / A3.");
       return;
     }
+    currentPreviewPage = 0;
     pdfPreviewModal.style.display = "flex";
     renderSheetCanvas();
   }
@@ -1746,12 +1749,29 @@
     if (e.target === pdfPreviewModal) closeBulkModal();
   });
 
-  modalPaperSize.addEventListener("change", () => renderSheetCanvas());
-  modalOrientation.addEventListener("change", () => renderSheetCanvas());
-  modalColumns.addEventListener("change", () => renderSheetCanvas());
+  modalPaperSize.addEventListener("change", () => {
+    currentPreviewPage = 0;
+    renderSheetCanvas();
+  });
+
+  btnPrevPage.addEventListener("click", () => {
+    if (currentPreviewPage > 0) {
+      currentPreviewPage--;
+      renderSheetCanvas();
+    }
+  });
+
+  btnNextPage.addEventListener("click", () => {
+    const selectedCards = allCards.filter((c) => selectedCardIds.has(c.cardId));
+    const totalPages = Math.ceil(selectedCards.length / 2);
+    if (currentPreviewPage < totalPages - 1) {
+      currentPreviewPage++;
+      renderSheetCanvas();
+    }
+  });
 
   async function loadQrImageWithRetry(cardId, dynamicUrl, maxAttempts = 3) {
-    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&margin=10&data=${encodeURIComponent(dynamicUrl)}`;
+    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=0&bgcolor=e2f0e4&data=${encodeURIComponent(dynamicUrl)}`;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -1772,7 +1792,101 @@
     return null;
   }
 
-  // Render Pratinjau Kertas 1 Halaman ke Canvas
+  // Menggambar 1 Kartu Lipat Utuh (Depan Kiri + Belakang Kanan) ke Canvas
+  function drawFoldedCardOnCanvas(ctx, card, xMm, yMm, wMm, hMm, toPx, templateImg, qrImg) {
+    const pxX = toPx(xMm);
+    const pxY = toPx(yMm);
+    const pxW = toPx(wMm);
+    const pxH = toPx(hMm);
+
+    // 1. Gambar background template kartu utuh
+    ctx.drawImage(templateImg, pxX, pxY, pxW, pxH);
+
+    // 2. Kotak QR: relX = 224/676, relY = 184/338, relW = 70/676, relH = 70/338
+    const qX = pxX + (pxW * (224 / 676));
+    const qY = pxY + (pxH * (184 / 338));
+    const qW = pxW * (70 / 676);
+    const qH = pxH * (70 / 338);
+
+    // Latar hijau muda asli kotak SCAN QR: #e2f0e4
+    ctx.fillStyle = "#e2f0e4";
+    ctx.fillRect(qX, qY, qW, qH);
+
+    // 3. Gambar QR Code unik yang digenerate sistem
+    if (qrImg) {
+      ctx.drawImage(qrImg, qX, qY, qW, qH);
+    }
+  }
+
+  // Menggambar 1 Lembar Penuh (Memuat Maksimal 2 Kartu Lipat: Atas & Bawah)
+  async function renderSingleSheetToCanvas(canvas, paperKey, cardsOnThisPage, loadedQrImages, templateImg) {
+    const spec = PAPER_LAYOUTS[paperKey] || PAPER_LAYOUTS.A4;
+    const dpiScale = 10; // 10 px per mm (~254 DPI)
+    canvas.width = Math.round(spec.paperW * dpiScale);
+    canvas.height = Math.round(spec.paperH * dpiScale);
+    const ctx = canvas.getContext("2d");
+    const toPx = (mm) => Math.round(mm * dpiScale);
+
+    // Kertas Putih Bersih
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (!templateImg) {
+      templateImg = await getCardTemplateImg();
+    }
+    if (!templateImg) return;
+
+    const totalCardsH = (spec.cardH * 2) + spec.cardGap;
+    const marginY = (spec.paperH - totalCardsH) / 2;
+    const c1Y = marginY;
+    const c2Y = marginY + spec.cardH + spec.cardGap;
+    const foldX = spec.marginX + (spec.cardW / 2);
+    const cutY = c1Y + spec.cardH + (spec.cardGap / 2);
+
+    // Slot 1 (Kartu Atas)
+    if (cardsOnThisPage[0]) {
+      const card = cardsOnThisPage[0];
+      const qr = loadedQrImages ? loadedQrImages.get(card.cardId) : null;
+      drawFoldedCardOnCanvas(ctx, card, spec.marginX, c1Y, spec.cardW, spec.cardH, toPx, templateImg, qr);
+    }
+
+    // Slot 2 (Kartu Bawah)
+    if (cardsOnThisPage[1]) {
+      const card = cardsOnThisPage[1];
+      const qr = loadedQrImages ? loadedQrImages.get(card.cardId) : null;
+      drawFoldedCardOnCanvas(ctx, card, spec.marginX, c2Y, spec.cardW, spec.cardH, toPx, templateImg, qr);
+    }
+
+    // 1. Garis lipat vertikal putus-putus di tengah (antar sisi Depan & Belakang)
+    ctx.save();
+    ctx.strokeStyle = "#94a3b8";
+    ctx.lineWidth = Math.max(1, toPx(0.25));
+    ctx.setLineDash([toPx(1.5), toPx(1.5)]);
+    ctx.beginPath();
+    ctx.moveTo(toPx(foldX), toPx(c1Y - 4));
+    ctx.lineTo(toPx(foldX), toPx(c2Y + spec.cardH + 4));
+    ctx.stroke();
+    ctx.restore();
+
+    // 2. Garis potong horizontal putus-putus di tengah celah 10 mm
+    ctx.save();
+    ctx.strokeStyle = "#94a3b8";
+    ctx.lineWidth = Math.max(1, toPx(0.25));
+    ctx.setLineDash([toPx(1.5), toPx(1.5)]);
+    ctx.beginPath();
+    ctx.moveTo(toPx(spec.marginX - 4), toPx(cutY));
+    ctx.lineTo(toPx(spec.marginX + spec.cardW + 4), toPx(cutY));
+    ctx.stroke();
+    ctx.restore();
+
+    // 3. Teks Spesifikasi di sudut kiri bawah kertas
+    ctx.fillStyle = "#64748b";
+    ctx.font = `${toPx(2.5)}px sans-serif`;
+    ctx.textAlign = "left";
+    ctx.fillText(spec.specFooter, toPx(10), toPx(spec.paperH - 5));
+  }
+
+  // Render Pratinjau Kertas ke Canvas Modal
   async function renderSheetCanvas() {
     const currentSession = ++renderSessionId;
     const selectedCards = allCards.filter((c) => selectedCardIds.has(c.cardId));
@@ -1786,288 +1900,167 @@
     modalDownloadPdfBtn.disabled = true;
 
     const paperKey = (modalPaperSize.value || "A4").toUpperCase();
-    const spec = PAPER_SPECS[paperKey] || PAPER_SPECS.A4;
-    const isLandscape = modalOrientation.value === "landscape";
-    const paperW = isLandscape ? spec.heightMm : spec.widthMm;
-    const paperH = isLandscape ? spec.widthMm : spec.heightMm;
+    const totalPages = Math.max(1, Math.ceil(N / 2));
+    if (currentPreviewPage >= totalPages) currentPreviewPage = totalPages - 1;
+    if (currentPreviewPage < 0) currentPreviewPage = 0;
 
-    // Margin & Jarak antarsel adaptif agar muat banyak di 1 kertas
-    const marginMm = N > 30 ? 4 : N > 16 ? 6 : 8;
-    const gapMm = N > 30 ? 1.5 : N > 16 ? 2 : 3;
-    const usableW = paperW - (marginMm * 2);
-    const usableH = paperH - (marginMm * 2);
-
-    const colPref = modalColumns.value;
-    let cols = 3;
-
-    if (colPref === "auto") {
-      let bestArea = -1;
-      let bestCols = 1;
-      const maxCols = Math.min(N, 12);
-      const targetRatio = 0.82; // width / height
-
-      for (let c = 1; c <= maxCols; c++) {
-        const r = Math.ceil(N / c);
-        const cellW = (usableW - ((c - 1) * gapMm)) / c;
-        const cellH = (usableH - ((r - 1) * gapMm)) / r;
-        if (cellW <= 0 || cellH <= 0) continue;
-
-        const fitW = Math.min(cellW, cellH * targetRatio);
-        const fitH = fitW / targetRatio;
-        const area = fitW * fitH;
-
-        if (area > bestArea) {
-          bestArea = area;
-          bestCols = c;
-        }
-      }
-      cols = bestCols;
+    // Kontrol navigasi multi-halaman
+    if (totalPages > 1) {
+      pageNavWrap.style.display = "flex";
+      pageIndicator.textContent = `Hal ${currentPreviewPage + 1} / ${totalPages}`;
+      btnPrevPage.disabled = currentPreviewPage === 0;
+      btnNextPage.disabled = currentPreviewPage >= totalPages - 1;
     } else {
-      cols = Math.min(Number(colPref) || 3, N);
-    }
-
-    const rows = Math.ceil(N / cols);
-    const cellW = (usableW - ((cols - 1) * gapMm)) / cols;
-    const cellH = (usableH - ((rows - 1) * gapMm)) / rows;
-
-    const targetRatio = 0.82; // width / height
-    const insetMm = 0.8;
-    const maxStickerW = Math.max(0, cellW - (insetMm * 2));
-    const maxStickerH = Math.max(0, cellH - (insetMm * 2));
-    let stickerW = Math.min(maxStickerW, maxStickerH * targetRatio);
-    let stickerH = stickerW / targetRatio;
-    if (stickerH > maxStickerH) {
-      stickerH = maxStickerH;
-      stickerW = stickerH * targetRatio;
-    }
-    const qrSizeMm = Math.round((Math.min(stickerW * 0.76, stickerH * 0.48)) * 10) / 10;
-
-    let scanWarning = "";
-    if (qrSizeMm < 14) {
-      scanWarning = ` • <span style="color:#b45309;">⚠️ QR ~${qrSizeMm} mm (disarankan A4/A3 agar mudah di-scan)</span>`;
+      pageNavWrap.style.display = "none";
     }
 
     modalGridInfo.className = "status-pill linked";
-    modalGridInfo.innerHTML = `${N} Barcode • ${cols} Kolom × ${rows} Baris • Stiker: ~${Math.round(stickerW)}×${Math.round(stickerH)} mm • QR: ~${qrSizeMm} mm${scanWarning}`;
+    modalGridInfo.innerHTML = `${N} Kartu NFCMap • ${totalPages} Lembar ${paperKey} (2 kartu per lembar)`;
 
-    const dpiScale = 10; // 10 px per mm (~254 DPI)
-    sheetCanvas.width = Math.round(paperW * dpiScale);
-    sheetCanvas.height = Math.round(paperH * dpiScale);
     const ctx = sheetCanvas.getContext("2d");
+    const spec = PAPER_LAYOUTS[paperKey] || PAPER_LAYOUTS.A4;
+    const dpiScale = 10;
+    sheetCanvas.width = Math.round(spec.paperW * dpiScale);
+    sheetCanvas.height = Math.round(spec.paperH * dpiScale);
     const toPx = (mm) => Math.round(mm * dpiScale);
 
-    // Kertas Putih Bersih
+    // Status loading
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
-
-    // Muat gambar QR dengan auto-retry
-    const loadedQrImages = new Map();
     ctx.fillStyle = "#0f172a";
     ctx.font = `bold ${toPx(5)}px sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText("⏳ Memuat gambar stiker QR...", sheetCanvas.width / 2, sheetCanvas.height / 2);
+    ctx.fillText("⏳ Memuat template kartu & QR code...", sheetCanvas.width / 2, sheetCanvas.height / 2);
 
-    await Promise.all(
-      selectedCards.map(async (item) => {
-        const dynamicUrl = `${window.location.origin}/c/${item.cardId}`;
-        const img = await loadQrImageWithRetry(item.cardId, dynamicUrl, 3);
-        if (img) loadedQrImages.set(item.cardId, img);
-      })
-    );
+    const cardsForCurrentPage = selectedCards.slice(currentPreviewPage * 2, (currentPreviewPage * 2) + 2);
+
+    const [templateImg, loadedQrImages] = await Promise.all([
+      getCardTemplateImg(),
+      (async () => {
+        const qrMap = new Map();
+        await Promise.all(
+          cardsForCurrentPage.map(async (item) => {
+            const dynamicUrl = `${window.location.origin}/c/${item.cardId}`;
+            const img = await loadQrImageWithRetry(item.cardId, dynamicUrl, 3);
+            if (img) qrMap.set(item.cardId, img);
+          })
+        );
+        return qrMap;
+      })()
+    ]);
 
     if (currentSession !== renderSessionId) return;
 
-    // Cek apakah ada QR yang gagal termuat
-    const failedCards = selectedCards.filter((c) => !loadedQrImages.has(c.cardId));
-    if (failedCards.length > 0) {
-      ctx.fillStyle = "#ffffff";
+    if (!templateImg) {
+      ctx.fillStyle = "#fef2f2";
       ctx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
       ctx.fillStyle = "#b91c1c";
-      ctx.font = `bold ${toPx(4.5)}px sans-serif`;
+      ctx.font = `bold ${toPx(4)}px sans-serif`;
       ctx.textAlign = "center";
-      ctx.fillText(`⚠️ ${failedCards.length} QR gagal dimuat dari server karena koneksi / limit.`, sheetCanvas.width / 2, (sheetCanvas.height / 2) - toPx(4));
-      ctx.font = `${toPx(3.5)}px sans-serif`;
-      ctx.fillStyle = "#475569";
-      ctx.fillText("Klik tombol '🔄 Muat Ulang QR' di atas untuk mencoba kembali.", sheetCanvas.width / 2, (sheetCanvas.height / 2) + toPx(4));
-
-      modalGridInfo.className = "status-pill unlinked";
-      modalGridInfo.innerHTML = `⚠️ ${failedCards.length} QR Belum Termuat • <button type="button" id="btn-retry-qr" style="padding:2px 8px;border-radius:6px;border:1px solid #d97706;background:#fff;cursor:pointer;font-weight:700;color:#92400e;">🔄 Muat Ulang QR</button>`;
-      const retryBtn = document.getElementById("btn-retry-qr");
-      if (retryBtn) retryBtn.addEventListener("click", () => renderSheetCanvas());
+      ctx.fillText("⚠️ Gagal memuat template kartu (/assets/nfcmap-card-template.png).", sheetCanvas.width / 2, sheetCanvas.height / 2);
       return;
     }
 
-    // Gambar Ulang Kertas Bersih
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
-
-    selectedCards.forEach((item, index) => {
-      const colIdx = index % cols;
-      const rowIdx = Math.floor(index / cols);
-
-      const cellX = marginMm + colIdx * (cellW + gapMm);
-      const cellY = marginMm + rowIdx * (cellH + gapMm);
-
-      const pxX = toPx(cellX);
-      const pxY = toPx(cellY);
-      const pxW = toPx(cellW);
-      const pxH = toPx(cellH);
-
-      // Kartu Stiker di Dalam Sel (Proporsional aspect ratio 0.82)
-      const maxW = Math.max(0, pxW - toPx(insetMm * 2));
-      const maxH = Math.max(0, pxH - toPx(insetMm * 2));
-
-      let cardW = Math.min(maxW, maxH * targetRatio);
-      let cardH = cardW / targetRatio;
-      if (cardH > maxH) {
-        cardH = maxH;
-        cardW = cardH * targetRatio;
-      }
-
-      // Posisi di tengah sel
-      const cardX = pxX + (pxW - cardW) / 2;
-      const cardY = pxY + (pxH - cardH) / 2;
-
-      // 1. Garis Panduan Gunting Potong Stiker (Dashed Line) mengitari stiker proporsional
-      const cutX = cardX - toPx(insetMm);
-      const cutY = cardY - toPx(insetMm);
-      const cutW = cardW + toPx(insetMm * 2);
-      const cutH = cardH + toPx(insetMm * 2);
-
-      ctx.save();
-      ctx.strokeStyle = "#cbd5e1";
-      ctx.lineWidth = Math.max(1, toPx(0.25));
-      ctx.setLineDash([toPx(1.5), toPx(1.5)]);
-      ctx.strokeRect(cutX, cutY, cutW, cutH);
-      ctx.restore();
-
-      // 2. Kartu Stiker di Dalam Sel
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(cardX, cardY, cardW, cardH);
-      ctx.strokeStyle = "#e2e8f0";
-      ctx.lineWidth = Math.max(1, toPx(0.3));
-      ctx.strokeRect(cardX, cardY, cardW, cardH);
-
-      const centerX = cardX + (cardW / 2);
-
-      // Desain Proporsional Bebas Tumpukan:
-      // Badge Atas
-      const badgeH = cardH * 0.08;
-      const badgeW = Math.min(cardW * 0.84, toPx(42));
-      const badgeY = cardY + (cardH * 0.03);
-
-      ctx.fillStyle = "#eff6ff";
-      ctx.fillRect(centerX - (badgeW / 2), badgeY, badgeW, badgeH);
-      ctx.strokeStyle = "#bfdbfe";
-      ctx.lineWidth = Math.max(1, toPx(0.2));
-      ctx.strokeRect(centerX - (badgeW / 2), badgeY, badgeW, badgeH);
-
-      ctx.fillStyle = "#1d4ed8";
-      ctx.font = `bold ${badgeH * 0.52}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("SCAN UNTUK ULASAN", centerX, badgeY + (badgeH / 2), badgeW * 0.9);
-
-      // Gambar QR Code
-      const qrImg = loadedQrImages.get(item.cardId);
-      const qrSize = Math.min(cardW * 0.76, cardH * 0.48);
-      const qrY = badgeY + badgeH + (cardH * 0.025);
-
-      if (qrImg) {
-        ctx.drawImage(qrImg, centerX - (qrSize / 2), qrY, qrSize, qrSize);
-      }
-
-      // Judul & Subjudul
-      const titleY = qrY + qrSize + (cardH * 0.055);
-      ctx.fillStyle = "#0f172a";
-      ctx.font = `bold ${cardH * 0.046}px sans-serif`;
-      ctx.fillText("Tap NFCMap atau Scan QR", centerX, titleY, cardW * 0.9);
-
-      const subY = titleY + (cardH * 0.048);
-      ctx.fillStyle = "#64748b";
-      ctx.font = `${cardH * 0.036}px sans-serif`;
-      ctx.fillText("Bagikan Pengalaman & Ulasan Anda", centerX, subY, cardW * 0.9);
-
-      // Tag Barcode ID di Bawah
-      const idBadgeH = cardH * 0.085;
-      const idBadgeW = Math.min(cardW * 0.88, toPx(48));
-      const idBadgeY = cardY + cardH - idBadgeH - (cardH * 0.03);
-
-      ctx.fillStyle = "#f8fafc";
-      ctx.fillRect(centerX - (idBadgeW / 2), idBadgeY, idBadgeW, idBadgeH);
-      ctx.strokeStyle = "#cbd5e1";
-      ctx.lineWidth = Math.max(1, toPx(0.25));
-      ctx.strokeRect(centerX - (idBadgeW / 2), idBadgeY, idBadgeW, idBadgeH);
-
-      ctx.fillStyle = "#0f172a";
-      ctx.font = `bold ${idBadgeH * 0.55}px monospace`;
-      ctx.fillText(`ID: ${item.cardId}`, centerX, idBadgeY + (idBadgeH / 2), idBadgeW * 0.9);
-    });
+    await renderSingleSheetToCanvas(sheetCanvas, paperKey, cardsForCurrentPage, loadedQrImages, templateImg);
 
     modalDirectPrintBtn.disabled = false;
     modalDownloadPdfBtn.disabled = false;
+    modalDirectPrintBtn.textContent = totalPages > 1 ? `🖨️ Cetak Langsung (${totalPages} Lembar)` : `🖨️ Cetak Langsung (1 Lembar)`;
+    modalDownloadPdfBtn.textContent = totalPages > 1 ? `⬇️ Download PDF (${totalPages} Lembar)` : `⬇️ Download PDF (1 Lembar)`;
   }
 
-  // Download PDF 1 Halaman via jsPDF
-  modalDownloadPdfBtn.addEventListener("click", () => {
+  // Download PDF (Mendukung Multi-Halaman Sesuai Jumlah Kartu Terpilih)
+  modalDownloadPdfBtn.addEventListener("click", async () => {
     if (selectedCardIds.size === 0) return;
     const paperKey = (modalPaperSize.value || "A4").toUpperCase();
-    const orientation = modalOrientation.value;
+    const selectedCards = allCards.filter((c) => selectedCardIds.has(c.cardId));
+    const totalPages = Math.ceil(selectedCards.length / 2);
 
     modalDownloadPdfBtn.disabled = true;
-    modalDownloadPdfBtn.textContent = "⏳ Menyiapkan PDF...";
+    modalDownloadPdfBtn.textContent = `⏳ Menyiapkan PDF (${totalPages} Lembar)...`;
 
     try {
       if (!window.jspdf || !window.jspdf.jsPDF) {
-        throw new Error("Library jsPDF belum selesai dimuat di browser.");
+        throw new Error("Library jsPDF belum selesai dimuat.");
       }
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({
-        orientation: orientation === "landscape" ? "l" : "p",
+        orientation: "p",
         unit: "mm",
         format: paperKey.toLowerCase(),
       });
 
-      const imgData = sheetCanvas.toDataURL("image/jpeg", 0.96);
       const pdfW = pdf.internal.pageSize.getWidth();
       const pdfH = pdf.internal.pageSize.getHeight();
+      const templateImg = await getCardTemplateImg();
 
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
-      pdf.save(`STIKER-NFCMAP-${paperKey}-${orientation}-${selectedCardIds.size}-LEMBAR.pdf`);
+      // Load all QR images for selected cards
+      const loadedQrImages = new Map();
+      await Promise.all(
+        selectedCards.map(async (item) => {
+          const dynamicUrl = `${window.location.origin}/c/${item.cardId}`;
+          const img = await loadQrImageWithRetry(item.cardId, dynamicUrl, 3);
+          if (img) loadedQrImages.set(item.cardId, img);
+        })
+      );
+
+      for (let p = 0; p < totalPages; p++) {
+        if (p > 0) pdf.addPage(paperKey.toLowerCase(), "p");
+        const pageCanvas = document.createElement("canvas");
+        const cardsOnThisPage = selectedCards.slice(p * 2, p * 2 + 2);
+        await renderSingleSheetToCanvas(pageCanvas, paperKey, cardsOnThisPage, loadedQrImages, templateImg);
+        const imgData = pageCanvas.toDataURL("image/jpeg", 0.95);
+        pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
+      }
+
+      pdf.save(`KARTU-NFCMAP-${paperKey}-${selectedCards.length}-KARTU-${totalPages}-LEMBAR.pdf`);
     } catch (err) {
       alert("Gagal mengunduh PDF: " + err.message);
     } finally {
       modalDownloadPdfBtn.disabled = false;
-      modalDownloadPdfBtn.textContent = "⬇️ Download PDF (1 Halaman)";
+      modalDownloadPdfBtn.textContent = totalPages > 1 ? `⬇️ Download PDF (${totalPages} Lembar)` : `⬇️ Download PDF (1 Lembar)`;
     }
   });
 
-  // Cetak Langsung 1 Halaman Kertas
+  // Cetak Langsung (Mendukung Multi-Lembar Kertas Sesuai Jumlah Kartu Terpilih)
   modalDirectPrintBtn.addEventListener("click", async () => {
     if (selectedCardIds.size === 0) return;
     const paperKey = (modalPaperSize.value || "a4").toLowerCase();
-    const orientation = modalOrientation.value;
+    const selectedCards = allCards.filter((c) => selectedCardIds.has(c.cardId));
+    const totalPages = Math.ceil(selectedCards.length / 2);
 
     modalDirectPrintBtn.disabled = true;
     modalDirectPrintBtn.textContent = "⏳ Menyiapkan Cetak...";
 
     try {
       printSheet.replaceChildren();
-      const printImg = document.createElement("img");
-      printImg.src = sheetCanvas.toDataURL("image/png");
-      printImg.style.width = "100%";
-      printImg.style.height = "100%";
-      printImg.style.objectFit = "contain";
-      printImg.style.display = "block";
-      printSheet.appendChild(printImg);
+      const templateImg = await getCardTemplateImg();
 
-      if ("decode" in printImg) {
-        await printImg.decode().catch(() => {});
+      const loadedQrImages = new Map();
+      await Promise.all(
+        selectedCards.map(async (item) => {
+          const dynamicUrl = `${window.location.origin}/c/${item.cardId}`;
+          const img = await loadQrImageWithRetry(item.cardId, dynamicUrl, 3);
+          if (img) loadedQrImages.set(item.cardId, img);
+        })
+      );
+
+      for (let p = 0; p < totalPages; p++) {
+        const pageCanvas = document.createElement("canvas");
+        const cardsOnThisPage = selectedCards.slice(p * 2, p * 2 + 2);
+        await renderSingleSheetToCanvas(pageCanvas, paperKey.toUpperCase(), cardsOnThisPage, loadedQrImages, templateImg);
+        const printImg = document.createElement("img");
+        printImg.src = pageCanvas.toDataURL("image/png");
+        printImg.style.width = "100%";
+        printImg.style.height = "100%";
+        printImg.style.objectFit = "contain";
+        printImg.style.display = "block";
+        if (p < totalPages - 1) {
+          printImg.style.pageBreakAfter = "always";
+          printImg.style.breakAfter = "page";
+        }
+        printSheet.appendChild(printImg);
       }
-
-      await new Promise((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-      });
 
       let printPageStyle = document.getElementById("dynamic-print-page-style");
       if (!printPageStyle) {
@@ -2077,7 +2070,7 @@
       }
       printPageStyle.textContent = `
         @page {
-          size: ${paperKey} ${orientation};
+          size: ${paperKey} portrait;
           margin: 0;
         }
         @media print {
@@ -2087,30 +2080,32 @@
             width: 100% !important;
             height: 100% !important;
             background: #ffffff !important;
-            overflow: hidden !important;
           }
           .no-print { display: none !important; }
           .print-sheet {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            width: 100vw !important;
-            height: 100vh !important;
+            display: block !important;
             margin: 0 !important;
             padding: 0 !important;
             box-sizing: border-box !important;
           }
           .print-sheet img {
-            width: 100% !important;
-            height: 100% !important;
+            width: 100vw !important;
+            height: 100vh !important;
             object-fit: contain !important;
+            display: block !important;
+            page-break-after: always !important;
+            break-after: page !important;
+          }
+          .print-sheet img:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
         }
       `;
       window.print();
     } finally {
       modalDirectPrintBtn.disabled = false;
-      modalDirectPrintBtn.textContent = "🖨️ Cetak Langsung (1 Halaman)";
+      modalDirectPrintBtn.textContent = totalPages > 1 ? `🖨️ Cetak Langsung (${totalPages} Lembar)` : `🖨️ Cetak Langsung (1 Lembar)`;
     }
   });
 
